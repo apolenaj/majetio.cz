@@ -166,6 +166,23 @@ enum DataQualityIssueStatus {
   IGNORED
 }
 
+enum ImportJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  PARTIAL
+}
+
+enum ImportJobItemStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  SKIPPED
+  DUPLICATE
+}
+
 enum AnalysisTier {
   BASIC
   FULL
@@ -553,9 +570,16 @@ model Property {
   @@index([status, visibility])
   @@index([propertyType, transactionType])
   @@index([askingPrice])
+  @@index([pricePerSqm])
   @@index([publicCity])
+  @@index([publicCity, publicDistrict])
+  @@index([publicRegion])
   @@index([locationId])
+  @@index([latitude, longitude])
+  @@index([status, askingPrice])
+  @@index([status, publicCity, askingPrice])
   @@index([freshness, lastSeenAt])
+  @@index([transactionType, status, askingPrice])
 }
 
 /** Fixed boolean / count feature flags (1:1). */
@@ -654,7 +678,7 @@ model PropertySource {
   statusEvents    PropertyStatusHistory[]
   media           PropertyMedia[]
 
-  @@index([provider, externalPropertyId])
+  @@unique([provider, externalPropertyId])
   @@index([propertyId, sourceType])
   @@index([lastSeenAt])
 }
@@ -839,6 +863,57 @@ model PropertyFieldOverride {
 
   @@unique([propertyId, fieldKey])
   @@index([locked])
+}
+
+// ─── Import jobs (Prompt 7 Part 4) ───────────────────────────────────────────
+
+model ImportJob {
+  id              String             @id @default(cuid())
+  /** Stable key so the same scheduled run / webhook is not processed twice. */
+  idempotencyKey  String             @unique
+  provider        String
+  sourceType      PropertySourceType @default(OTHER)
+  status          ImportJobStatus    @default(PENDING)
+  processedCount  Int                @default(0)
+  successCount    Int                @default(0)
+  errorCount      Int                @default(0)
+  skippedCount    Int                @default(0)
+  /** Structured error summaries for ops dashboards. */
+  errors          Json?
+  meta            Json?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  items ImportJobItem[]
+
+  @@index([provider, status])
+  @@index([createdAt])
+}
+
+/**
+ * Per-record import unit — idempotent via provider + external id / payload hash.
+ */
+model ImportJobItem {
+  id                 String              @id @default(cuid())
+  jobId              String
+  /** Globally unique: provider:externalId or provider:sha256(payload). */
+  idempotencyKey     String              @unique
+  externalPropertyId String?
+  propertyId         String?
+  status             ImportJobItemStatus @default(PENDING)
+  errorMessage       String?
+  payloadHash        String?
+  processedAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  job ImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, status])
+  @@index([propertyId])
+  @@index([externalPropertyId])
 }
 
 // ─── Analysis & calculations ─────────────────────────────────────────────────

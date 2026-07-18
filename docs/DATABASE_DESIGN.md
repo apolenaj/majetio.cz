@@ -97,6 +97,17 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 **Purpose:** Analyst lock/override so a later feed import does not overwrite the field.  
 **Key fields:** `propertyId`, `fieldKey`, `value`, `locked`, `reason`, audit user refs.
 
+### ImportJob / ImportJobItem
+**Purpose:** Scheduled / webhook import runs with idempotency (Prompt 7 Part 4).  
+**ImportJob:** `idempotencyKey`, `provider`, `status`, counters (`processed` / success / error / skipped), `errors` JSON.  
+**ImportJobItem:** per-record `idempotencyKey` (`provider:ext:…` or payload hash) — same payload must not create a duplicate Property.  
+**Source uniqueness:** `PropertySource @@unique([provider, externalPropertyId])`.  
+**Pipeline:** Ingest → Validate → Sanitize → Normalize → Detect Duplicates → Canonical Update (`src/domains/property-sources/service/`).
+
+### Search indexes (Property)
+Composite indexes for listing discovery: `status+askingPrice`, `status+publicCity+askingPrice`, `latitude+longitude`, `publicCity+publicDistrict`, `transactionType+status+askingPrice`.  
+Service layer: `PropertyService` + `PropertySearchProvider` with public DTOs (no precise address / notes / audit for anonymous viewers).
+
 ### PropertyAnalysis
 **Purpose:** Container for analysis run (free or paid).  
 **Key fields:** `userId`, `propertyId`, `status`, `tier` (BASIC/FULL), `majetioScore`, `summary`, `createdAt`.  
