@@ -82,6 +82,21 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 **Fields:** `firstSeenAt`, `lastSeenAt`, `lastFetchedAt`, `freshness` (FRESH/STALE/UNAVAILABLE), `staleMarkedAt`.  
 **Rule (helper):** silent source ≥14d → STALE; ≥30d → UNAVAILABLE (`src/lib/properties/freshness.ts`).
 
+### PropertyDuplicateCandidate
+**Purpose:** Suspected duplicate pairs (Prompt 7 Part 3).  
+**Key fields:** `propertyAId`, `propertyBId`, `similarityScore`, `scoreBreakdown`, `status` (PENDING/MERGED/NOT_DUPLICATE), `mergeIntoPropertyId`.  
+**Scoring:** high weight address/GPS, medium area, low price/text (`src/domains/properties/service/dedupe-score.ts`).  
+**Merge:** non-destructive — keep canonical + source history; verified source wins; never hard-delete the secondary listing (`merge-strategy.ts`).
+
+### DataQualityIssue / DataCompletenessScore
+**Purpose:** Anomaly flags + internal fill metric.  
+**Issues:** `ruleCode`, `severity` (CRITICAL/WARNING/INFO), `message`, `field`, `status`. Critical: price ≤ 0, area ≤ 0. Warning: extreme Kč/m², area mismatch.  
+**Completeness:** 0–100 weighted presence (price, location, area, title, …).
+
+### PropertyFieldOverride
+**Purpose:** Analyst lock/override so a later feed import does not overwrite the field.  
+**Key fields:** `propertyId`, `fieldKey`, `value`, `locked`, `reason`, audit user refs.
+
 ### PropertyAnalysis
 **Purpose:** Container for analysis run (free or paid).  
 **Key fields:** `userId`, `propertyId`, `status`, `tier` (BASIC/FULL), `majetioScore`, `summary`, `createdAt`.  

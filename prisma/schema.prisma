@@ -147,6 +147,25 @@ enum PropertyFreshness {
   UNAVAILABLE
 }
 
+enum DuplicateCandidateStatus {
+  PENDING
+  MERGED
+  NOT_DUPLICATE
+}
+
+enum DataQualitySeverity {
+  CRITICAL
+  WARNING
+  INFO
+}
+
+enum DataQualityIssueStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  IGNORED
+}
+
 enum AnalysisTier {
   BASIC
   FULL
@@ -232,8 +251,11 @@ model User {
   leads                 Lead[]
   orders                Order[]
   notifications         Notification[]
-  auditLogs             AuditLog[]         @relation("AuditActor")
-  configUpdates         AppConfiguration[] @relation("ConfigUpdater")
+  auditLogs               AuditLog[]                   @relation("AuditActor")
+  configUpdates           AppConfiguration[]           @relation("ConfigUpdater")
+  reviewedDuplicates      PropertyDuplicateCandidate[] @relation("DuplicateReviewer")
+  fieldOverridesCreated   PropertyFieldOverride[]      @relation("FieldOverrideCreator")
+  fieldOverridesUpdated   PropertyFieldOverride[]      @relation("FieldOverrideUpdater")
 }
 
 model Account {
@@ -516,6 +538,12 @@ model Property {
   images          PropertyImage[]
   priceHistory    PropertyPriceHistory[]
   statusHistory   PropertyStatusHistory[]
+  duplicateAsA    PropertyDuplicateCandidate[] @relation("DuplicatePropertyA")
+  duplicateAsB    PropertyDuplicateCandidate[] @relation("DuplicatePropertyB")
+  mergeTargets    PropertyDuplicateCandidate[] @relation("DuplicateMergeTarget")
+  qualityIssues   DataQualityIssue[]
+  completeness    DataCompletenessScore?
+  fieldOverrides  PropertyFieldOverride[]
   analyses        PropertyAnalysis[]
   favourites      Favourite[]
   comparisonItems ComparisonItem[]
@@ -724,6 +752,93 @@ model PropertyStatusHistory {
 
   @@index([propertyId, changedAt])
   @@index([sourceId])
+}
+
+// ─── Deduplikace, data quality, overrides (Prompt 7 Part 3) ─────────────────
+
+model PropertyDuplicateCandidate {
+  id                  String                   @id @default(cuid())
+  propertyAId         String
+  propertyBId         String
+  similarityScore     Float
+  /** Weighted component scores for auditability. */
+  scoreBreakdown      Json?
+  status              DuplicateCandidateStatus @default(PENDING)
+  /** Canonical property kept after a non-destructive merge decision. */
+  mergeIntoPropertyId String?
+  reviewedAt          DateTime?
+  reviewedById        String?
+  notes               String?                  @db.Text
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  propertyA   Property  @relation("DuplicatePropertyA", fields: [propertyAId], references: [id], onDelete: Cascade)
+  propertyB   Property  @relation("DuplicatePropertyB", fields: [propertyBId], references: [id], onDelete: Cascade)
+  mergeInto   Property? @relation("DuplicateMergeTarget", fields: [mergeIntoPropertyId], references: [id], onDelete: SetNull)
+  reviewedBy  User?     @relation("DuplicateReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([propertyAId, propertyBId])
+  @@index([status, similarityScore])
+  @@index([mergeIntoPropertyId])
+}
+
+model DataQualityIssue {
+  id         String                 @id @default(cuid())
+  propertyId String
+  ruleCode   String
+  severity   DataQualitySeverity
+  message    String
+  field      String?
+  status     DataQualityIssueStatus @default(OPEN)
+  detectedAt DateTime               @default(now())
+  resolvedAt DateTime?
+  meta       Json?
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, status])
+  @@index([ruleCode, severity])
+  @@index([detectedAt])
+}
+
+/** Snapshot of how completely a listing is filled (internal QA metric). */
+model DataCompletenessScore {
+  id         String   @id @default(cuid())
+  propertyId String   @unique
+  /** 0–100 overall completeness. */
+  score      Float
+  /** Per-dimension flags / weights, e.g. { price: 1, location: 0.5, area: 1 }. */
+  breakdown  Json
+  computedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * Analyst lock / manual override — import feeds must not overwrite locked fields.
+ */
+model PropertyFieldOverride {
+  id          String                     @id @default(cuid())
+  propertyId  String
+  fieldKey    String
+  value       String                     @db.Text
+  valueType   PropertyAttributeValueType @default(STRING)
+  locked      Boolean                    @default(true)
+  reason      String?
+  createdById String?
+  updatedById String?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation("FieldOverrideCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?    @relation("FieldOverrideUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([propertyId, fieldKey])
+  @@index([locked])
 }
 
 // ─── Analysis & calculations ─────────────────────────────────────────────────
