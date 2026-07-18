@@ -1,0 +1,620 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  PAID_CLIENT
+  ANALYST
+  SALES
+  EDITOR
+  PARTNER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum PropertyStatus {
+  DRAFT
+  ACTIVE
+  RESERVED
+  SOLD
+  ARCHIVED
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  LAND
+  COMMERCIAL
+  OTHER
+}
+
+enum AnalysisTier {
+  BASIC
+  FULL
+}
+
+enum AnalysisStatus {
+  DRAFT
+  READY
+  PURCHASED
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum LeadType {
+  ANALYSIS_INTEREST
+  FINANCING
+  TRANSACTION
+  PARTNER_SERVICE
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  LOST
+  HANDED_OFF
+}
+
+enum ConsentType {
+  TERMS
+  PRIVACY
+  MARKETING
+  HYPOTEKAJASNE_HANDOFF
+  PARTNER_SHARE
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+// ─── Auth.js / User ──────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts              Account[]
+  sessions              Session[]
+  profile               UserProfile?
+  financialProfile      FinancialProfile?
+  propertyPreference    PropertyPreference?
+  investmentPreference  InvestmentPreference?
+  consents              Consent[]
+  favourites            Favourite[]
+  comparisons           Comparison[]
+  savedSearches         SavedSearch[]
+  analyses              PropertyAnalysis[]
+  leads                 Lead[]
+  orders                Order[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]         @relation("AuditActor")
+  configUpdates         AppConfiguration[] @relation("ConfigUpdater")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  phone           String?
+  preferredLocale String   @default("cs")
+  investmentGoal  String?
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FinancialProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  monthlyIncomeCzk      Int?
+  monthlyLiabilitiesCzk Int?
+  availableEquityCzk    Int?
+  employmentType        String?
+  creditScoreBand       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Consent {
+  id        String      @id @default(cuid())
+  userId    String
+  type      ConsentType
+  granted   Boolean
+  version   String
+  grantedAt DateTime?
+  revokedAt DateTime?
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+/** Catalog of legal / consent document versions (terms, privacy, …). */
+model ConsentVersion {
+  id            String      @id @default(cuid())
+  type          ConsentType
+  version       String
+  title         String
+  summary       String?     @db.Text
+  documentUrl   String?
+  effectiveFrom DateTime    @default(now())
+  isCurrent     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+
+  @@unique([type, version])
+  @@index([type, isCurrent])
+}
+
+/** Property search / listing preferences (onboarding Part 2+). */
+model PropertyPreference {
+  id             String         @id @default(cuid())
+  userId         String         @unique
+  propertyTypes  PropertyType[]
+  minPriceCzk    Int?
+  maxPriceCzk    Int?
+  minAreaSqm     Float?
+  maxAreaSqm     Float?
+  regions        String[]
+  dispositions  String[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/** Investment strategy preferences (onboarding Part 2+). */
+model InvestmentPreference {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  strategies           String[]
+  targetGrossYieldPct  Float?
+  maxRiskLevel         String?
+  holdPeriodYears      Int?
+  financingPreferred   Boolean?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * Brute-force protection for auth endpoints.
+ * Key is typically "ip:email" or "ip".
+ */
+model AuthRateLimit {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  failCount   Int       @default(0)
+  windowStart DateTime  @default(now())
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
+}
+
+// ─── Properties & locations ──────────────────────────────────────────────────
+
+model Location {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  region    String?
+  district  String?
+  country   String   @default("CZ")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  metrics    LocationMetric[]
+  properties Property[]
+}
+
+model LocationMetric {
+  id         String   @id @default(cuid())
+  locationId String
+  type       String
+  value      Float
+  unit       String?
+  period     String?
+  source     String?
+  recordedAt DateTime @default(now())
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([locationId, type])
+}
+
+model Property {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  description  String?        @db.Text
+  propertyType PropertyType
+  disposition  String?
+  areaSqm      Float?
+  priceCzk     Int?
+  currency     String         @default("CZK")
+  status       PropertyStatus @default(DRAFT)
+  city         String?
+  street       String?
+  zip          String?
+  locationId   String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  location       Location?               @relation(fields: [locationId], references: [id])
+  sources        PropertySource[]
+  images         PropertyImage[]
+  priceHistory   PropertyPriceHistory[]
+  statusHistory  PropertyStatusHistory[]
+  analyses       PropertyAnalysis[]
+  favourites     Favourite[]
+  comparisonItems ComparisonItem[]
+  leads          Lead[]
+  valuations     Valuation[]
+}
+
+model PropertySource {
+  id         String   @id @default(cuid())
+  propertyId String
+  provider   String
+  externalId String?
+  url        String?
+  rawPayload Json?
+  fetchedAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([provider, externalId])
+}
+
+model PropertyImage {
+  id         String  @id @default(cuid())
+  propertyId String
+  url        String
+  alt        String?
+  sortOrder  Int     @default(0)
+  isPrimary  Boolean @default(false)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyPriceHistory {
+  id         String   @id @default(cuid())
+  propertyId String
+  priceCzk   Int
+  source     String?
+  changedAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyStatusHistory {
+  id         String         @id @default(cuid())
+  propertyId String
+  status     PropertyStatus
+  source     String?
+  changedAt  DateTime       @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+// ─── Analysis & calculations ─────────────────────────────────────────────────
+
+model PropertyAnalysis {
+  id           String         @id @default(cuid())
+  userId       String?
+  propertyId   String?
+  status       AnalysisStatus @default(DRAFT)
+  tier         AnalysisTier   @default(BASIC)
+  majetioScore Float?
+  summary      String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  user                    User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  property                Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  scenarios               AnalysisScenario[]
+  valuations              Valuation[]
+  investmentCalculations  InvestmentCalculation[]
+  renovationEstimates     RenovationEstimate[]
+  orders                  Order[]
+}
+
+model AnalysisScenario {
+  id           String   @id @default(cuid())
+  analysisId   String
+  name         String
+  assumptions  Json
+  results      Json?
+  createdAt    DateTime @default(now())
+
+  analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model Valuation {
+  id                String   @id @default(cuid())
+  analysisId        String?
+  propertyId        String?
+  estimatedValueCzk Int
+  method            String
+  confidence        Float?
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+
+  analysis    PropertyAnalysis?     @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  property    Property?             @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  comparables ValuationComparable[]
+}
+
+model ValuationComparable {
+  id              String  @id @default(cuid())
+  valuationId     String
+  label           String
+  priceCzk        Int?
+  areaSqm         Float?
+  distanceMeters  Int?
+  externalRef     String?
+  propertyId      String?
+
+  valuation Valuation @relation(fields: [valuationId], references: [id], onDelete: Cascade)
+}
+
+model InvestmentCalculation {
+  id            String   @id @default(cuid())
+  analysisId    String
+  engineVersion String
+  inputs        Json
+  outputs       Json
+  createdAt     DateTime @default(now())
+
+  analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model RenovationEstimate {
+  id               String   @id @default(cuid())
+  analysisId       String
+  scope            String
+  estimatedCostCzk Int
+  contingencyPct   Float    @default(10)
+  lineItems        Json?
+  createdAt        DateTime @default(now())
+
+  analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+// ─── User workspace ──────────────────────────────────────────────────────────
+
+model Favourite {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+}
+
+model Comparison {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ComparisonItem[]
+}
+
+model ComparisonItem {
+  id           String @id @default(cuid())
+  comparisonId String
+  propertyId   String
+  sortOrder    Int    @default(0)
+
+  comparison Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([comparisonId, propertyId])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  criteria  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Leads, commerce, partners ───────────────────────────────────────────────
+
+model Lead {
+  id         String     @id @default(cuid())
+  type       LeadType
+  status     LeadStatus @default(NEW)
+  userId     String?
+  propertyId String?
+  email      String?
+  phone      String?
+  payload    Json?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user       User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  property   Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  activities LeadActivity[]
+}
+
+model LeadActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  type      String
+  note      String?  @db.Text
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  analysisId      String?
+  status          OrderStatus @default(PENDING)
+  productKey      String
+  amountCzk       Int
+  currency        String      @default("CZK")
+  configSnapshot  Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis PropertyAnalysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  payments Payment[]
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  orderId          String
+  status           PaymentStatus @default(PENDING)
+  amountCzk        Int
+  currency         String        @default("CZK")
+  provider         String?
+  providerPaymentId String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  email     String?
+  phone     String?
+  active    Boolean  @default(true)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  body      String?             @db.Text
+  readAt    DateTime?
+  meta      Json?
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  ip        String?
+  userAgent String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([actorId])
+}
+
+model AppConfiguration {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedById String?
+
+  updatedBy User? @relation("ConfigUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+}
