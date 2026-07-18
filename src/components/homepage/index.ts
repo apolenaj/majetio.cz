@@ -1,4 +1,16 @@
 export { AnnouncementBar } from "@/components/homepage/announcement-bar";
+export { AudienceSegments } from "@/components/homepage/audience-segments";
+export { FinalCta } from "@/components/homepage/final-cta";
+export { FinancingIntegration } from "@/components/homepage/financing-integration";
 export { HeroDemoVisual } from "@/components/homepage/hero-demo-visual";
+export { HomepageFaq } from "@/components/homepage/homepage-faq";
 export { HomepageHero } from "@/components/homepage/homepage-hero";
+export { HowItWorks } from "@/components/homepage/how-it-works";
+export { MethodologyTrust } from "@/components/homepage/methodology-trust";
+export { PricingPreview } from "@/components/homepage/pricing-preview";
+export { PropertyComparisonPreview } from "@/components/homepage/property-comparison-preview";
 export { QuickAnalysisEntry } from "@/components/homepage/quick-analysis-entry";
+export { RenovationLocationRisks } from "@/components/homepage/renovation-location-risks";
+export { SampleAnalysis } from "@/components/homepage/sample-analysis";
+export { ScoreAndMetrics } from "@/components/homepage/score-and-metrics";
+export { StrategyGrid } from "@/components/homepage/strategy-grid";

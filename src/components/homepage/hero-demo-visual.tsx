@@ -80,7 +80,7 @@ export function HeroDemoVisual() {
           <dd className="mt-1">
             <MetricValue
               value={formatCzk(demo.monthlyCashFlowCzk, { signed: true })}
-              tone="positive"
+              tone={demo.monthlyCashFlowCzk >= 0 ? "positive" : "negative"}
               size="s"
             />
           </dd>
