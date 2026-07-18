@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AccountDashboard } from "@/components/account/account-dashboard";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { InlineAlert } from "@/components/feedback/states";
 import { auth } from "@/lib/auth";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
+import { loadAccountDashboard } from "@/lib/financial-passport/actions";
 import { isOnboardingPending } from "@/lib/onboarding/actions";
 
 export const metadata: Metadata = {
@@ -11,10 +14,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/**
- * Minimal protected account landing — dashboard / financial passport come in later parts.
- * Middleware + server session check (defense in depth).
- */
 export default async function UcetPage() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -25,16 +24,21 @@ export default async function UcetPage() {
     redirect("/onboarding");
   }
 
+  const result = await loadAccountDashboard();
+  if (!result.ok) {
+    return (
+      <InlineAlert tone="error" title="Nepodařilo se načíst přehled">
+        {result.error}
+      </InlineAlert>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-h2 text-[var(--text-primary)]">Můj účet</h1>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          Jste přihlášeni jako {session.user.email}. Tato stránka je záměrně prázdná — další
-          funkce účtu doplníme v následujících částech.
-        </p>
+    <div className="space-y-10">
+      <AccountDashboard data={result.data} />
+      <div className="border-t border-[var(--border-default)] pt-6">
+        <LogoutButton />
       </div>
-      <LogoutButton />
     </div>
   );
 }
