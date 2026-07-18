@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { auth } from "@/lib/auth";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
+import { isOnboardingPending } from "@/lib/onboarding/actions";
 
 export const metadata: Metadata = {
   title: "Můj účet",
@@ -11,13 +12,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * Minimal protected account landing — onboarding / financial passport come in later parts.
+ * Minimal protected account landing — dashboard / financial passport come in later parts.
  * Middleware + server session check (defense in depth).
  */
 export default async function UcetPage() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect(buildLoginUrl("/ucet"));
+  }
+
+  if (await isOnboardingPending(session.user.id)) {
+    redirect("/onboarding");
   }
 
   return (

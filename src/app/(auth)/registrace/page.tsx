@@ -14,7 +14,7 @@ type Props = { searchParams: Promise<{ callbackUrl?: string }> };
 
 export default async function RegistracePage({ searchParams }: Props) {
   const { callbackUrl } = await searchParams;
-  const safeReturn = getSafeCallbackUrl(callbackUrl);
+  const safeReturn = getSafeCallbackUrl(callbackUrl, "/onboarding");
 
   return (
     <Container width="form" className="py-16 sm:py-20">

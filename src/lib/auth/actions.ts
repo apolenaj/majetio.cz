@@ -143,7 +143,7 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     throw error;
   }
 
-  redirect(getSafeCallbackUrl(parsed.data.callbackUrl, "/ucet"));
+  redirect(getSafeCallbackUrl(parsed.data.callbackUrl, "/onboarding"));
 }
 
 export async function loginAction(formData: FormData): Promise<ActionResult> {

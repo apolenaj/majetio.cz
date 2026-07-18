@@ -26,14 +26,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/ucet")) {
+  if (pathname.startsWith("/ucet") || pathname.startsWith("/onboarding")) {
     if (!isLoggedIn) {
       return NextResponse.redirect(
         new URL(buildLoginUrl(pathname + request.nextUrl.search), request.url),
       );
     }
     const response = NextResponse.next();
-    response.headers.set("x-majetio-zone", "account");
+    response.headers.set("x-majetio-zone", pathname.startsWith("/onboarding") ? "onboarding" : "account");
     response.headers.set("x-robots-tag", "noindex, nofollow");
     return response;
   }
@@ -63,6 +63,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/ucet/:path*",
+    "/onboarding",
+    "/onboarding/:path*",
     "/admin/:path*",
     "/prihlaseni",
     "/registrace",

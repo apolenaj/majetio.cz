@@ -12,7 +12,9 @@ export type AuditAction =
   | "auth.password_reset.success"
   | "auth.password_change"
   | "consent.grant"
-  | "consent.revoke";
+  | "consent.revoke"
+  | "onboarding.complete"
+  | "onboarding.skip";
 
 export async function writeAuditLog(input: {
   action: AuditAction | string;

@@ -162,14 +162,19 @@ model VerificationToken {
 }
 
 model UserProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  phone           String?
-  preferredLocale String   @default("cs")
-  investmentGoal  String?
-  notes           String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  phone                  String?
+  preferredLocale        String    @default("cs")
+  investmentGoal         String?
+  /** Onboarding goal: OWN_HOME | INVESTMENT | RENOVATION | FLIP | EXPLORING */
+  onboardingGoal         String?
+  onboardingStep         Int       @default(1)
+  onboardingCompletedAt  DateTime?
+  onboardingSkippedAt    DateTime?
+  notes                  String?   @db.Text
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -180,6 +185,10 @@ model FinancialProfile {
   monthlyIncomeCzk      Int?
   monthlyLiabilitiesCzk Int?
   availableEquityCzk    Int?
+  /** Optional share of purchase price as own funds (0–100). */
+  equityPercent         Float?
+  /** MORTGAGE | MIXED | CASH */
+  financingMode         String?
   employmentType        String?
   creditScoreBand       String?
   createdAt             DateTime @default(now())
@@ -229,6 +238,7 @@ model PropertyPreference {
   maxPriceCzk    Int?
   minAreaSqm     Float?
   maxAreaSqm     Float?
+  preferredCity  String?
   regions        String[]
   dispositions  String[]
   createdAt      DateTime       @default(now())
@@ -239,15 +249,16 @@ model PropertyPreference {
 
 /** Investment strategy preferences (onboarding Part 2+). */
 model InvestmentPreference {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
-  strategies           String[]
-  targetGrossYieldPct  Float?
-  maxRiskLevel         String?
-  holdPeriodYears      Int?
-  financingPreferred   Boolean?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  strategies              String[]
+  targetGrossYieldPct     Float?
+  targetCashFlowMonthlyCzk Int?
+  maxRiskLevel            String?
+  holdPeriodYears         Int?
+  financingPreferred      Boolean?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
