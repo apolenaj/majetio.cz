@@ -50,10 +50,16 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 
 
 ### Property
-**Purpose:** Canonical listing / subject of analysis.  
-**Key fields:** `slug`, `title`, `description`, `propertyType`, `disposition`, `areaSqm`, `priceCzk`, `currency`, `status`, `address*` / `locationId`, `sourcePrimaryId`.  
-**Sensitivity:** Public listing data mostly; exact address may be restricted until lead.  
-**Retention:** Keep historical for valuation comps; mark unpublished rather than hard delete when referenced.
+**Purpose:** Canonical multi-source listing / analysis subject (Prompt 7).  
+**Identity:** `id`, `slug`, `canonicalKey`, `status`, `visibility` (PUBLIC/PRIVATE/ACCOUNT_ONLY), `transactionType`, timestamps.  
+**Basics:** `title`, `description`, `propertyType`, `condition`, `constructionType`, `ownershipType`.  
+**Price:** `askingPrice`, `originalAskingPrice`, `currency`, `pricePerSqm`, `negotiable` (+ legacy `priceCzk`).  
+**Size:** `usableArea`, `floorArea`, `landArea`, `layout`, room counts (+ legacy `areaSqm` / `disposition`).  
+**Building:** floor, yearBuilt, energyRating, parking, elevator, …  
+**Location split:** public (`publicLabel`, `addressPrecision`, public city/district/region) vs internal (`street`, house numbers, GPS). Exact address is not public by default.  
+**Relations:** `PropertyFeatures` (1:1 flags), `PropertyAttribute` (EAV), sources, images, histories.  
+**Sensitivity:** Exact address + GPS = restricted; public label only when precision allows.  
+**Retention:** Prefer unpublish over hard delete when referenced.
 
 ### PropertySource
 **Purpose:** Provenance of listing data (portal, partner, manual).  

@@ -28,6 +28,8 @@ enum PropertyStatus {
   ACTIVE
   RESERVED
   SOLD
+  RENTED
+  WITHDRAWN
   ARCHIVED
 }
 
@@ -37,6 +39,70 @@ enum PropertyType {
   LAND
   COMMERCIAL
   OTHER
+}
+
+enum PropertyVisibility {
+  PUBLIC
+  PRIVATE
+  ACCOUNT_ONLY
+}
+
+enum AddressPrecision {
+  EXACT
+  APPROXIMATE
+  HIDDEN
+}
+
+enum TransactionType {
+  SALE
+  RENT
+}
+
+enum PropertyCondition {
+  NEW
+  EXCELLENT
+  GOOD
+  AVERAGE
+  NEEDS_RENOVATION
+  SHELL
+  UNKNOWN
+}
+
+enum ConstructionType {
+  BRICK
+  PANEL
+  WOOD
+  STEEL
+  MIXED
+  OTHER
+  UNKNOWN
+}
+
+enum OwnershipType {
+  PERSONAL
+  COOPERATIVE
+  MUNICIPAL
+  COMPANY
+  OTHER
+  UNKNOWN
+}
+
+enum EnergyRating {
+  A
+  B
+  C
+  D
+  E
+  F
+  G
+  UNKNOWN
+}
+
+enum PropertyAttributeValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
 }
 
 enum AnalysisTier {
@@ -290,8 +356,11 @@ model Location {
   id        String   @id @default(cuid())
   slug      String   @unique
   name      String
+  /** Public-facing label, e.g. "Praha 2 – Vinohrady". */
+  publicName String?
   region    String?
   district  String?
+  city      String?
   country   String   @default("CZ")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -315,34 +384,144 @@ model LocationMetric {
   @@index([locationId, type])
 }
 
+/**
+ * Canonical property — multi-source listing subject.
+ * Exact address fields are internal; public surfaces must respect addressPrecision + visibility.
+ */
 model Property {
-  id           String         @id @default(cuid())
-  slug         String         @unique
-  title        String
-  description  String?        @db.Text
-  propertyType PropertyType
-  disposition  String?
-  areaSqm      Float?
-  priceCzk     Int?
-  currency     String         @default("CZK")
-  status       PropertyStatus @default(DRAFT)
-  city         String?
-  street       String?
-  zip          String?
-  locationId   String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String             @id @default(cuid())
+  slug          String             @unique
+  /** Stable cross-source identity key (Part 2+ dedup). */
+  canonicalKey  String             @unique
+  status        PropertyStatus     @default(DRAFT)
+  visibility    PropertyVisibility @default(PUBLIC)
+  transactionType TransactionType  @default(SALE)
+  publishedAt   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
-  location       Location?               @relation(fields: [locationId], references: [id])
-  sources        PropertySource[]
-  images         PropertyImage[]
-  priceHistory   PropertyPriceHistory[]
-  statusHistory  PropertyStatusHistory[]
-  analyses       PropertyAnalysis[]
-  favourites     Favourite[]
+  // ── Basics ───────────────────────────────────────────────────────────────
+  title            String
+  description      String?            @db.Text
+  propertyType     PropertyType
+  condition        PropertyCondition  @default(UNKNOWN)
+  constructionType ConstructionType  @default(UNKNOWN)
+  ownershipType    OwnershipType      @default(UNKNOWN)
+
+  // ── Price ────────────────────────────────────────────────────────────────
+  askingPrice         Int?
+  originalAskingPrice Int?
+  /** @deprecated Prefer askingPrice — kept for existing readers. */
+  priceCzk            Int?
+  currency            String  @default("CZK")
+  pricePerSqm         Float?
+  negotiable          Boolean @default(false)
+
+  // ── Size & layout ────────────────────────────────────────────────────────
+  usableArea   Float?
+  floorArea    Float?
+  landArea     Float?
+  /** @deprecated Prefer usableArea. */
+  areaSqm      Float?
+  layout       String?
+  /** @deprecated Prefer layout (e.g. 3+kk). */
+  disposition  String?
+  roomsCount   Int?
+  bedroomsCount Int?
+  bathroomsCount Int?
+
+  // ── Building ─────────────────────────────────────────────────────────────
+  floor           Int?
+  floorsTotal     Int?
+  yearBuilt       Int?
+  yearRenovated   Int?
+  energyRating    EnergyRating @default(UNKNOWN)
+  parkingSpaces   Int?
+  hasElevator     Boolean?
+  buildingName    String?
+
+  // ── Public location (safe to show when precision allows) ─────────────────
+  publicLabel      String?
+  addressPrecision AddressPrecision @default(APPROXIMATE)
+  publicCity       String?
+  publicDistrict   String?
+  publicRegion     String?
+
+  // ── Internal / precise location (not for public by default) ──────────────
+  street             String?
+  houseNumber        String?
+  orientationNumber  String?
+  zip                String?
+  /** Internal city (may equal publicCity). */
+  city               String?
+  latitude           Float?
+  longitude          Float?
+  locationId         String?
+
+  location        Location?               @relation(fields: [locationId], references: [id])
+  features        PropertyFeatures?
+  attributes      PropertyAttribute[]
+  sources         PropertySource[]
+  images          PropertyImage[]
+  priceHistory    PropertyPriceHistory[]
+  statusHistory   PropertyStatusHistory[]
+  analyses        PropertyAnalysis[]
+  favourites      Favourite[]
   comparisonItems ComparisonItem[]
-  leads          Lead[]
-  valuations     Valuation[]
+  leads           Lead[]
+  valuations      Valuation[]
+
+  @@index([status, visibility])
+  @@index([propertyType, transactionType])
+  @@index([askingPrice])
+  @@index([publicCity])
+  @@index([locationId])
+}
+
+/** Fixed boolean / count feature flags (1:1). */
+model PropertyFeatures {
+  id              String  @id @default(cuid())
+  propertyId      String  @unique
+  balcony         Boolean @default(false)
+  loggia          Boolean @default(false)
+  terrace         Boolean @default(false)
+  garden          Boolean @default(false)
+  cellar          Boolean @default(false)
+  garage          Boolean @default(false)
+  parking         Boolean @default(false)
+  elevator        Boolean @default(false)
+  furnished       Boolean @default(false)
+  barrierFree     Boolean @default(false)
+  airConditioning Boolean @default(false)
+  fireplace       Boolean @default(false)
+  pool            Boolean @default(false)
+  alarm           Boolean @default(false)
+  internet        Boolean @default(false)
+  cableTv         Boolean @default(false)
+  washingMachine  Boolean @default(false)
+  dishwasher      Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+/** Flexible EAV attributes for source-specific / evolving parameters. */
+model PropertyAttribute {
+  id        String                     @id @default(cuid())
+  propertyId String
+  key       String
+  value     String                     @db.Text
+  valueType PropertyAttributeValueType @default(STRING)
+  unit      String?
+  source    String?
+  createdAt DateTime                   @default(now())
+  updatedAt DateTime                   @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, key])
+  @@index([key])
 }
 
 model PropertySource {
