@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { HypotekaJasneHandoffCard } from "@/components/privacy/data-sharing-preview";
 import { FinancialPassportForm } from "@/components/financial-passport/passport-form";
 import { InlineAlert } from "@/components/feedback/states";
 import { auth } from "@/lib/auth";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
+import { loadHypotekaHandoffPreview } from "@/lib/financing/handoff-actions";
 import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import { isOnboardingPending } from "@/lib/onboarding/actions";
 
@@ -23,7 +25,11 @@ export default async function FinancniProfilPage() {
     redirect("/onboarding");
   }
 
-  const result = await loadFinancialPassport();
+  const [result, handoff] = await Promise.all([
+    loadFinancialPassport(),
+    loadHypotekaHandoffPreview(),
+  ]);
+
   if (!result.ok) {
     return (
       <InlineAlert tone="error" title="Nepodařilo se načíst Finanční pas">
@@ -32,5 +38,15 @@ export default async function FinancniProfilPage() {
     );
   }
 
-  return <FinancialPassportForm initialState={result.state} />;
+  return (
+    <div className="space-y-8">
+      <FinancialPassportForm initialState={result.state} />
+      {handoff.ok ? (
+        <HypotekaJasneHandoffCard
+          preview={handoff.data}
+          source="ucet/financni-profil"
+        />
+      ) : null}
+    </div>
+  );
 }

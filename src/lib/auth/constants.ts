@@ -1,10 +1,13 @@
 /**
- * Current consent document versions accepted at registration.
+ * Current consent document versions accepted at registration / handoff.
  * Kept in sync with ConsentVersion seed / DB catalog.
  */
 export const CURRENT_CONSENT_VERSIONS = {
   TERMS: "2026-07-01",
   PRIVACY: "2026-07-01",
+  MARKETING: "2026-07-01",
+  HYPOTEKAJASNE_HANDOFF: "2026-07-01",
+  PARTNER_SHARE: "2026-07-01",
 } as const;
 
 export const AUTH_MESSAGES = {

@@ -104,6 +104,8 @@ model User {
   name          String?
   image         String?
   passwordHash  String?
+  /** Pending e-mail change — applied only after verification. */
+  pendingEmail  String?
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -173,6 +175,12 @@ model UserProfile {
   onboardingCompletedAt  DateTime?
   onboardingSkippedAt    DateTime?
   notes                  String?   @db.Text
+  /** Transactional alerts (orders, security). Defaults on — not marketing. */
+  notifyTransactionalEmail Boolean @default(true)
+  notifyTransactionalInApp Boolean @default(true)
+  /** Marketing — must default false; never pre-checked in UI. */
+  notifyMarketingEmail     Boolean @default(false)
+  notifyMarketingInApp     Boolean @default(false)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
