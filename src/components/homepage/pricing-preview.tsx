@@ -1,4 +1,4 @@
-import { ButtonLink } from "@/components/ui/button-link";
+import { TrackedButtonLink } from "@/components/homepage/tracked";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Grid, Section } from "@/components/ui/layout-primitives";
@@ -33,9 +33,17 @@ export function PricingPreview() {
                 <li key={feature}>· {feature}</li>
               ))}
             </ul>
-            <ButtonLink href={copy.basicHref} variant="secondary" className="mt-6">
+            <TrackedButtonLink
+              href={copy.basicHref}
+              variant="secondary"
+              className="mt-6"
+              event={{
+                name: "pricing_cta_clicked",
+                props: { product: "basic", href: copy.basicHref },
+              }}
+            >
               {copy.basicCta}
-            </ButtonLink>
+            </TrackedButtonLink>
           </Card>
 
           <Card as="article" elevation="raised">
@@ -48,9 +56,16 @@ export function PricingPreview() {
                 <li key={feature}>· {feature}</li>
               ))}
             </ul>
-            <ButtonLink href={copy.proHref} className="mt-6">
+            <TrackedButtonLink
+              href={copy.proHref}
+              className="mt-6"
+              event={{
+                name: "pricing_cta_clicked",
+                props: { product: "full", href: copy.proHref },
+              }}
+            >
               {copy.proCta}
-            </ButtonLink>
+            </TrackedButtonLink>
           </Card>
         </Grid>
       </Container>

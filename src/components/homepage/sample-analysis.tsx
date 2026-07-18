@@ -1,7 +1,7 @@
 import { MajetioScore, MetricCard } from "@/components/data-display/metric-card";
 import { PropertyCard } from "@/components/property/property-card";
+import { SampleAnalysisViewTracker, TrackedButtonLink } from "@/components/homepage/tracked";
 import { Badge, RiskBadge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/layout-primitives";
 import { homepageContent } from "@/content/homepage";
@@ -34,6 +34,7 @@ export function SampleAnalysis() {
       className="border-b border-[var(--border-default)] bg-[var(--background-secondary)]"
       aria-labelledby="sample-analysis-heading"
     >
+      <SampleAnalysisViewTracker />
       <Container>
         <div className="flex flex-wrap items-center gap-3">
           <h2 id="sample-analysis-heading" className="text-h2 text-[var(--text-primary)]">
@@ -47,7 +48,7 @@ export function SampleAnalysis() {
         </p>
 
         <div className="mt-10 grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
-          <div className="space-y-6 lg:col-span-5">
+          <div className="min-w-0 space-y-6 lg:col-span-5">
             <PropertyCard property={property} />
 
             <div className="space-y-4 text-sm">
@@ -79,10 +80,27 @@ export function SampleAnalysis() {
               </div>
             </div>
 
-            <ButtonLink href={copy.ctaHref}>{copy.ctaLabel}</ButtonLink>
+            <TrackedButtonLink
+              href={copy.ctaHref}
+              event={{
+                name: "primary_cta_clicked",
+                props: {
+                  label: copy.ctaLabel,
+                  href: copy.ctaHref,
+                  location: "homepage_sample_analysis",
+                },
+              }}
+            >
+              {copy.ctaLabel}
+            </TrackedButtonLink>
           </div>
 
-          <div className="space-y-4 lg:col-span-7" data-demo="true">
+          <div
+            className="min-w-0 space-y-4 lg:col-span-7"
+            data-demo="true"
+            role="region"
+            aria-label="Ukázkové metriky analýzy (ilustrativní údaje)"
+          >
             <div className="flex flex-wrap items-center gap-2">
               <RiskBadge level={demo.risk} />
               <Badge tone="neutral">Strategie: {demo.strategy}</Badge>

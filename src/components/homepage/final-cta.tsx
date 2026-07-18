@@ -1,4 +1,4 @@
-import { ButtonLink } from "@/components/ui/button-link";
+import { TrackedButtonLink } from "@/components/homepage/tracked";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/layout-primitives";
 import { homepageContent } from "@/content/homepage";
@@ -15,19 +15,27 @@ export function FinalCta() {
         <h2 className="font-display text-2xl sm:text-3xl">{copy.title}</h2>
         <p className="mt-4 text-sm text-white/75 sm:text-base">{copy.description}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <ButtonLink
+          <TrackedButtonLink
             href={copy.primaryHref}
             className="bg-[var(--background-primary)] text-[var(--text-primary)] hover:bg-white"
+            event={{
+              name: "final_cta_clicked",
+              props: { href: copy.primaryHref, intent: "analyze" },
+            }}
           >
             {copy.primaryLabel}
-          </ButtonLink>
-          <ButtonLink
+          </TrackedButtonLink>
+          <TrackedButtonLink
             href={copy.secondaryHref}
             variant="ghost"
             className="text-[var(--text-inverse)] hover:bg-white/10"
+            event={{
+              name: "final_cta_clicked",
+              props: { href: copy.secondaryHref, intent: "browse" },
+            }}
           >
             {copy.secondaryLabel}
-          </ButtonLink>
+          </TrackedButtonLink>
         </div>
       </Container>
     </Section>

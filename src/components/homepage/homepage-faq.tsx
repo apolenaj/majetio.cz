@@ -1,3 +1,4 @@
+import { FaqDisclosure } from "@/components/homepage/faq-disclosure";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/layout-primitives";
 import { homepageContent } from "@/content/homepage";
@@ -17,23 +18,13 @@ export function HomepageFaq() {
         <p className="mt-3 text-[var(--text-secondary)]">{copy.description}</p>
 
         <div className="mt-8 divide-y divide-[var(--border-default)] border-y border-[var(--border-default)]">
-          {copy.items.map((item) => (
-            <details key={item.question} className="group py-4">
-              <summary className="cursor-pointer list-none font-display text-lg text-[var(--text-primary)] marker:content-none [&::-webkit-details-marker]:hidden">
-                <span className="flex items-start justify-between gap-4">
-                  {item.question}
-                  <span
-                    aria-hidden
-                    className="mt-1 shrink-0 text-[var(--text-muted)] transition-transform group-open:rotate-45"
-                  >
-                    +
-                  </span>
-                </span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-                {item.answer}
-              </p>
-            </details>
+          {copy.items.map((item, index) => (
+            <FaqDisclosure
+              key={item.question}
+              questionId={`faq-${index + 1}`}
+              question={item.question}
+              answer={item.answer}
+            />
           ))}
         </div>
       </Container>

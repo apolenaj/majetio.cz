@@ -1,15 +1,22 @@
-import { ButtonLink } from "@/components/ui/button-link";
-import { Container } from "@/components/ui/container";
 import { HeroDemoVisual } from "@/components/homepage/hero-demo-visual";
 import { QuickAnalysisEntry } from "@/components/homepage/quick-analysis-entry";
-import { homepageContent } from "@/content/homepage";
+import { TrackedButtonLink } from "@/components/homepage/tracked";
+import { Container } from "@/components/ui/container";
+import type { resolveHomepageHero } from "@/config/homepage";
+
+type HeroCopy = ReturnType<typeof resolveHomepageHero>;
 
 /**
  * Homepage hero — product claim, CTAs above the fold, demo visual, quick analysis entry.
+ * Receives resolved experiment copy for future A/B without forking the layout.
  */
-export function HomepageHero() {
-  const { hero } = homepageContent;
-
+export function HomepageHero({
+  hero,
+  experimentVariant = "control",
+}: {
+  hero: HeroCopy;
+  experimentVariant?: string;
+}) {
   return (
     <section
       className="relative overflow-x-clip border-b border-[var(--border-default)]"
@@ -17,7 +24,7 @@ export function HomepageHero() {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(11,31,51,0.08),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(31,111,84,0.06),transparent_50%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgb(11,31,51,0.08),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgb(31,111,84,0.06),transparent_50%)]"
       />
 
       <Container className="relative py-10 sm:py-14 lg:py-16">
@@ -34,24 +41,53 @@ export function HomepageHero() {
               {hero.subheadline}
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href={hero.primaryCta.href} size="lg">
+            <div className="mt-7 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <TrackedButtonLink
+                href={hero.primaryCta.href}
+                size="lg"
+                className="w-full sm:w-auto"
+                event={{
+                  name: "hero_primary_cta_clicked",
+                  props: { href: hero.primaryCta.href, variant: experimentVariant },
+                }}
+              >
                 {hero.primaryCta.label}
-              </ButtonLink>
-              <ButtonLink href={hero.secondaryCta.href} variant="secondary" size="lg">
+              </TrackedButtonLink>
+              <TrackedButtonLink
+                href={hero.secondaryCta.href}
+                variant="secondary"
+                size="lg"
+                className="w-full sm:w-auto"
+                event={{
+                  name: "hero_secondary_cta_clicked",
+                  props: { href: hero.secondaryCta.href, variant: experimentVariant },
+                }}
+              >
                 {hero.secondaryCta.label}
-              </ButtonLink>
+              </TrackedButtonLink>
             </div>
             <p className="mt-3">
-              <ButtonLink href={hero.tertiaryCta.href} variant="link" size="sm">
+              <TrackedButtonLink
+                href={hero.tertiaryCta.href}
+                variant="link"
+                size="sm"
+                event={{
+                  name: "primary_cta_clicked",
+                  props: {
+                    label: hero.tertiaryCta.label,
+                    href: hero.tertiaryCta.href,
+                    location: "homepage_hero_tertiary",
+                  },
+                }}
+              >
                 {hero.tertiaryCta.label}
-              </ButtonLink>
+              </TrackedButtonLink>
             </p>
 
             <QuickAnalysisEntry className="mt-8" />
           </div>
 
-          <div className="min-w-0 lg:pt-2">
+          <div className="min-w-0 lg:order-none lg:pt-2" aria-hidden={false}>
             <HeroDemoVisual />
           </div>
         </div>

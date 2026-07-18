@@ -7,6 +7,7 @@ import { Field, TextInput } from "@/components/forms/field";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { homepageContent } from "@/content/homepage";
+import { track } from "@/lib/analytics/events";
 import {
   buildAnalysisEntryHref,
   validateListingUrl,
@@ -26,7 +27,8 @@ function errorMessageForReason(
 
 /**
  * Fast path into analysis: validated listing URL or manual entry redirect.
- * Does not fetch remote content (SSRF-safe) — only validates and navigates.
+ * Progressive enhancement: without JS the form GETs /analyza/nova.
+ * Does not fetch remote content (SSRF-safe).
  */
 export function QuickAnalysisEntry({ className }: { className?: string }) {
   const router = useRouter();
@@ -41,6 +43,11 @@ export function QuickAnalysisEntry({ className }: { className?: string }) {
     setError(undefined);
 
     const result = validateListingUrl(url);
+    track({
+      name: "quick_analysis_submitted",
+      props: { entry: "url", valid: result.ok },
+    });
+
     if (!result.ok) {
       setError(errorMessageForReason(result.reason));
       return;
@@ -103,12 +110,15 @@ export function QuickAnalysisEntry({ className }: { className?: string }) {
       {mode === "url" ? (
         <form
           className="mt-4 space-y-3"
+          action="/analyza/nova"
+          method="get"
           onSubmit={onSubmit}
           noValidate
           role="tabpanel"
           id="quick-analysis-panel-url"
           aria-labelledby="quick-analysis-tab-url"
         >
+          <input type="hidden" name="source" value="url" />
           <Field
             id="homepage-listing-url"
             label={copy.urlLabel}
@@ -149,12 +159,24 @@ export function QuickAnalysisEntry({ className }: { className?: string }) {
             href={buildAnalysisEntryHref({ source: "manual" })}
             fullWidth
             size="lg"
+            onClick={() =>
+              track({
+                name: "quick_analysis_submitted",
+                props: { entry: "manual", valid: true },
+              })
+            }
           >
             {copy.manualCta}
           </ButtonLink>
           <p className="text-xs text-[var(--text-muted)]">{copy.nextStepNote}</p>
         </div>
       )}
+
+      <noscript>
+        <p className="mt-3 text-xs text-[var(--text-muted)]">
+          Bez JavaScriptu odešlete URL formulářem výše — validaci dokončí další krok.
+        </p>
+      </noscript>
     </div>
   );
 }

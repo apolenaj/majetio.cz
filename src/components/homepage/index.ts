@@ -3,6 +3,7 @@ export { AudienceSegments } from "@/components/homepage/audience-segments";
 export { FinalCta } from "@/components/homepage/final-cta";
 export { FinancingIntegration } from "@/components/homepage/financing-integration";
 export { HeroDemoVisual } from "@/components/homepage/hero-demo-visual";
+export { HomepageBody } from "@/components/homepage/homepage-body";
 export { HomepageFaq } from "@/components/homepage/homepage-faq";
 export { HomepageHero } from "@/components/homepage/homepage-hero";
 export { HowItWorks } from "@/components/homepage/how-it-works";
@@ -14,3 +15,9 @@ export { RenovationLocationRisks } from "@/components/homepage/renovation-locati
 export { SampleAnalysis } from "@/components/homepage/sample-analysis";
 export { ScoreAndMetrics } from "@/components/homepage/score-and-metrics";
 export { StrategyGrid } from "@/components/homepage/strategy-grid";
+export {
+  HomepageViewTracker,
+  SampleAnalysisViewTracker,
+  TrackedAnchor,
+  TrackedButtonLink,
+} from "@/components/homepage/tracked";

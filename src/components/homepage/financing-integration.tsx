@@ -1,8 +1,8 @@
 import { ExternalLink } from "lucide-react";
 
 import { MetricCard } from "@/components/data-display/metric-card";
+import { TrackedAnchor, TrackedButtonLink } from "@/components/homepage/tracked";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/layout-primitives";
 import { homepageContent } from "@/content/homepage";
@@ -45,7 +45,12 @@ export async function FinancingIntegration() {
           </div>
         </div>
 
-        <div className="mt-8" data-demo="true">
+        <div
+          className="mt-8"
+          data-demo="true"
+          role="region"
+          aria-label="Demonstrační odhad financování HypotekaJasne"
+        >
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <Badge tone="premium">Demo odhad</Badge>
             {preview.isMock ? <Badge tone="neutral">Mock API</Badge> : null}
@@ -77,22 +82,30 @@ export async function FinancingIntegration() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink
+          <TrackedButtonLink
             href={copy.ctaHref}
             className="bg-[var(--background-primary)] text-[var(--text-primary)] hover:bg-white"
+            event={{
+              name: "hypotekajasne_cta_clicked",
+              props: { target: "calculator", location: "homepage" },
+            }}
           >
             {copy.ctaLabel}
-          </ButtonLink>
-          <a
+          </TrackedButtonLink>
+          <TrackedAnchor
             href={copy.externalHref}
             className="inline-flex items-center gap-1.5 self-center text-sm font-medium text-[var(--action-premium)] underline-offset-2 hover:underline"
             rel="noopener noreferrer"
             target="_blank"
+            event={{
+              name: "hypotekajasne_cta_clicked",
+              props: { target: "external", location: "homepage" },
+            }}
           >
             {copy.externalLabel}
             <ExternalLink className="size-3.5" aria-hidden />
             <span className="sr-only">(otevře se v novém okně)</span>
-          </a>
+          </TrackedAnchor>
         </div>
       </Container>
     </Section>
