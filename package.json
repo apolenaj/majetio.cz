@@ -18,6 +18,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:seed:test-user": "tsx scripts/seed-test-user.ts",
     "brand:icons": "tsx scripts/generate-brand-icons.ts",
     "postinstall": "prisma generate"
   },

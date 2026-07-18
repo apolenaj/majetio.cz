@@ -6,6 +6,7 @@ import { z } from "zod";
 import { writeAuditLog } from "@/lib/auth/audit";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics/events";
 import {
   CONSENT_LABELS,
   consentVersionFor,
@@ -226,6 +227,10 @@ export async function setMarketingConsent(
       actorId: userId,
       meta: { type: "MARKETING", version, source: parsed.data.source },
     });
+    track({
+      name: "consent_given",
+      props: { type: "MARKETING", source: parsed.data.source },
+    });
   } else {
     if (parsed.data.syncChannelPrefs) {
       await prisma.userProfile.updateMany({
@@ -242,6 +247,10 @@ export async function setMarketingConsent(
       entityId: userId,
       actorId: userId,
       meta: { type: "MARKETING", version, source: parsed.data.source },
+    });
+    track({
+      name: "consent_revoked",
+      props: { type: "MARKETING", source: parsed.data.source },
     });
   }
 

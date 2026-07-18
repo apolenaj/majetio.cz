@@ -6,6 +6,7 @@ import { z } from "zod";
 import { writeAuditLog } from "@/lib/auth/audit";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { percentBucket, track } from "@/lib/analytics/events";
 import { computePassportProgress } from "@/lib/financial-passport/progress";
 import { buildPassportRecommendations } from "@/lib/financial-passport/recommendations";
 import {
@@ -305,6 +306,14 @@ export async function saveFinancialPassport(
   });
 
   const fresh = mapState(await loadRows(userId));
+  const progress = computePassportProgress(fresh);
+  track({
+    name: "financial_profile_updated",
+    props: {
+      completion_level: progress.level,
+      percent_bucket: percentBucket(progress.percent),
+    },
+  });
   return pack(fresh);
 }
 

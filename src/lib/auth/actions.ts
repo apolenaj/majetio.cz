@@ -18,6 +18,8 @@ import {
   clearAuthFailures,
   recordAuthFailure,
 } from "@/lib/auth/rate-limit";
+import { track } from "@/lib/analytics/events";
+import { logEmailInDev, passwordResetEmail, welcomeEmail } from "@/lib/email/templates";
 import { prisma } from "@/lib/db";
 import { ConsentType, Role } from "@prisma/client";
 
@@ -126,6 +128,10 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
       versions: CURRENT_CONSENT_VERSIONS,
     },
   });
+
+  track({ name: "signup_completed", props: { consents: "terms_privacy" } });
+  const base = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+  logEmailInDev(welcomeEmail(`${base}/onboarding`), "new-user");
 
   try {
     const result = await signIn("credentials", {
@@ -238,9 +244,11 @@ export async function requestPasswordResetAction(formData: FormData): Promise<Ac
     if (process.env.NODE_ENV !== "production") {
       console.info("[auth] password reset URL:", resetUrl);
     }
-    // Production: send via email provider (Prompt later) — never log the raw token.
+    logEmailInDev(passwordResetEmail(resetUrl), "password-reset");
+    // Production: send via email provider — never log the raw token.
   }
 
+  track({ name: "password_reset_requested", props: {} });
   return { ok: true, message: AUTH_MESSAGES.resetSent };
 }
 
@@ -305,5 +313,6 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
     actorId: user.id,
   });
 
+  track({ name: "password_reset_completed", props: {} });
   return { ok: true, message: AUTH_MESSAGES.resetSuccess };
 }

@@ -211,7 +211,7 @@ export function SettingsPanel({ initial }: { initial: SettingsPageData }) {
             loading={loading === "json"}
             onClick={() =>
               void run("json", async () => {
-                const result = await buildAccountExport();
+                const result = await buildAccountExport("json");
                 if (!result.ok) return result;
                 downloadBlob(
                   `majetio-export-${new Date().toISOString().slice(0, 10)}.json`,
@@ -230,7 +230,7 @@ export function SettingsPanel({ initial }: { initial: SettingsPageData }) {
             loading={loading === "csv"}
             onClick={() =>
               void run("csv", async () => {
-                const result = await buildAccountExport();
+                const result = await buildAccountExport("csv");
                 if (!result.ok) return result;
                 downloadBlob(
                   `majetio-export-${new Date().toISOString().slice(0, 10)}.csv`,

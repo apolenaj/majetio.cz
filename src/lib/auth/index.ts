@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 
 import { writeAuditLog, getRequestIp } from "@/lib/auth/audit";
+import { track } from "@/lib/analytics/events";
 import {
   assertNotRateLimited,
   clearAuthFailures,
@@ -12,11 +13,16 @@ import {
 import { verifyPassword } from "@/lib/auth/password";
 import type { Role } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db";
+import { createHash } from "node:crypto";
 
 const credentialsSchema = z.object({
   email: z.string().email().max(254),
   password: z.string().min(8).max(128),
 });
+
+function emailFingerprint(email: string): string {
+  return createHash("sha256").update(email.toLowerCase()).digest("hex").slice(0, 16);
+}
 
 function credentialsEnabled(): boolean {
   return process.env.AUTH_CREDENTIALS_ENABLED !== "false";
@@ -59,8 +65,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 await writeAuditLog({
                   action: "auth.login.failure",
                   entity: "User",
-                  meta: { reason: "rate_limited", email },
+                  meta: { reason: "rate_limited", emailFp: emailFingerprint(email) },
                 });
+                track({ name: "login_failed", props: { reason: "rate_limit" } });
                 return null;
               }
 
@@ -81,8 +88,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 await writeAuditLog({
                   action: "auth.login.failure",
                   entity: "User",
-                  meta: { reason: "unknown_user", email },
+                  meta: { reason: "unknown_user", emailFp: emailFingerprint(email) },
                 });
+                track({ name: "login_failed", props: { reason: "credentials" } });
                 return null;
               }
 
@@ -96,6 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   actorId: user.id,
                   meta: { reason: "bad_password" },
                 });
+                track({ name: "login_failed", props: { reason: "credentials" } });
                 return null;
               }
 
@@ -106,6 +115,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 entityId: user.id,
                 actorId: user.id,
               });
+              track({ name: "login_succeeded", props: {} });
 
               // Never return passwordHash to Auth.js
               return {

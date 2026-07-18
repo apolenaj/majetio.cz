@@ -6,9 +6,11 @@ import { z } from "zod";
 import { writeAuditLog } from "@/lib/auth/audit";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics/events";
 import {
   emptyOnboardingState,
   getVisibleSteps,
+  needsInvestmentSteps,
   type FinancingModeId,
   type OnboardingGoalId,
   type OnboardingState,
@@ -245,6 +247,15 @@ export async function saveOnboardingProgress(
     }
   });
 
+  track({
+    name: "onboarding_step_saved",
+    props: {
+      step: data.step,
+      has_goal: Boolean(goal),
+      investment_path: needsInvestmentSteps(goal),
+    },
+  });
+
   return loadOnboardingState();
 }
 
@@ -287,6 +298,20 @@ export async function completeOnboarding(
     meta: { step },
   });
 
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId },
+    select: { onboardingGoal: true },
+  });
+  track({
+    name: "onboarding_completed",
+    props: {
+      goal: (profile?.onboardingGoal as OnboardingGoalId | null) ?? null,
+      investment_path: needsInvestmentSteps(
+        (profile?.onboardingGoal as OnboardingGoalId | null) ?? null,
+      ),
+    },
+  });
+
   return loadOnboardingState();
 }
 
@@ -312,6 +337,8 @@ export async function skipOnboarding(): Promise<OnboardingActionResult> {
     entityId: userId,
     actorId: userId,
   });
+
+  track({ name: "onboarding_skipped", props: {} });
 
   return loadOnboardingState();
 }

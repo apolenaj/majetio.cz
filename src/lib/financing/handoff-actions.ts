@@ -7,6 +7,7 @@ import { writeAuditLog } from "@/lib/auth/audit";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createHypotekaJasneClient } from "@/integrations/hypotekajasne";
+import { track } from "@/lib/analytics/events";
 import {
   HYPOTEKAJASNE_RECIPIENT,
   HYPOTEKAJASNE_SHAREABLE_FIELDS,
@@ -274,6 +275,19 @@ export async function confirmHypotekaJasneHandoff(
       externalLeadId: handoff.externalLeadId,
       isMock: handoff.isMock,
     },
+  });
+
+  track({
+    name: "partner_handoff_confirmed",
+    props: {
+      partner: "hypotekajasne",
+      field_count: selected.length,
+      is_mock: handoff.isMock,
+    },
+  });
+  track({
+    name: "consent_given",
+    props: { type: "HYPOTEKAJASNE_HANDOFF", source: parsed.data.source },
   });
 
   return {

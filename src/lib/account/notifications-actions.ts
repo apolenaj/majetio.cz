@@ -5,6 +5,7 @@ import { z } from "zod";
 import { writeAuditLog } from "@/lib/auth/audit";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics/events";
 import { setMarketingConsent } from "@/lib/privacy/consents";
 
 export type NotificationPrefs = {
@@ -127,7 +128,18 @@ export async function saveNotificationPrefs(
     entity: "UserProfile",
     entityId: userId,
     actorId: userId,
-    meta: data,
+    meta: {
+      marketing_enabled: wantsMarketing,
+      transactional_email: data.transactionalEmail,
+    },
+  });
+
+  track({
+    name: "notification_prefs_updated",
+    props: {
+      marketing_enabled: wantsMarketing,
+      transactional_email: data.transactionalEmail,
+    },
   });
 
   return { ok: true };

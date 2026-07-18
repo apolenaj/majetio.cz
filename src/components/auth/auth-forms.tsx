@@ -33,6 +33,8 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <form
       className="space-y-4"
+      aria-label="Přihlášení"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -85,6 +87,8 @@ export function RegisterForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <form
       className="space-y-4"
+      aria-label="Registrace"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);

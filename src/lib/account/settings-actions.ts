@@ -16,6 +16,11 @@ import {
   recordAuthFailure,
   clearAuthFailures,
 } from "@/lib/auth/rate-limit";
+import { track } from "@/lib/analytics/events";
+import {
+  emailChangeConfirmEmail,
+  logEmailInDev,
+} from "@/lib/email/templates";
 import { prisma } from "@/lib/db";
 import { ACCOUNT_DELETE_CONSEQUENCES } from "@/lib/privacy/constants";
 
@@ -157,6 +162,7 @@ export async function changePassword(input: {
     actorId: sessionUser.id,
   });
 
+  track({ name: "password_changed", props: {} });
   return { ok: true, message: "Heslo bylo změněno." };
 }
 
@@ -221,14 +227,17 @@ export async function requestEmailChange(input: {
   if (process.env.NODE_ENV !== "production") {
     console.info("[auth] email change confirm URL:", confirmUrl);
   }
+  logEmailInDev(emailChangeConfirmEmail(confirmUrl), "email-change");
 
   await writeAuditLog({
     action: "account.email_change.request",
     entity: "User",
     entityId: sessionUser.id,
     actorId: sessionUser.id,
-    meta: { pendingEmail: newEmail },
+    meta: { pendingEmailFp: sha256(newEmail).slice(0, 16) },
   });
+
+  track({ name: "email_change_requested", props: {} });
 
   return {
     ok: true,
@@ -332,6 +341,8 @@ export async function deleteAccount(input: {
     actorId: sessionUser.id,
     meta: { emailHash: sha256(user.email) },
   });
+
+  track({ name: "account_delete_requested", props: {} });
 
   await prisma.user.delete({ where: { id: sessionUser.id } });
   await signOut({ redirect: false });

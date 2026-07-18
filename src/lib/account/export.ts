@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/auth/audit";
+import { track } from "@/lib/analytics/events";
 import { prisma } from "@/lib/db";
 
 export type AccountExportPayload = {
@@ -24,7 +25,9 @@ export type AccountExportPayload = {
   notificationPrefs: unknown;
 };
 
-export async function buildAccountExport(): Promise<
+export async function buildAccountExport(
+  format: "json" | "csv" = "json",
+): Promise<
   { ok: true; data: AccountExportPayload } | { ok: false; error: string }
 > {
   const session = await auth();
@@ -86,6 +89,8 @@ export async function buildAccountExport(): Promise<
     entityId: userId,
     actorId: userId,
   });
+
+  track({ name: "account_export_requested", props: { format } });
 
   return {
     ok: true,

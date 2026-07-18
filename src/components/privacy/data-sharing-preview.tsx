@@ -11,6 +11,7 @@ import {
   confirmHypotekaJasneHandoff,
   type HandoffPreviewData,
 } from "@/lib/financing/handoff-actions";
+import { track } from "@/lib/analytics/events";
 
 type Props = {
   open: boolean;
@@ -44,6 +45,10 @@ export function DataSharingPreview({
       setSelected(selectable.filter((f) => f.included || f.always).map((f) => f.key));
       setExplicit(false);
       setError(null);
+      track({
+        name: "partner_handoff_preview_opened",
+        props: { partner: "hypotekajasne" },
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when dialog opens
   }, [open]);
