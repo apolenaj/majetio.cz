@@ -61,21 +61,26 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 **Sensitivity:** Exact address + GPS = restricted; public label only when precision allows.  
 **Retention:** Prefer unpublish over hard delete when referenced.
 
-### PropertySource
-**Purpose:** Provenance of listing data (portal, partner, manual).  
-**Key fields:** `propertyId`, `provider`, `externalId`, `url`, `rawPayload` (JSON), `fetchedAt`.  
-**Sensitivity:** May contain scraped/partner data — access-controlled.  
-**Retention:** Align with provider ToS.
-
-### PropertyImage
-**Purpose:** Listing media.  
-**Key fields:** `propertyId`, `url`, `alt`, `sortOrder`, `isPrimary`.  
-**Sensitivity:** Low.
+### PropertySource / PropertySourcePayload / PropertyFieldProvenance
+**Purpose:** Multi-source provenance (Prompt 7 Part 2).  
+**PropertySource:** `sourceType` (manual, partner_feed, licensed_api, …), `externalPropertyId`, `licenseStatus`, lifecycle (`firstSeenAt` / `lastSeenAt` / `lastFetchedAt`).  
+**PropertySourcePayload:** minimized raw JSON, isolated from production DTOs; `piiRedacted` default true.  
+**PropertyFieldProvenance:** which source last confirmed a canonical field.  
+**Sensitivity:** Raw payloads may contain partner/scraped data — access-controlled; prefer redaction.
 
 ### PropertyPriceHistory / PropertyStatusHistory
-**Purpose:** Change tracking for trust and valuation.  
-**Key fields:** previous/new values, `changedAt`, `source`.  
-**Sensitivity:** Low–medium.
+**Purpose:** Trustable change tracking.  
+**Price:** `amount`, `currency`, `changeType` (initial/increased/decreased/…), `sourceId`, `observedAt`.  
+**Status:** `previousStatus` → `newStatus` (e.g. ACTIVE → UNAVAILABLE when source silent — not assumed sold).
+
+### PropertyMedia
+**Purpose:** Photos, floorplans, documents, video.  
+**Key fields:** `url`, `type`, `sortOrder`, `licenseStatus`, `isPrimary`, `isPlaceholder`.  
+**Note:** Legacy `PropertyImage` kept temporarily; prefer `PropertyMedia`.
+
+### Property lifecycle / freshness
+**Fields:** `firstSeenAt`, `lastSeenAt`, `lastFetchedAt`, `freshness` (FRESH/STALE/UNAVAILABLE), `staleMarkedAt`.  
+**Rule (helper):** silent source ≥14d → STALE; ≥30d → UNAVAILABLE (`src/lib/properties/freshness.ts`).
 
 ### PropertyAnalysis
 **Purpose:** Container for analysis run (free or paid).  

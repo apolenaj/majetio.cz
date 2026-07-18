@@ -29,6 +29,8 @@ enum PropertyStatus {
   RESERVED
   SOLD
   RENTED
+  /** Listing no longer confirmed by source — not necessarily sold. */
+  UNAVAILABLE
   WITHDRAWN
   ARCHIVED
 }
@@ -103,6 +105,46 @@ enum PropertyAttributeValueType {
   NUMBER
   BOOLEAN
   JSON
+}
+
+enum PropertySourceType {
+  MANUAL
+  PARTNER_FEED
+  LICENSED_API
+  PUBLIC_PORTAL
+  USER_SUBMITTED
+  OTHER
+}
+
+enum LicenseStatus {
+  UNKNOWN
+  OWNED
+  LICENSED
+  PUBLIC_DOMAIN
+  RESTRICTED
+  PROHIBITED
+}
+
+enum PriceChangeType {
+  INITIAL
+  INCREASED
+  DECREASED
+  CORRECTED
+  REMOVED
+}
+
+enum PropertyMediaType {
+  PHOTO
+  FLOORPLAN
+  DOCUMENT
+  VIDEO
+  OTHER
+}
+
+enum PropertyFreshness {
+  FRESH
+  STALE
+  UNAVAILABLE
 }
 
 enum AnalysisTier {
@@ -397,6 +439,12 @@ model Property {
   visibility    PropertyVisibility @default(PUBLIC)
   transactionType TransactionType  @default(SALE)
   publishedAt   DateTime?
+  /** Lifecycle — multi-source freshness (stale when source silent). */
+  firstSeenAt   DateTime           @default(now())
+  lastSeenAt    DateTime           @default(now())
+  lastFetchedAt DateTime?
+  freshness     PropertyFreshness  @default(FRESH)
+  staleMarkedAt DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -461,7 +509,10 @@ model Property {
   location        Location?               @relation(fields: [locationId], references: [id])
   features        PropertyFeatures?
   attributes      PropertyAttribute[]
+  fieldProvenance PropertyFieldProvenance[]
   sources         PropertySource[]
+  media           PropertyMedia[]
+  /** @deprecated Prefer PropertyMedia. */
   images          PropertyImage[]
   priceHistory    PropertyPriceHistory[]
   statusHistory   PropertyStatusHistory[]
@@ -476,6 +527,7 @@ model Property {
   @@index([askingPrice])
   @@index([publicCity])
   @@index([locationId])
+  @@index([freshness, lastSeenAt])
 }
 
 /** Fixed boolean / count feature flags (1:1). */
@@ -524,20 +576,107 @@ model PropertyAttribute {
   @@index([key])
 }
 
-model PropertySource {
+/**
+ * Which source last confirmed a canonical field (field-level provenance).
+ * Separates multi-source truth from raw payloads.
+ */
+model PropertyFieldProvenance {
   id         String   @id @default(cuid())
   propertyId String
-  provider   String
-  externalId String?
-  url        String?
-  rawPayload Json?
-  fetchedAt  DateTime @default(now())
+  /** Canonical field path, e.g. "askingPrice", "usableArea", "publicLabel". */
+  fieldKey   String
+  sourceId   String?
+  observedAt DateTime @default(now())
+  confidence Float?
+  /** Optional string snapshot of the value at observation time (not a DTO). */
+  valueSnapshot String? @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  source   PropertySource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
-  @@index([provider, externalId])
+  @@unique([propertyId, fieldKey])
+  @@index([sourceId])
+  @@index([fieldKey])
 }
 
+model PropertySource {
+  id                  String            @id @default(cuid())
+  propertyId          String
+  sourceType          PropertySourceType @default(OTHER)
+  /** Vendor / portal name, e.g. "sreality", "partner:acme". */
+  provider            String
+  externalPropertyId  String?
+  /** @deprecated Prefer externalPropertyId. */
+  externalId          String?
+  url                 String?
+  licenseStatus       LicenseStatus     @default(UNKNOWN)
+  isPrimary           Boolean           @default(false)
+  firstSeenAt         DateTime          @default(now())
+  lastSeenAt          DateTime          @default(now())
+  lastFetchedAt       DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  property        Property                 @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  payloads        PropertySourcePayload[]
+  fieldProvenance PropertyFieldProvenance[]
+  priceEvents     PropertyPriceHistory[]
+  statusEvents    PropertyStatusHistory[]
+  media           PropertyMedia[]
+
+  @@index([provider, externalPropertyId])
+  @@index([propertyId, sourceType])
+  @@index([lastSeenAt])
+}
+
+/**
+ * Raw / minimized source payload — isolated from production DTOs.
+ * Store only what licensing allows; prefer piiRedacted = true.
+ */
+model PropertySourcePayload {
+  id          String   @id @default(cuid())
+  sourceId    String
+  /** Minimized JSON blob from the source adapter (not a domain DTO). */
+  payload     Json
+  contentType String   @default("application/json")
+  byteSize    Int?
+  piiRedacted Boolean  @default(true)
+  storedAt    DateTime @default(now())
+
+  source PropertySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, storedAt])
+}
+
+model PropertyMedia {
+  id              String           @id @default(cuid())
+  propertyId      String
+  sourceId        String?
+  url             String
+  type            PropertyMediaType @default(PHOTO)
+  sortOrder       Int              @default(0)
+  licenseStatus   LicenseStatus    @default(UNKNOWN)
+  alt             String?
+  title           String?
+  mimeType        String?
+  width           Int?
+  height          Int?
+  isPrimary       Boolean          @default(false)
+  /** True when URL is a brand/system placeholder (missing real asset). */
+  isPlaceholder   Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  source   PropertySource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, type, sortOrder])
+  @@index([sourceId])
+}
+
+/** @deprecated Prefer PropertyMedia. Kept for early scaffolding. */
 model PropertyImage {
   id         String  @id @default(cuid())
   propertyId String
@@ -550,23 +689,41 @@ model PropertyImage {
 }
 
 model PropertyPriceHistory {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   propertyId String
-  priceCzk   Int
-  source     String?
-  changedAt  DateTime @default(now())
+  sourceId   String?
+  amount     Int
+  /** @deprecated Prefer amount (same CZK legacy). */
+  priceCzk   Int?
+  currency   String          @default("CZK")
+  changeType PriceChangeType @default(INITIAL)
+  observedAt DateTime        @default(now())
+  note       String?
 
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  source   PropertySource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, observedAt])
+  @@index([sourceId])
 }
 
 model PropertyStatusHistory {
-  id         String         @id @default(cuid())
-  propertyId String
-  status     PropertyStatus
-  source     String?
-  changedAt  DateTime       @default(now())
+  id             String         @id @default(cuid())
+  propertyId     String
+  sourceId       String?
+  previousStatus PropertyStatus?
+  newStatus      PropertyStatus
+  /** @deprecated Prefer newStatus. */
+  status         PropertyStatus?
+  changedAt      DateTime       @default(now())
+  reason         String?
+  note           String?
 
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  source   PropertySource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, changedAt])
+  @@index([sourceId])
 }
 
 // ─── Analysis & calculations ─────────────────────────────────────────────────
