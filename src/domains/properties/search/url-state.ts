@@ -1,0 +1,357 @@
+/**
+ * URL-driven property search state (Prompt 8 Part 2).
+ * Czech query keys stay readable after refresh, e.g. ?lokalita=praha&cena-do=8000000
+ */
+
+import type { SearchSortPreset } from "@/domains/properties/schemas/search";
+
+export type PropertyUrlFilterState = {
+  q?: string;
+  lokalita?: string;
+  cenaOd?: number;
+  cenaDo?: number;
+  typ: string[];
+  dispozice: string[];
+  plochaOd?: number;
+  plochaDo?: number;
+  pozemekOd?: number;
+  pozemekDo?: number;
+  stav: string[];
+  vlastnictvi: string[];
+  razeni?: SearchSortPreset;
+  energie: string[];
+  strategie: string[];
+  kvalita: string[];
+  stranka: number;
+};
+
+export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
+  typ: [],
+  dispozice: [],
+  stav: [],
+  vlastnictvi: [],
+  energie: [],
+  strategie: [],
+  kvalita: [],
+  stranka: 1,
+};
+
+const SORT_TO_URL: Record<SearchSortPreset, string> = {
+  newest: "nejnovejsi",
+  price_asc: "cena-vzestupne",
+  price_desc: "cena-sestupne",
+  price_per_sqm: "cena-m2",
+  price_per_sqm_asc: "cena-m2-vzestupne",
+  area_desc: "plocha-sestupne",
+};
+
+const URL_TO_SORT: Record<string, SearchSortPreset> = Object.fromEntries(
+  Object.entries(SORT_TO_URL).map(([k, v]) => [v, k as SearchSortPreset]),
+) as Record<string, SearchSortPreset>;
+
+export const TYP_OPTIONS = [
+  { value: "byt", label: "Byt", propertyType: "APARTMENT" },
+  { value: "dum", label: "Dům", propertyType: "HOUSE" },
+  { value: "pozemek", label: "Pozemek", propertyType: "LAND" },
+  { value: "komercni", label: "Komerční", propertyType: "COMMERCIAL" },
+] as const;
+
+export const DISPOZICE_OPTIONS = [
+  "1+kk",
+  "1+1",
+  "2+kk",
+  "2+1",
+  "3+kk",
+  "3+1",
+  "4+kk",
+  "4+1",
+  "5+kk",
+] as const;
+
+export const STAV_OPTIONS = [
+  { value: "new", label: "Novostavba", condition: "NEW" },
+  { value: "excellent", label: "Výborný", condition: "EXCELLENT" },
+  { value: "good", label: "Dobrý", condition: "GOOD" },
+  { value: "average", label: "Průměrný", condition: "AVERAGE" },
+  { value: "rekonstrukce", label: "K rekonstrukci", condition: "NEEDS_RENOVATION" },
+] as const;
+
+export const VLASTNICTVI_OPTIONS = [
+  { value: "osobni", label: "Osobní", ownership: "PERSONAL" },
+  { value: "druzstevni", label: "Družstevní", ownership: "COOPERATIVE" },
+  { value: "obecni", label: "Obecní", ownership: "MUNICIPAL" },
+  { value: "firemni", label: "Firemní", ownership: "COMPANY" },
+] as const;
+
+export const ENERGIE_OPTIONS = ["A", "B", "C", "D", "E", "F", "G"] as const;
+
+export const STRATEGIE_OPTIONS = [
+  { value: "vlastni-bydleni", label: "Vlastní bydlení" },
+  { value: "dlouhodoby-pronajem", label: "Dlouhodobý pronájem" },
+  { value: "kratkodoby-pronajem", label: "Krátkodobý pronájem" },
+  { value: "rekonstrukce", label: "Rekonstrukce" },
+  { value: "flip", label: "Flip" },
+] as const;
+
+export const KVALITA_OPTIONS = [
+  { value: "overena", label: "Ověřená data", dataQuality: "verified" },
+  { value: "odhad", label: "Odhad", dataQuality: "estimated" },
+  { value: "neuplne", label: "Neúplné", dataQuality: "incomplete" },
+  { value: "zastarale", label: "Zastaralé", dataQuality: "stale" },
+] as const;
+
+export const RAZENI_OPTIONS = [
+  { value: "nejnovejsi" as const, label: "Nejnovější", sort: "newest" as const },
+  { value: "cena-vzestupne" as const, label: "Cena ↑", sort: "price_asc" as const },
+  { value: "cena-sestupne" as const, label: "Cena ↓", sort: "price_desc" as const },
+  { value: "cena-m2" as const, label: "Kč/m² ↓", sort: "price_per_sqm" as const },
+];
+
+function first(
+  value: string | string[] | undefined,
+): string | undefined {
+  if (value == null) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function list(
+  value: string | string[] | undefined,
+): string[] {
+  if (value == null || value === "") return [];
+  const raw = Array.isArray(value) ? value.join(",") : value;
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+function num(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const n = Number(value.replace(/\s/g, ""));
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
+export type SearchParamsLike = Record<string, string | string[] | undefined>;
+
+export function parsePropertySearchParams(
+  params: SearchParamsLike,
+): PropertyUrlFilterState {
+  const razeniRaw = first(params.razeni);
+  const razeni = razeniRaw ? URL_TO_SORT[razeniRaw] : undefined;
+
+  const page = Math.max(1, Math.floor(num(first(params.stranka)) ?? 1));
+
+  return {
+    q: first(params.q)?.trim() || undefined,
+    lokalita: first(params.lokalita)?.trim() || undefined,
+    cenaOd: num(first(params["cena-od"])),
+    cenaDo: num(first(params["cena-do"])),
+    typ: list(params.typ),
+    dispozice: list(params.dispozice).map(normalizeDisposition),
+    plochaOd: num(first(params["plocha-od"])),
+    plochaDo: num(first(params["plocha-do"])),
+    pozemekOd: num(first(params["pozemek-od"])),
+    pozemekDo: num(first(params["pozemek-do"])),
+    stav: list(params.stav),
+    vlastnictvi: list(params.vlastnictvi),
+    razeni,
+    energie: list(params.energie).map((e) => e.toUpperCase()),
+    strategie: list(params.strategie),
+    kvalita: list(params.kvalita),
+    stranka: page,
+  };
+}
+
+function normalizeDisposition(value: string): string {
+  const v = value.toLowerCase().replace(/\s+/g, "");
+  if (/^\d\+kk$/.test(v) || /^\d\+\d$/.test(v)) return v;
+  if (/^\dkk$/.test(v)) return `${v[0]}+kk`;
+  return v;
+}
+
+/** Serialize state → query object (omit empties). */
+export function serializePropertySearchParams(
+  state: PropertyUrlFilterState,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (state.q) out.q = state.q;
+  if (state.lokalita) out.lokalita = state.lokalita;
+  if (state.cenaOd != null) out["cena-od"] = String(state.cenaOd);
+  if (state.cenaDo != null) out["cena-do"] = String(state.cenaDo);
+  if (state.typ.length) out.typ = state.typ.join(",");
+  if (state.dispozice.length) out.dispozice = state.dispozice.join(",");
+  if (state.plochaOd != null) out["plocha-od"] = String(state.plochaOd);
+  if (state.plochaDo != null) out["plocha-do"] = String(state.plochaDo);
+  if (state.pozemekOd != null) out["pozemek-od"] = String(state.pozemekOd);
+  if (state.pozemekDo != null) out["pozemek-do"] = String(state.pozemekDo);
+  if (state.stav.length) out.stav = state.stav.join(",");
+  if (state.vlastnictvi.length) out.vlastnictvi = state.vlastnictvi.join(",");
+  if (state.razeni) out.razeni = SORT_TO_URL[state.razeni] ?? state.razeni;
+  if (state.energie.length) out.energie = state.energie.join(",");
+  if (state.strategie.length) out.strategie = state.strategie.join(",");
+  if (state.kvalita.length) out.kvalita = state.kvalita.join(",");
+  if (state.stranka > 1) out.stranka = String(state.stranka);
+  return out;
+}
+
+export function buildPropertySearchHref(
+  state: PropertyUrlFilterState,
+  basePath = "/nemovitosti",
+): string {
+  const params = serializePropertySearchParams(state);
+  const qs = new URLSearchParams(params).toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
+export function countActiveFilters(state: PropertyUrlFilterState): number {
+  let n = 0;
+  if (state.q) n += 1;
+  if (state.lokalita) n += 1;
+  if (state.cenaOd != null || state.cenaDo != null) n += 1;
+  n += state.typ.length;
+  n += state.dispozice.length;
+  if (state.plochaOd != null || state.plochaDo != null) n += 1;
+  if (state.pozemekOd != null || state.pozemekDo != null) n += 1;
+  n += state.stav.length;
+  n += state.vlastnictvi.length;
+  n += state.energie.length;
+  n += state.strategie.length;
+  n += state.kvalita.length;
+  return n;
+}
+
+export type ActiveFilterChip = {
+  id: string;
+  label: string;
+  /** Patch that removes this chip when applied. */
+  clear: Partial<PropertyUrlFilterState>;
+};
+
+export function getActiveFilterChips(
+  state: PropertyUrlFilterState,
+): ActiveFilterChip[] {
+  const chips: ActiveFilterChip[] = [];
+  if (state.q) {
+    chips.push({ id: "q", label: `„${state.q}“`, clear: { q: undefined } });
+  }
+  if (state.lokalita) {
+    chips.push({
+      id: "lokalita",
+      label: state.lokalita,
+      clear: { lokalita: undefined },
+    });
+  }
+  if (state.cenaOd != null || state.cenaDo != null) {
+    const label =
+      state.cenaOd != null && state.cenaDo != null
+        ? `${formatMil(state.cenaOd)}–${formatMil(state.cenaDo)}`
+        : state.cenaDo != null
+          ? `Do ${formatMil(state.cenaDo)}`
+          : `Od ${formatMil(state.cenaOd!)}`;
+    chips.push({
+      id: "cena",
+      label,
+      clear: { cenaOd: undefined, cenaDo: undefined },
+    });
+  }
+  for (const t of state.typ) {
+    const opt = TYP_OPTIONS.find((o) => o.value === t);
+    chips.push({
+      id: `typ-${t}`,
+      label: opt?.label ?? t,
+      clear: { typ: state.typ.filter((x) => x !== t) },
+    });
+  }
+  for (const d of state.dispozice) {
+    chips.push({
+      id: `disp-${d}`,
+      label: d,
+      clear: { dispozice: state.dispozice.filter((x) => x !== d) },
+    });
+  }
+  if (state.plochaOd != null || state.plochaDo != null) {
+    chips.push({
+      id: "plocha",
+      label:
+        state.plochaOd != null && state.plochaDo != null
+          ? `${state.plochaOd}–${state.plochaDo} m²`
+          : state.plochaDo != null
+            ? `Do ${state.plochaDo} m²`
+            : `Od ${state.plochaOd} m²`,
+      clear: { plochaOd: undefined, plochaDo: undefined },
+    });
+  }
+  for (const s of state.stav) {
+    chips.push({
+      id: `stav-${s}`,
+      label: STAV_OPTIONS.find((o) => o.value === s)?.label ?? s,
+      clear: { stav: state.stav.filter((x) => x !== s) },
+    });
+  }
+  for (const v of state.vlastnictvi) {
+    chips.push({
+      id: `vl-${v}`,
+      label: VLASTNICTVI_OPTIONS.find((o) => o.value === v)?.label ?? v,
+      clear: { vlastnictvi: state.vlastnictvi.filter((x) => x !== v) },
+    });
+  }
+  for (const e of state.energie) {
+    chips.push({
+      id: `en-${e}`,
+      label: `PENB ${e}`,
+      clear: { energie: state.energie.filter((x) => x !== e) },
+    });
+  }
+  for (const s of state.strategie) {
+    chips.push({
+      id: `st-${s}`,
+      label: STRATEGIE_OPTIONS.find((o) => o.value === s)?.label ?? s,
+      clear: { strategie: state.strategie.filter((x) => x !== s) },
+    });
+  }
+  for (const k of state.kvalita) {
+    chips.push({
+      id: `kq-${k}`,
+      label: KVALITA_OPTIONS.find((o) => o.value === k)?.label ?? k,
+      clear: { kvalita: state.kvalita.filter((x) => x !== k) },
+    });
+  }
+  return chips;
+}
+
+function formatMil(czk: number): string {
+  if (czk >= 1_000_000) {
+    const mil = czk / 1_000_000;
+    return `${Number.isInteger(mil) ? mil : mil.toFixed(1)} mil.`;
+  }
+  return new Intl.NumberFormat("cs-CZ").format(czk);
+}
+
+/** Map URL state → backend PropertySearchInput (extended UI fields stay client-side). */
+export function urlStateToSearchInput(state: PropertyUrlFilterState) {
+  const propertyType = state.typ
+    .map((t) => TYP_OPTIONS.find((o) => o.value === t)?.propertyType)
+    .filter(Boolean) as string[];
+
+  return {
+    query: state.q || state.lokalita,
+    city: state.lokalita,
+    priceMin: state.cenaOd,
+    priceMax: state.cenaDo,
+    propertyType: propertyType.length ? propertyType : undefined,
+    layout: state.dispozice.length ? state.dispozice : undefined,
+    usableAreaMin: state.plochaOd,
+    usableAreaMax: state.plochaDo,
+    landAreaMin: state.pozemekOd,
+    landAreaMax: state.pozemekDo,
+    condition: state.stav
+      .map((s) => STAV_OPTIONS.find((o) => o.value === s)?.condition)
+      .filter(Boolean) as string[],
+    ownershipType: state.vlastnictvi
+      .map((v) => VLASTNICTVI_OPTIONS.find((o) => o.value === v)?.ownership)
+      .filter(Boolean) as string[],
+    sort: state.razeni ?? "newest",
+    page: state.stranka,
+  };
+}

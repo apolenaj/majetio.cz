@@ -1,0 +1,125 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildPropertySearchHref,
+  countActiveFilters,
+  getActiveFilterChips,
+  parsePropertySearchParams,
+  serializePropertySearchParams,
+} from "./url-state";
+import { foldDiacritics, fuzzyIncludes } from "./text-match";
+import { applyUrlFiltersToListings } from "./apply-filters";
+import type { SearchableListing } from "./apply-filters";
+
+describe("url-state", () => {
+  it("parses Czech query params and survives round-trip", () => {
+    const state = parsePropertySearchParams({
+      lokalita: "praha",
+      "cena-do": "8000000",
+      typ: "byt,dum",
+      dispozice: "2kk,3+kk",
+      razeni: "cena-sestupne",
+      energie: "B,C",
+      kvalita: "overena",
+      strategie: "dlouhodoby-pronajem",
+    });
+    expect(state.lokalita).toBe("praha");
+    expect(state.cenaDo).toBe(8_000_000);
+    expect(state.typ).toEqual(["byt", "dum"]);
+    expect(state.dispozice).toContain("2+kk");
+    expect(state.razeni).toBe("price_desc");
+    expect(state.energie).toEqual(["B", "C"]);
+
+    const href = buildPropertySearchHref(state);
+    expect(href).toContain("lokalita=praha");
+    expect(href).toContain("cena-do=8000000");
+    expect(href).toContain("razeni=cena-sestupne");
+
+    const again = parsePropertySearchParams(
+      Object.fromEntries(new URL(href, "https://majetio.cz").searchParams),
+    );
+    expect(again.cenaDo).toBe(8_000_000);
+    expect(again.razeni).toBe("price_desc");
+  });
+
+  it("builds chips and clear-all count", () => {
+    const state = parsePropertySearchParams({
+      lokalita: "Brno",
+      "cena-do": "5000000",
+      typ: "byt",
+    });
+    expect(countActiveFilters(state)).toBeGreaterThanOrEqual(3);
+    const chips = getActiveFilterChips(state);
+    expect(chips.some((c) => c.label.includes("Brno") || c.label === "Brno")).toBe(
+      true,
+    );
+    expect(chips.some((c) => /mil/i.test(c.label))).toBe(true);
+    expect(serializePropertySearchParams(state)["cena-do"]).toBe("5000000");
+  });
+});
+
+describe("text-match", () => {
+  it("folds diacritics and tolerates small typos", () => {
+    expect(foldDiacritics("Praha")).toBe("praha");
+    expect(fuzzyIncludes("Vinohrady Praha", "praha")).toBe(true);
+    expect(fuzzyIncludes("Vinohrady", "Vinohady")).toBe(true);
+  });
+});
+
+describe("applyUrlFiltersToListings", () => {
+  const sample: SearchableListing[] = [
+    {
+      id: "1",
+      slug: "a",
+      status: "ACTIVE",
+      visibility: "PUBLIC",
+      transactionType: "SALE",
+      title: "Byt Vinohrady",
+      description: null,
+      propertyType: "APARTMENT",
+      askingPrice: 6_000_000,
+      currency: "CZK",
+      pricePerSqm: 80_000,
+      usableArea: 70,
+      usableAreaDisplay: "70 m²",
+      layout: "3+kk",
+      location: {
+        label: "Praha — Vinohrady",
+        precision: "APPROXIMATE",
+        city: "Praha",
+        district: "Vinohrady",
+        region: null,
+        latitude: null,
+        longitude: null,
+      },
+      media: [],
+      publishedAt: "2026-07-01T00:00:00.000Z",
+      updatedAt: null,
+      isDemo: true,
+      dataQuality: "estimated",
+      tags: ["Pronájem"],
+      completenessScore: null,
+      grossYieldPct: null,
+      cashFlowMonthlyCzk: null,
+      majetioScore: null,
+      risk: null,
+      priceHistory: [],
+      sources: [],
+      fieldConflicts: [],
+      freshness: null,
+      lastSeenAt: null,
+      energyRating: "C",
+      strategySlugs: ["dlouhodoby-pronajem"],
+    },
+  ];
+
+  it("filters by lokalita fuzzy and cena-do", () => {
+    const state = parsePropertySearchParams({
+      q: "praha",
+      "cena-do": "7000000",
+      typ: "byt",
+    });
+    expect(applyUrlFiltersToListings(sample, state)).toHaveLength(1);
+    const none = parsePropertySearchParams({ "cena-do": "1000000" });
+    expect(applyUrlFiltersToListings(sample, none)).toHaveLength(0);
+  });
+});
