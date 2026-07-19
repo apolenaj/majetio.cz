@@ -239,6 +239,18 @@ enum NotificationChannel {
   EMAIL
 }
 
+enum SavedSearchAlertFrequency {
+  OFF
+  INSTANT
+  WEEKLY
+}
+
+enum PropertyAlertType {
+  PRICE_DROP
+  NEW_PROPERTY
+  SAVED_SEARCH_MATCH
+}
+
 // ─── Auth.js / User ──────────────────────────────────────────────────────────
 
 model User {
@@ -264,6 +276,7 @@ model User {
   favourites            Favourite[]
   comparisons           Comparison[]
   savedSearches         SavedSearch[]
+  alertSubscriptions    PropertyAlertSubscription[]
   analyses              PropertyAnalysis[]
   leads                 Lead[]
   orders                Order[]
@@ -1056,14 +1069,65 @@ model ComparisonItem {
 }
 
 model SavedSearch {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  criteria  Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String                    @id @default(cuid())
+  userId         String
+  name           String
+  /** Structured filters snapshot (URL state / search input). */
+  filters        Json
+  /** @deprecated Prefer filters — kept for older rows. */
+  criteria       Json?
+  sort           String?
+  /** Schema version of `filters` payload for migrations. */
+  filtersVersion Int                       @default(1)
+  alertFrequency SavedSearchAlertFrequency @default(OFF)
+  lastAlertedAt  DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alertSubscriptions PropertyAlertSubscription[]
+
+  @@index([userId, updatedAt])
+  @@index([userId, alertFrequency])
+}
+
+/**
+ * Architectural foundation for future property alerts (price drop / new match).
+ * No mail jobs yet — subscriptions + typed events only.
+ */
+model PropertyAlertSubscription {
+  id            String              @id @default(cuid())
+  userId        String
+  savedSearchId String?
+  alertType     PropertyAlertType
+  enabled       Boolean             @default(true)
+  channel       NotificationChannel @default(IN_APP)
+  meta          Json?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savedSearch SavedSearch? @relation(fields: [savedSearchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, savedSearchId, alertType, channel])
+  @@index([userId, enabled])
+  @@index([alertType, enabled])
+}
+
+model PropertyAlertEvent {
+  id            String           @id @default(cuid())
+  userId        String
+  savedSearchId String?
+  propertyId    String?
+  alertType     PropertyAlertType
+  payload       Json?
+  /** Set when delivered to Notification / email worker. */
+  deliveredAt   DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([alertType, deliveredAt])
+  @@index([propertyId])
 }
 
 // ─── Leads, commerce, partners ───────────────────────────────────────────────

@@ -37,6 +37,7 @@ export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
 };
 
 const SORT_TO_URL: Record<SearchSortPreset, string> = {
+  recommended: "doporucene",
   newest: "nejnovejsi",
   price_asc: "cena-vzestupne",
   price_desc: "cena-sestupne",
@@ -101,6 +102,7 @@ export const KVALITA_OPTIONS = [
 ] as const;
 
 export const RAZENI_OPTIONS = [
+  { value: "doporucene" as const, label: "Doporučené", sort: "recommended" as const },
   { value: "nejnovejsi" as const, label: "Nejnovější", sort: "newest" as const },
   { value: "cena-vzestupne" as const, label: "Cena ↑", sort: "price_asc" as const },
   { value: "cena-sestupne" as const, label: "Cena ↓", sort: "price_desc" as const },

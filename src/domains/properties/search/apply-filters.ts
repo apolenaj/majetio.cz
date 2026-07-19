@@ -174,6 +174,12 @@ function sortListings(
     case "area_desc":
       sorted.sort((a, b) => (b.usableArea ?? 0) - (a.usableArea ?? 0));
       break;
+    case "recommended":
+      // Match score sort is applied by the discovery page (needs Finanční pas).
+      sorted.sort((a, b) =>
+        (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
+      );
+      break;
     case "newest":
     default:
       sorted.sort((a, b) =>

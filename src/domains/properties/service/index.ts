@@ -67,6 +67,19 @@ export type {
   SearchSortPreset,
 } from "./search";
 
+export {
+  computePropertyMatchScore,
+  isMatchProfileComplete,
+  sortByMatchScore,
+} from "./match-score";
+export type {
+  MatchListing,
+  MatchProfile,
+  MatchReason,
+  PropertyMatchScore,
+} from "./match-score";
+export { passportToMatchProfile, listingToMatchInput } from "./match-profile";
+
 export { createPropertyService } from "./property-service";
 export type { PropertyService, PropertyRepository } from "./property-service";
 

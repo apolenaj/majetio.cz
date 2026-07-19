@@ -8,6 +8,8 @@ import type { SearchSortPreset } from "../../schemas/search";
 import { SEARCH_SORT_PRESETS } from "../../schemas/search";
 
 const PRESET_MAP: Record<SearchSortPreset, PropertySort> = {
+  /** Match score is applied in app layer; DB fallback = newest. */
+  recommended: { field: "publishedAt", direction: "desc" },
   newest: { field: "publishedAt", direction: "desc" },
   price_asc: { field: "askingPrice", direction: "asc" },
   price_desc: { field: "askingPrice", direction: "desc" },

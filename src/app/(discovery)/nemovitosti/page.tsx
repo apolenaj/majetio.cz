@@ -4,6 +4,7 @@ import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
 import { PropertySearchFilters } from "@/components/property/search/property-search-filters";
 import { PropertySearchResults } from "@/components/property/search/property-search-results";
+import type { PropertyCardData } from "@/components/property/property-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -19,6 +20,17 @@ import {
   RAZENI_OPTIONS,
   type SearchParamsLike,
 } from "@/domains/properties/search/url-state";
+import {
+  computePropertyMatchScore,
+  isMatchProfileComplete,
+  sortByMatchScore,
+} from "@/domains/properties/service/match-score";
+import {
+  listingToMatchInput,
+  passportToMatchProfile,
+} from "@/domains/properties/service/match-profile";
+import { auth } from "@/lib/auth";
+import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 
 export const metadata: Metadata = preparePageMeta({
   title: "Nemovitosti",
@@ -66,8 +78,52 @@ export default async function NemovitostiPage({ searchParams }: Props) {
   const params = await searchParams;
   const state = parsePropertySearchParams(params);
   const all = demoListings();
-  const filtered = applyUrlFiltersToListings(all, state);
-  const cards = filtered.map(mapPublicDtoToPropertyCard);
+  let filtered = applyUrlFiltersToListings(all, state);
+
+  const session = await auth();
+  const isAuthenticated = Boolean(session?.user?.id);
+
+  let matchProfile = null;
+  let profileComplete = false;
+  if (isAuthenticated) {
+    const passport = await loadFinancialPassport();
+    if (passport.ok) {
+      matchProfile = passportToMatchProfile(passport.state);
+      profileComplete = isMatchProfileComplete(matchProfile);
+    }
+  }
+
+  const wantsRecommended = state.razeni === "recommended";
+  const scoreMap = new Map<
+    string,
+    ReturnType<typeof computePropertyMatchScore>
+  >();
+
+  for (const listing of filtered) {
+    const score = computePropertyMatchScore(
+      listingToMatchInput(listing),
+      matchProfile,
+    );
+    scoreMap.set(listing.id, score);
+  }
+
+  if (wantsRecommended && profileComplete) {
+    filtered = sortByMatchScore(filtered, scoreMap);
+  }
+
+  const cards: PropertyCardData[] = filtered.map((listing) => {
+    const card = mapPublicDtoToPropertyCard(listing);
+    const match = scoreMap.get(listing.id);
+    if (wantsRecommended && match?.profileComplete) {
+      card.matchScore = match.score;
+      card.matchReasons = match.reasons.map((r) => ({
+        tone: r.tone,
+        label: r.label,
+      }));
+    }
+    return card;
+  });
+
   const sortLabel =
     RAZENI_OPTIONS.find((o) => o.sort === (state.razeni ?? "newest"))?.label ??
     "Nejnovější";
@@ -106,6 +162,8 @@ export default async function NemovitostiPage({ searchParams }: Props) {
         state={state}
         sortLabel={sortLabel}
         relaxedCount={relaxedCount}
+        isAuthenticated={isAuthenticated}
+        showPassportCta={wantsRecommended && !profileComplete}
       />
     </Container>
   );

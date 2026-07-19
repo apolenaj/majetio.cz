@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { PreparingPage } from "@/components/content/page-helpers";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Doporučené nemovitosti",
-  description: "Doporučení podle finančního profilu se připravuje.",
+  description: "Nabídky seřazené podle shody s Finančním pasem.",
   robots: { index: true, follow: true },
 };
 
+/** Canonical sort lives on /nemovitosti?razeni=doporucene */
 export default function Page() {
-  return (
-    <PreparingPage
-      title="Doporučené nemovitosti"
-      description="Doporučení podle finančního profilu se připravuje."
-    />
-  );
+  redirect("/nemovitosti?razeni=doporucene");
 }

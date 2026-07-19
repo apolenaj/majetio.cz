@@ -40,6 +40,9 @@ export type PropertyCardData = {
   tags?: string[];
   isDemo?: boolean;
   listingStatus?: PropertyListingStatus;
+  /** Rule-based match vs Finanční pas (Prompt 8 Part 4). */
+  matchScore?: number | null;
+  matchReasons?: Array<{ tone: "positive" | "warning" | "neutral"; label: string }>;
 };
 
 export function PropertyCard({
@@ -170,6 +173,9 @@ export function PropertyCard({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {property.matchScore != null && property.matchScore > 0 ? (
+            <Badge tone="premium">Shoda {property.matchScore} %</Badge>
+          ) : null}
           {property.dataQuality ? (
             <DataQualityBadge quality={property.dataQuality} />
           ) : null}
@@ -180,6 +186,25 @@ export function PropertyCard({
             </Badge>
           ))}
         </div>
+
+        {property.matchReasons && property.matchReasons.length > 0 ? (
+          <ul className="space-y-1 text-xs text-[var(--text-secondary)]">
+            {property.matchReasons.slice(0, 3).map((reason) => (
+              <li
+                key={reason.label}
+                className={
+                  reason.tone === "positive"
+                    ? "text-[var(--status-success)]"
+                    : reason.tone === "warning"
+                      ? "text-[var(--status-warning)]"
+                      : undefined
+                }
+              >
+                {reason.label}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div>

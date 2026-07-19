@@ -32,6 +32,7 @@ export const SEARCH_TRANSACTION_TYPES = ["SALE", "RENT"] as const;
 
 /** Named sort presets — mapped server-side; never interpolated into SQL. */
 export const SEARCH_SORT_PRESETS = [
+  "recommended",
   "newest",
   "price_asc",
   "price_desc",

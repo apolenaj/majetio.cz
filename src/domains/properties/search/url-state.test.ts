@@ -123,3 +123,11 @@ describe("applyUrlFiltersToListings", () => {
     expect(applyUrlFiltersToListings(sample, none)).toHaveLength(0);
   });
 });
+
+describe("recommended sort URL", () => {
+  it("parses and serializes razeni=doporucene", () => {
+    const state = parsePropertySearchParams({ razeni: "doporucene" });
+    expect(state.razeni).toBe("recommended");
+    expect(buildPropertySearchHref(state)).toContain("razeni=doporucene");
+  });
+});

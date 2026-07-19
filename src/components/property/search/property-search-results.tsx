@@ -9,7 +9,9 @@ import {
   type PropertyCardData,
 } from "@/components/property/property-card";
 import { PropertySearchEmptyState } from "@/components/property/search/property-search-empty";
+import { SaveSearchButton } from "@/components/property/search/save-search-button";
 import { CompareTray } from "@/components/navigation/mobile-nav";
+import { InlineAlert } from "@/components/feedback/states";
 import { Button } from "@/components/ui/button";
 import {
   COMPARE_MAX,
@@ -27,6 +29,7 @@ import {
   buildPropertySearchHref,
   type PropertyUrlFilterState,
 } from "@/domains/properties/search/url-state";
+import { buildLoginUrl } from "@/lib/auth/callback-url";
 import { cn } from "@/lib/utils";
 
 function slugFromHref(href: string): string {
@@ -50,10 +53,12 @@ export function PropertySearchResultsHeader({
   count,
   sortLabel,
   className,
+  actions,
 }: {
   count: number;
   sortLabel: string;
   className?: string;
+  actions?: React.ReactNode;
 }) {
   const label =
     count === 1
@@ -77,6 +82,7 @@ export function PropertySearchResultsHeader({
           Řazení: {sortLabel}
         </p>
       </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>
   );
 }
@@ -86,11 +92,15 @@ export function PropertySearchResults({
   state,
   sortLabel,
   relaxedCount,
+  isAuthenticated = false,
+  showPassportCta = false,
 }: {
   properties: PropertyCardData[];
   state: PropertyUrlFilterState;
   sortLabel: string;
   relaxedCount?: number | null;
+  isAuthenticated?: boolean;
+  showPassportCta?: boolean;
 }) {
   const router = useRouter();
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
@@ -102,7 +112,6 @@ export function PropertySearchResults({
     const sync = () => {
       setCompareIds(readCompareTray().map((c) => c.id));
       setFavouriteIds(
-        // re-read favourites lazily via isFavourite per card; keep slug list
         properties
           .map((p) => p.id ?? p.slug ?? slugFromHref(p.href))
           .filter((id) => isFavourite(id)),
@@ -157,9 +166,32 @@ export function PropertySearchResults({
         })
       : null;
 
+  const passportHref = isAuthenticated
+    ? "/ucet/financni-profil"
+    : buildLoginUrl("/ucet/financni-profil");
+
   return (
     <div className="mt-6 space-y-6">
-      <PropertySearchResultsHeader count={properties.length} sortLabel={sortLabel} />
+      <PropertySearchResultsHeader
+        count={properties.length}
+        sortLabel={sortLabel}
+        actions={
+          <SaveSearchButton state={state} isAuthenticated={isAuthenticated} />
+        }
+      />
+
+      {showPassportCta ? (
+        <InlineAlert tone="info" title="Doplňte Finanční pas">
+          Řazení „Doporučené“ potřebuje alespoň rozpočet, lokalitu nebo typ
+          nemovitosti ve Finančním pasu.{" "}
+          <Link
+            href={passportHref}
+            className="font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
+          >
+            Doplnit Finanční pas
+          </Link>
+        </InlineAlert>
+      ) : null}
 
       {properties.length === 0 ? (
         <div>
