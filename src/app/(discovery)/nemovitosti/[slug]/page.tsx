@@ -3,20 +3,24 @@ import { notFound } from "next/navigation";
 
 import { PropertyGallery } from "@/components/property/property-gallery";
 import { PropertyIdentityGrid } from "@/components/property/property-identity-grid";
+import { PropertyDecisionActions } from "@/components/property/property-decision-actions";
+import { PropertyPriceBlock } from "@/components/property/property-price-block";
+import { PropertyQuickSummary } from "@/components/property/property-quick-summary";
+import { PropertyScorePanel } from "@/components/property/property-score-panel";
 import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
-import { MetricValue } from "@/components/data-display/metric-card";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button-link";
-import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { StickyMobileCTALink } from "@/components/navigation/mobile-nav";
 import {
   buildPropertyDetailBreadcrumbs,
   loadPropertyDetailBySlug,
   propertyListingStatusTone,
 } from "@/domains/properties/service/detail-loader";
-import { formatCzk, formatCzkPerSqm } from "@/lib/format";
+import { resolveMatchProfile } from "@/components/property/search/discovery-listing";
+import {
+  computePropertyMatchScore,
+  listingToMatchInput,
+} from "@/domains/properties/service";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -51,6 +55,24 @@ export default async function PropertyDetailPage({ params }: Props) {
   ]
     .filter(Boolean)
     .join(", ");
+
+  const { isAuthenticated, matchProfile } = await resolveMatchProfile();
+  const matchScore = computePropertyMatchScore(
+    listingToMatchInput({
+      id: property.id,
+      askingPrice: property.askingPrice,
+      location: property.location,
+      propertyType: property.propertyType,
+      layout: property.layout,
+      usableArea: property.usableArea,
+      condition: property.condition,
+      tags: property.tags,
+      grossYieldPct: property.grossYieldPct,
+      risk: property.risk,
+      dataQuality: property.dataQuality,
+    }),
+    matchProfile,
+  );
 
   return (
     <>
@@ -92,9 +114,27 @@ export default async function PropertyDetailPage({ params }: Props) {
           ) : null}
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0 space-y-10">
             <PropertyGallery media={property.media} title={property.title} />
+
+            {/* Mobile price (desktop lives in sticky panel) */}
+            <div className="lg:hidden">
+              <PropertyPriceBlock
+                askingPrice={property.askingPrice}
+                pricePerSqm={property.pricePerSqm}
+                priceHistory={property.priceHistory}
+              />
+            </div>
+
+            <PropertyQuickSummary property={property} />
+
+            <PropertyScorePanel
+              majetioScore={property.majetioScore}
+              matchScore={isAuthenticated ? matchScore : null}
+              isAuthenticated={isAuthenticated}
+            />
+
             <PropertyIdentityGrid property={property} />
 
             {property.description ? (
@@ -112,35 +152,23 @@ export default async function PropertyDetailPage({ params }: Props) {
             ) : null}
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <Card elevation="raised">
-              <p className="text-caption uppercase text-[var(--text-muted)]">
-                Nabídková cena
-              </p>
-              <MetricValue
-                size="xl"
-                value={
-                  property.askingPrice != null
-                    ? formatCzk(property.askingPrice)
-                    : "—"
-                }
-              />
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                {property.pricePerSqm != null
-                  ? formatCzkPerSqm(property.pricePerSqm)
-                  : "Kč/m² neuvedeno"}
-              </p>
-              <div className="mt-6 flex flex-col gap-2">
-                <ButtonLink href="/analyza">Analyzovat nemovitost</ButtonLink>
-                <ButtonLink href="/nemovitosti" variant="secondary">
-                  Zpět na katalog
-                </ButtonLink>
-              </div>
-            </Card>
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <PropertyDecisionActions
+              property={{
+                id: property.id,
+                slug: property.slug,
+                title: property.title,
+                askingPrice: property.askingPrice,
+                pricePerSqm: property.pricePerSqm,
+                priceHistory: property.priceHistory,
+                locationLabel:
+                  locationLine || property.location.label || "Lokalita neuvedena",
+                isDemo: property.isDemo,
+              }}
+            />
           </aside>
         </div>
       </Container>
-      <StickyMobileCTALink label="Analyzovat nemovitost" href="/analyza" />
     </>
   );
 }
