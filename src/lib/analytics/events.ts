@@ -137,6 +137,28 @@ export type AnalyticsEvent =
   | {
       name: "recommendation_sort_viewed";
       props: { profile_complete: boolean; result_count_bucket: string };
+    }
+  /** Property detail / Decision Cockpit — no CZK amounts, no street addresses */
+  | {
+      name: "property_detail_viewed";
+      props: {
+        slug: string;
+        is_demo: boolean;
+        has_asking_price: boolean;
+        visibility: string;
+      };
+    }
+  | {
+      name: "property_detail_section_nav";
+      props: { section: string };
+    }
+  | {
+      name: "scenario_changed";
+      props: { scenario_id: string; is_demo: boolean };
+    }
+  | {
+      name: "similar_property_clicked";
+      props: { from_slug: string; to_slug: string };
     };
 
 const FORBIDDEN_PROP_KEYS = new Set([

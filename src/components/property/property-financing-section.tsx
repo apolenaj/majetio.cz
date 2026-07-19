@@ -9,6 +9,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import type { HandoffPreviewData } from "@/lib/financing/handoff-actions";
 import { formatCzk, formatPercentPoints } from "@/lib/format";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
+import { track } from "@/lib/analytics/events";
 
 const NEU = "Neuvedeno";
 
@@ -131,6 +132,12 @@ export function PropertyFinancingSection({
         <HypotekaJasneHandoffCard
           preview={handoffPreview}
           source={`nemovitosti/${returnPath.split("/").pop() ?? "detail"}`}
+          onOpenTrack={() => {
+            track({
+              name: "financing_cta_clicked",
+              props: { location: "property_detail" },
+            });
+          }}
         />
       ) : (
         <Card padding="lg">

@@ -1,6 +1,7 @@
 import { formatCzk, formatPercentPoints } from "@/lib/format";
 import type { InvestmentOverviewDemo } from "@/content/demo-property-financial";
-import { PropertyCashFlowWaterfall } from "@/components/property/property-cash-flow-waterfall";
+import { LazyCashFlowWaterfall } from "@/components/property/property-detail-lazy";
+import { MobileDisclosure } from "@/components/property/mobile-disclosure";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +99,9 @@ export function PropertyInvestmentOverview({
       </div>
 
       <div className="mt-6">
-        <PropertyCashFlowWaterfall waterfall={investment?.waterfall ?? null} />
+        <MobileDisclosure title="Cash flow waterfall (rozbalit)">
+          <LazyCashFlowWaterfall waterfall={investment?.waterfall ?? null} />
+        </MobileDisclosure>
       </div>
     </section>
   );

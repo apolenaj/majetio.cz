@@ -16,6 +16,7 @@ import {
 } from "@/components/navigation/tabs";
 import { formatCzk } from "@/lib/format";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
+import { track } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
 const NEU = "Neuvedeno";
@@ -41,6 +42,14 @@ export function ScenarioSwitcher({
   const relevant = scenarios.filter((s) => s.relevant);
   const defaultId = relevant[0]?.id ?? "long_term_rent";
   const [active, setActive] = React.useState(String(defaultId));
+
+  function onTabChange(next: string) {
+    setActive(next);
+    track({
+      name: "scenario_changed",
+      props: { scenario_id: next, is_demo: true },
+    });
+  }
 
   const customBase = relevant.find((s) => s.id === "custom");
   const [assumptions, setAssumptions] = React.useState<Assumptions>(() => ({
@@ -86,7 +95,7 @@ export function ScenarioSwitcher({
         dočasné předpoklady v prohlížeči — databázi nepřepisuje.
       </p>
 
-      <Tabs value={active} onValueChange={setActive} className="mt-5">
+      <Tabs value={active} onValueChange={onTabChange} className="mt-5">
         <TabsList className="flex h-auto min-h-11 w-full flex-wrap justify-start">
           {relevant.map((s) => (
             <TabsTrigger key={s.id} value={s.id} className="flex-none">

@@ -13,10 +13,15 @@ import { ScenarioSwitcher } from "@/components/property/property-scenario-switch
 import { PropertyFinancingSection } from "@/components/property/property-financing-section";
 import { PropertyRenovationSection } from "@/components/property/property-renovation-section";
 import { PropertyRisksSection } from "@/components/property/property-risks-section";
-import { PropertyLocationSection } from "@/components/property/property-location-section";
-import { PropertyMarketHistorySection } from "@/components/property/property-market-history-section";
 import { PropertyProvenanceSection } from "@/components/property/property-provenance-section";
 import { PropertySimilarSection } from "@/components/property/property-similar-section";
+import { PropertyDetailSectionNav } from "@/components/property/property-detail-section-nav";
+import { PropertyDetailAnalytics } from "@/components/property/property-detail-analytics";
+import { MobileDisclosure } from "@/components/property/mobile-disclosure";
+import {
+  LazyPropertyLocationSection,
+  LazyPropertyMarketHistorySection,
+} from "@/components/property/property-detail-lazy";
 import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +31,10 @@ import {
   loadPropertyDetailBySlug,
   propertyListingStatusTone,
 } from "@/domains/properties/service/detail-loader";
+import {
+  buildPropertyDetailJsonLd,
+  buildPropertyDetailMetadata,
+} from "@/domains/properties/service/detail-seo";
 import { resolveMatchProfile } from "@/components/property/search/discovery-listing";
 import {
   computePropertyMatchScore,
@@ -35,7 +44,7 @@ import {
 import { getPropertyFinancialDemo } from "@/content/demo-property-financial";
 import { getPropertyContextDemo } from "@/content/demo-property-context";
 import { getDemoPublicProperty } from "@/content/demo-canonical-properties";
-import { resolveDaysOnMarket } from "@/domains/properties/service/market-timing";
+import { resolveDaysOnMarket, daysBetweenIso } from "@/domains/properties/service/market-timing";
 import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import {
   loadHypotekaHandoffPreview,
@@ -52,16 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!property) {
     return { title: "Nemovitost nenalezena", robots: { index: false } };
   }
-  const place =
-    property.location.label ??
-    property.location.city ??
-    "Demonstrační detail Majetio";
-  return {
-    title: property.title,
-    description: `${place} — detail nemovitosti Majetio.`,
-    robots: { index: false, follow: true },
-    alternates: { canonical: `/nemovitosti/${property.slug}` },
-  };
+  return buildPropertyDetailMetadata(property);
 }
 
 export default async function PropertyDetailPage({ params }: Props) {
@@ -103,6 +103,7 @@ export default async function PropertyDetailPage({ params }: Props) {
     publishedAt: property.publishedAt,
     overrideDays: context?.market?.daysOnMarket ?? null,
   });
+  const daysSinceVerified = daysBetweenIso(property.lastSeenAt);
 
   const similarItems = (context?.similar ?? [])
     .map((alt) => {
@@ -151,9 +152,21 @@ export default async function PropertyDetailPage({ params }: Props) {
   }
 
   const returnPath = `/nemovitosti/${property.slug}`;
+  const jsonLd = buildPropertyDetailJsonLd(property);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PropertyDetailAnalytics
+        slug={property.slug}
+        isDemo={property.isDemo}
+        hasAskingPrice={property.askingPrice != null}
+        visibility={property.visibility}
+      />
+
       <Container className="overflow-x-hidden py-10 sm:py-14 pb-28 lg:pb-14">
         <PageHeader
           title={property.title}
@@ -170,7 +183,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           }
         />
 
-        <div className="mb-8 space-y-3">
+        <div className="mb-6 space-y-3">
           {property.isDemo ? (
             <InlineAlert tone="warning" title="Demonstrační nemovitost">
               Tato stránka ukazuje kanonická demo data Majetio. Nejde o reálnou
@@ -192,88 +205,113 @@ export default async function PropertyDetailPage({ params }: Props) {
           ) : null}
         </div>
 
+        <PropertyDetailSectionNav />
+
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0 space-y-10">
-            <PropertyGallery media={property.media} title={property.title} />
+            <section id="prehled" className="scroll-mt-28 space-y-10">
+              <PropertyGallery media={property.media} title={property.title} />
 
-            <div className="lg:hidden">
-              <PropertyPriceBlock
-                askingPrice={property.askingPrice}
-                pricePerSqm={property.pricePerSqm}
-                priceHistory={property.priceHistory}
+              <div className="lg:hidden">
+                <PropertyPriceBlock
+                  askingPrice={property.askingPrice}
+                  pricePerSqm={property.pricePerSqm}
+                  priceHistory={property.priceHistory}
+                />
+              </div>
+
+              <PropertyQuickSummary
+                property={property}
+                estimatedValueMidCzk={financial?.valuation?.midCzk ?? null}
               />
-            </div>
 
-            <PropertyQuickSummary
-              property={property}
-              estimatedValueMidCzk={financial?.valuation?.midCzk ?? null}
-            />
+              <PropertyScorePanel
+                majetioScore={property.majetioScore}
+                matchScore={isAuthenticated ? matchScore : null}
+                isAuthenticated={isAuthenticated}
+              />
+            </section>
 
-            <PropertyScorePanel
-              majetioScore={property.majetioScore}
-              matchScore={isAuthenticated ? matchScore : null}
-              isAuthenticated={isAuthenticated}
-            />
+            <section id="ekonomika" className="scroll-mt-28 space-y-10">
+              <PropertyValuationCompare
+                askingPrice={property.askingPrice}
+                valuation={financial?.valuation ?? null}
+              />
 
-            <PropertyValuationCompare
-              askingPrice={property.askingPrice}
-              valuation={financial?.valuation ?? null}
-            />
+              <PropertyInvestmentOverview
+                investment={financial?.investment ?? null}
+                fallbackGrossYieldPct={property.grossYieldPct}
+                fallbackCashFlowMonthlyCzk={property.cashFlowMonthlyCzk}
+              />
+            </section>
 
-            <PropertyInvestmentOverview
-              investment={financial?.investment ?? null}
-              fallbackGrossYieldPct={property.grossYieldPct}
-              fallbackCashFlowMonthlyCzk={property.cashFlowMonthlyCzk}
-            />
+            <section id="scenare" className="scroll-mt-28">
+              <ScenarioSwitcher
+                scenarios={financial?.scenarios ?? []}
+                isAuthenticated={isAuthenticated}
+                returnPath={returnPath}
+              />
+            </section>
 
-            <ScenarioSwitcher
-              scenarios={financial?.scenarios ?? []}
-              isAuthenticated={isAuthenticated}
-              returnPath={returnPath}
-            />
+            <section id="financovani" className="scroll-mt-28 space-y-10">
+              <PropertyFinancingSection
+                askingPrice={property.askingPrice}
+                equityUsedCzk={equityUsedCzk}
+                equitySource={equitySource}
+                preview={financingPreview}
+                handoffPreview={handoffPreview}
+                isAuthenticated={isAuthenticated}
+                returnPath={returnPath}
+              />
 
-            <PropertyFinancingSection
-              askingPrice={property.askingPrice}
-              equityUsedCzk={equityUsedCzk}
-              equitySource={equitySource}
-              preview={financingPreview}
-              handoffPreview={handoffPreview}
-              isAuthenticated={isAuthenticated}
-              returnPath={returnPath}
-            />
+              <PropertyRenovationSection
+                renovation={financial?.renovation ?? null}
+              />
+            </section>
 
-            <PropertyRenovationSection
-              renovation={financial?.renovation ?? null}
-            />
+            <section id="rizika" className="scroll-mt-28">
+              <PropertyRisksSection
+                risks={context?.risks ?? []}
+                checklist={context?.checklist ?? []}
+                dueDiligenceStatus={context?.dueDiligenceStatus ?? null}
+                dueDiligenceNote={context?.dueDiligenceNote ?? null}
+              />
+            </section>
 
-            <PropertyRisksSection
-              risks={context?.risks ?? []}
-              checklist={context?.checklist ?? []}
-              dueDiligenceStatus={context?.dueDiligenceStatus ?? null}
-              dueDiligenceNote={context?.dueDiligenceNote ?? null}
-            />
+            <section id="lokalita" className="scroll-mt-28">
+              <MobileDisclosure title="Lokalita a mapa (rozbalit)">
+                <LazyPropertyLocationSection
+                  location={property.location}
+                  benchmark={context?.location ?? null}
+                />
+              </MobileDisclosure>
+            </section>
 
-            <PropertyLocationSection
-              location={property.location}
-              benchmark={context?.location ?? null}
-            />
+            <section id="historie" className="scroll-mt-28">
+              <MobileDisclosure title="Historie ceny (rozbalit)">
+                <LazyPropertyMarketHistorySection
+                  points={property.priceHistory}
+                  daysOnMarket={daysOnMarket}
+                  relisted={context?.market?.relisted ?? false}
+                  relistNote={context?.market?.relistNote ?? null}
+                  publishedAt={property.publishedAt}
+                />
+              </MobileDisclosure>
+            </section>
 
-            <PropertyMarketHistorySection
-              points={property.priceHistory}
-              daysOnMarket={daysOnMarket}
-              relisted={context?.market?.relisted ?? false}
-              relistNote={context?.market?.relistNote ?? null}
-              publishedAt={property.publishedAt}
-            />
+            <section id="zdroje" className="scroll-mt-28">
+              <PropertyProvenanceSection
+                sources={property.sources}
+                lastSeenAt={property.lastSeenAt}
+                freshness={property.freshness}
+                fieldConflicts={property.fieldConflicts}
+                daysSinceVerified={daysSinceVerified}
+              />
+            </section>
 
-            <PropertyProvenanceSection
-              sources={property.sources}
-              lastSeenAt={property.lastSeenAt}
-              freshness={property.freshness}
-              fieldConflicts={property.fieldConflicts}
-            />
-
-            <PropertySimilarSection items={similarItems} />
+            <section id="alternativa" className="scroll-mt-28">
+              <PropertySimilarSection items={similarItems} />
+            </section>
 
             <PropertyIdentityGrid property={property} />
 
@@ -292,7 +330,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             ) : null}
           </div>
 
-          <aside className="lg:sticky lg:top-24 lg:self-start">
+          <aside className="lg:sticky lg:top-28 lg:self-start">
             <PropertyDecisionActions
               property={{
                 id: property.id,
@@ -302,7 +340,9 @@ export default async function PropertyDetailPage({ params }: Props) {
                 pricePerSqm: property.pricePerSqm,
                 priceHistory: property.priceHistory,
                 locationLabel:
-                  locationLine || property.location.label || "Lokalita neuvedena",
+                  locationLine ||
+                  property.location.label ||
+                  "Lokalita neuvedena",
                 isDemo: property.isDemo,
               }}
             />

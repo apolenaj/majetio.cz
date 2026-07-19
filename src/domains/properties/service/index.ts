@@ -97,3 +97,11 @@ export type { PublicMediaItem } from "./media-public";
 
 export { formatAreaConflict, formatNumericRangeConflict } from "./field-conflicts";
 export { mapPublicDtoToPropertyCard } from "./card-mapper";
+
+export {
+  buildPropertyDetailMetadata,
+  buildPropertyDetailJsonLd,
+  isPropertyDetailIndexable,
+} from "./detail-seo";
+export { resolveDaysOnMarket, daysBetweenIso } from "./market-timing";
+export { derivePriceDecrease } from "./price-change";

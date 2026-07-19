@@ -187,9 +187,11 @@ export function DataSharingPreview({
 export function HypotekaJasneHandoffCard({
   preview,
   source,
+  onOpenTrack,
 }: {
   preview: HandoffPreviewData;
   source?: string;
+  onOpenTrack?: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [done, setDone] = React.useState<{ externalLeadId: string; isMock: boolean } | null>(
@@ -212,7 +214,14 @@ export function HypotekaJasneHandoffCard({
           {done.isMock ? " (demo / mock prostředí)." : "."} Historii najdete v Souhlasech.
         </InlineAlert>
       ) : (
-        <Button type="button" size="lg" onClick={() => setOpen(true)}>
+        <Button
+          type="button"
+          size="lg"
+          onClick={() => {
+            onOpenTrack?.();
+            setOpen(true);
+          }}
+        >
           Chci zjistit možnosti financování
         </Button>
       )}

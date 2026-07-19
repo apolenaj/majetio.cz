@@ -6,48 +6,32 @@ import { PropertySourceFreshness } from "@/components/property/property-source-f
 import { InlineAlert } from "@/components/feedback/states";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  DEFAULT_STALE_AFTER_DAYS,
-  evaluatePropertyFreshness,
-} from "@/lib/properties/freshness";
+import { DEFAULT_STALE_AFTER_DAYS } from "@/lib/properties/freshness";
 
 const NEU = "Neuvedeno";
 
 /**
  * Provenance: sources, staleness warning, field conflicts without false precision.
+ * daysSinceVerified is computed on the server (pure render — no Date.now in component).
  */
 export function PropertyProvenanceSection({
   sources,
   lastSeenAt,
   freshness,
   fieldConflicts,
+  daysSinceVerified = null,
 }: {
   sources: PublicSourceFreshness[];
   lastSeenAt: string | null;
   freshness: string | null;
   fieldConflicts: PublicFieldConflict[];
+  daysSinceVerified?: number | null;
 }) {
-  const seenDate = lastSeenAt ? new Date(lastSeenAt) : null;
-  const freshnessEval =
-    seenDate && !Number.isNaN(seenDate.getTime())
-      ? evaluatePropertyFreshness({ lastSeenAt: seenDate })
-      : null;
-
-  const daysSince =
-    freshnessEval?.daysSinceSeen ??
-    (seenDate
-      ? Math.max(
-          0,
-          Math.floor(
-            (Date.now() - seenDate.getTime()) / (1000 * 60 * 60 * 24),
-          ),
-        )
-      : null);
-
   const showStaleWarning =
     freshness === "STALE" ||
     freshness === "UNAVAILABLE" ||
-    (daysSince != null && daysSince >= DEFAULT_STALE_AFTER_DAYS);
+    (daysSinceVerified != null &&
+      daysSinceVerified >= DEFAULT_STALE_AFTER_DAYS);
 
   return (
     <section aria-labelledby="provenance-heading">
@@ -68,8 +52,8 @@ export function PropertyProvenanceSection({
           tone="warning"
           title="Stale data — ověření zastaralé"
         >
-          {daysSince != null
-            ? `Dostupnost nabídky nebyla v posledních ${daysSince} dnech ověřena.`
+          {daysSinceVerified != null
+            ? `Dostupnost nabídky nebyla v posledních ${daysSinceVerified} dnech ověřena.`
             : "Dostupnost nabídky nebyla v posledních dnech ověřena."}
         </InlineAlert>
       ) : null}

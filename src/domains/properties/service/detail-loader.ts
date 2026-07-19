@@ -1,7 +1,10 @@
 /**
  * Load property detail for /nemovitosti/[slug] (Prompt 9 Part 1).
  * Always goes through canViewProperty + PublicPropertyDto — never raw records.
+ * React cache() dedupes metadata + page loads in one request (no N+1 / double fetch).
  */
+
+import { cache } from "react";
 
 import { DEMO_PROPERTY_RECORDS } from "@/content/demo-canonical-properties";
 import { auth } from "@/lib/auth";
@@ -33,7 +36,7 @@ const demoRepository: PropertyRepository = {
 
 const propertyService = createPropertyService({ repository: demoRepository });
 
-export async function resolvePropertyViewer(): Promise<PropertyViewer> {
+export const resolvePropertyViewer = cache(async (): Promise<PropertyViewer> => {
   const session = await auth();
   if (!session?.user?.id) return { role: "PUBLIC" };
   const role = (session.user.role as Role | undefined) ?? "USER";
@@ -41,26 +44,30 @@ export async function resolvePropertyViewer(): Promise<PropertyViewer> {
     userId: session.user.id,
     role: isStaff(role) ? "STAFF" : role === "USER" ? "USER" : String(role),
   };
-}
+});
 
 /**
  * Secure detail load. Returns null → caller should notFound() (covers missing + IDOR).
  * Reserved SEO city slugs are not property details.
+ * Cached per-request so generateMetadata + page share one load.
+ *
+ * Future Prisma: include media + priceHistory + sources in a single query
+ * (never N+1 per history point / source row).
  */
-export async function loadPropertyDetailBySlug(
-  slug: string,
-): Promise<PublicPropertyDto | null> {
-  if (isSeoLandingSlug(slug)) return null;
-  if (
-    slug === "doporucene" ||
-    slug === "investicni-prilezitosti" ||
-    slug === "praha" ||
-    slug === "brno" ||
-    slug === "ostrava"
-  ) {
-    return null;
-  }
+export const loadPropertyDetailBySlug = cache(
+  async (slug: string): Promise<PublicPropertyDto | null> => {
+    if (isSeoLandingSlug(slug)) return null;
+    if (
+      slug === "doporucene" ||
+      slug === "investicni-prilezitosti" ||
+      slug === "praha" ||
+      slug === "brno" ||
+      slug === "ostrava"
+    ) {
+      return null;
+    }
 
-  const viewer = await resolvePropertyViewer();
-  return propertyService.getPublicBySlug(slug, { viewer });
-}
+    const viewer = await resolvePropertyViewer();
+    return propertyService.getPublicBySlug(slug, { viewer });
+  },
+);

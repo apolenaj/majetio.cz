@@ -43,14 +43,16 @@ Sitemap: `/sitemap.xml`.
 | BreadcrumbList | PageHeader při breadcrumbs |
 | Article | Až u publikovaných článků průvodce |
 | FAQPage | Homepage FAQ |
-| RealEstateListing | Až při ověřených datech nabídky — **ne** pro demo |
+| RealEstateListing + Offer | Detail `/nemovitosti/[slug]` via `detail-seo.ts` — **bez Product / AggregateRating**; demo/private = noindex |
 
 ## Canonical a duplicity
 
 - **Indexovatelné SEO landings:** jen top kategorie `/nemovitosti/praha`, `/nemovitosti/brno`, `/nemovitosti/ostrava` (+ čistý `/nemovitosti`)
 - **Filtrované URL** `/nemovitosti?lokalita=…&cena-do=…` → `noindex, follow` + canonical na `/nemovitosti`
 - Stránkování `?stranka>1` → noindex
-- Demo detail má canonical na slug, ale `noindex` (demo data)
+- Demo detail má canonical na slug, ale `noindex` (`isDemo` / private → `isPropertyDetailIndexable` = false)
+- Indexovatelné detaily: jen `PUBLIC` + `ACTIVE` + `!isDemo`
+- Viz `docs/PROPERTY_DETAIL.md`
 - Slug změny → budoucí 301 (zatím stabilní slugy)
 
 Viz také `docs/PROPERTY_SEARCH.md` a `docs/SEARCH_FILTERS.md`.
