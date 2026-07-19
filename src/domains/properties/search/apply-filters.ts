@@ -2,7 +2,10 @@
  * Client/demo filter application from URL state (Prompt 8 Part 2).
  */
 
-import type { PublicPropertyDto } from "@/domains/properties/service/dto";
+import type {
+  PublicPropertyDto,
+  PublicPropertyListItemDto,
+} from "@/domains/properties/service/dto";
 import { fuzzyIncludes } from "./text-match";
 import {
   KVALITA_OPTIONS,
@@ -12,12 +15,23 @@ import {
   type PropertyUrlFilterState,
 } from "./url-state";
 
-export type SearchableListing = PublicPropertyDto & {
+export type SearchableListing = PublicPropertyListItemDto & {
   energyRating?: string | null;
   ownershipType?: string | null;
   condition?: string | null;
   landArea?: number | null;
   strategySlugs?: string[];
+  status?: string;
+  freshness?: string | null;
+  description?: string | null;
+  publishedAt?: string | null;
+  updatedAt?: string | null;
+  completenessScore?: number | null;
+  priceHistory?: PublicPropertyDto["priceHistory"];
+  sources?: PublicPropertyDto["sources"];
+  fieldConflicts?: PublicPropertyDto["fieldConflicts"];
+  lastSeenAt?: string | null;
+  visibility?: string;
 };
 
 export function applyUrlFiltersToListings(

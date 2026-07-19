@@ -86,5 +86,14 @@ export type { PropertyService, PropertyRepository } from "./property-service";
 export { canViewProperty, resolveViewerRole } from "./authorization";
 export type { PropertyViewer } from "./authorization";
 
+export {
+  loadPropertyDetailBySlug,
+  buildPropertyDetailBreadcrumbs,
+  propertyListingStatusTone,
+} from "./detail-loader";
+
+export { canDisplayMediaUrl, toPublicMediaList } from "./media-public";
+export type { PublicMediaItem } from "./media-public";
+
 export { formatAreaConflict, formatNumericRangeConflict } from "./field-conflicts";
 export { mapPublicDtoToPropertyCard } from "./card-mapper";

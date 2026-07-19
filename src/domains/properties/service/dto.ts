@@ -1,7 +1,9 @@
 /**
- * Public property DTOs (Prompt 7 Parts 4–5).
+ * Public property DTOs (Prompt 7 Parts 4–5 / Prompt 9 Part 1).
  * Strip internal notes, audit, and precise address for private / restricted listings.
  */
+
+import { toPublicMediaList, type PublicMediaItem } from "./media-public";
 
 export type DataQualityLevel =
   | "verified"
@@ -58,6 +60,12 @@ export type PropertyRecord = {
   areaSqm?: number | null;
   layout?: string | null;
   disposition?: string | null;
+  condition?: string | null;
+  ownershipType?: string | null;
+  energyRating?: string | null;
+  floor?: number | null;
+  floorsTotal?: number | null;
+  hasElevator?: boolean | null;
   publicLabel?: string | null;
   addressPrecision: AddressPrecision;
   publicCity?: string | null;
@@ -96,6 +104,8 @@ export type PropertyRecord = {
     isPrimary: boolean;
     isPlaceholder: boolean;
     alt?: string | null;
+    licenseStatus?: string | null;
+    sourceId?: string | null;
   }>;
 };
 
@@ -107,6 +117,11 @@ export type PublicPropertyLocation = {
   region: string | null;
   latitude: number | null;
   longitude: number | null;
+  /**
+   * Street-level line when precision is not HIDDEN and viewer may see it.
+   * Never includes internal cadastral / owner IDs.
+   */
+  addressLine: string | null;
 };
 
 export type PublicPropertyDto = {
@@ -125,14 +140,14 @@ export type PublicPropertyDto = {
   /** Prefer conflict display when sources disagree. */
   usableAreaDisplay: string | null;
   layout: string | null;
+  condition: string | null;
+  ownershipType: string | null;
+  energyRating: string | null;
+  floor: number | null;
+  floorsTotal: number | null;
+  hasElevator: boolean | null;
   location: PublicPropertyLocation;
-  media: Array<{
-    url: string;
-    type: string;
-    isPrimary: boolean;
-    isPlaceholder: boolean;
-    alt: string | null;
-  }>;
+  media: PublicMediaItem[];
   publishedAt: string | null;
   updatedAt: string | null;
   isDemo: boolean;
@@ -213,6 +228,13 @@ function publicLocation(
   const role = opts.viewerRole ?? "PUBLIC";
   const exact = canExposeExactAddress(record, role);
   const coords = canExposeCoordinates(record, role);
+  const precision = record.addressPrecision;
+  const hidden = precision === "HIDDEN";
+
+  const streetLine =
+    !hidden && exact
+      ? [record.street, record.houseNumber].filter(Boolean).join(" ") || null
+      : null;
 
   if (record.visibility === "PRIVATE" && role === "PUBLIC") {
     return {
@@ -223,6 +245,7 @@ function publicLocation(
       region: record.publicRegion ?? null,
       latitude: null,
       longitude: null,
+      addressLine: null,
     };
   }
 
@@ -234,10 +257,11 @@ function publicLocation(
         ? "APPROXIMATE"
         : record.addressPrecision,
     city: record.publicCity ?? null,
-    district: record.publicDistrict ?? null,
+    district: hidden ? null : (record.publicDistrict ?? null),
     region: record.publicRegion ?? null,
     latitude: coords ? (record.latitude ?? null) : null,
     longitude: coords ? (record.longitude ?? null) : null,
+    addressLine: streetLine,
   };
 }
 
@@ -249,20 +273,16 @@ function areaDisplay(record: PropertyRecord): string | null {
 }
 
 /**
- * Map DB/internal record → public DTO (filters street, house no., notes, audit, canonicalKey).
+ * Map DB/internal record → public DTO.
+ * Strips: street internals when HIDDEN, notes, audit, canonicalKey, media sourceId,
+ * prohibited media URLs, ownerUserId.
  */
 export function toPublicPropertyDto(
   record: PropertyRecord,
   opts: ToPublicDtoOptions = {},
 ): PublicPropertyDto {
   const role = opts.viewerRole ?? "PUBLIC";
-  const media = (record.media ?? []).map((m) => ({
-    url: m.url,
-    type: m.type,
-    isPrimary: m.isPrimary,
-    isPlaceholder: m.isPlaceholder,
-    alt: m.alt ?? null,
-  }));
+  const media = toPublicMediaList(record.media);
 
   return {
     id: record.id,
@@ -279,6 +299,12 @@ export function toPublicPropertyDto(
     usableArea: record.usableArea ?? record.areaSqm ?? null,
     usableAreaDisplay: areaDisplay(record),
     layout: record.layout ?? record.disposition ?? null,
+    condition: record.condition ?? null,
+    ownershipType: record.ownershipType ?? null,
+    energyRating: record.energyRating ?? null,
+    floor: record.floor ?? null,
+    floorsTotal: record.floorsTotal ?? null,
+    hasElevator: record.hasElevator ?? null,
     location: publicLocation(record, { viewerRole: role }),
     media,
     publishedAt: iso(record.publishedAt),

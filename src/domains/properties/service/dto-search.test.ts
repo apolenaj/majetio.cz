@@ -60,11 +60,22 @@ describe("public DTO", () => {
     expect(JSON.stringify(dto)).not.toContain("canonicalKey");
   });
 
-  it("hides exact street even on public EXACT for anonymous — only coords/label", () => {
+  it("exposes street via addressLine on public EXACT (Prompt 9), still strips secrets", () => {
     const dto = toPublicPropertyDto(baseRecord, { viewerRole: "PUBLIC" });
     expect(dto.location.latitude).toBe(50.07);
-    expect(JSON.stringify(dto)).not.toContain("Vinohradská");
+    expect(dto.location.addressLine).toContain("Vinohradská");
     expect(JSON.stringify(dto)).not.toContain("SECRET");
+    expect(JSON.stringify(dto)).not.toContain("canonicalKey");
+    expect(JSON.stringify(dto)).not.toContain("auditMeta");
+  });
+
+  it("keeps street hidden when addressPrecision is HIDDEN", () => {
+    const dto = toPublicPropertyDto(
+      { ...baseRecord, addressPrecision: "HIDDEN" },
+      { viewerRole: "PUBLIC" },
+    );
+    expect(dto.location.addressLine).toBeNull();
+    expect(JSON.stringify(dto)).not.toContain("Vinohradská");
   });
 });
 

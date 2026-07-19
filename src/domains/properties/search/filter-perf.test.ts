@@ -32,6 +32,7 @@ function makeListing(i: number): SearchableListing {
       region: null,
       latitude: null,
       longitude: null,
+      addressLine: null,
     },
     media: [],
     publishedAt: new Date(2026, 0, 1 + (i % 28)).toISOString(),

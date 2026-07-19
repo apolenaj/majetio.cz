@@ -1,32 +1,38 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Building2 } from "lucide-react";
 
-import { DataQualityBadge, RiskBadge, Badge } from "@/components/ui/badge";
+import { PropertyGallery } from "@/components/property/property-gallery";
+import { PropertyIdentityGrid } from "@/components/property/property-identity-grid";
+import { InlineAlert } from "@/components/feedback/states";
+import { PageHeader } from "@/components/layout/page-layouts";
+import { MetricValue } from "@/components/data-display/metric-card";
+import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { PageHeader } from "@/components/layout/page-layouts";
-import { MajetioScore, MetricValue } from "@/components/data-display/metric-card";
-import { InlineAlert } from "@/components/feedback/states";
 import { StickyMobileCTALink } from "@/components/navigation/mobile-nav";
-import { AspectRatio } from "@/components/ui/layout-primitives";
-import { PropertyPriceHistory } from "@/components/property/property-price-history";
-import { PropertySourceFreshness } from "@/components/property/property-source-freshness";
-import { getDemoPublicProperty } from "@/content/demo-canonical-properties";
-import { formatCzk, formatCzkPerSqm, formatPercentPoints } from "@/lib/format";
+import {
+  buildPropertyDetailBreadcrumbs,
+  loadPropertyDetailBySlug,
+  propertyListingStatusTone,
+} from "@/domains/properties/service/detail-loader";
+import { formatCzk, formatCzkPerSqm } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const property = getDemoPublicProperty(slug);
+  const property = await loadPropertyDetailBySlug(slug);
   if (!property) {
     return { title: "Nemovitost nenalezena", robots: { index: false } };
   }
+  const place =
+    property.location.label ??
+    property.location.city ??
+    "Demonstrační detail Majetio";
   return {
     title: property.title,
-    description: `${property.location.label ?? property.location.city ?? ""} — demonstrační detail nemovitosti Majetio.`,
+    description: `${place} — detail nemovitosti Majetio.`,
     robots: { index: false, follow: true },
     alternates: { canonical: `/nemovitosti/${property.slug}` },
   };
@@ -34,175 +40,102 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PropertyDetailPage({ params }: Props) {
   const { slug } = await params;
-  const property = getDemoPublicProperty(slug);
+  const property = await loadPropertyDetailBySlug(slug);
   if (!property) notFound();
 
-  const primaryImage =
-    property.media.find((m) => m.isPrimary) ?? property.media[0] ?? null;
-  const areaConflict = property.fieldConflicts.find((c) => c.fieldKey === "usableArea");
+  const statusTone = propertyListingStatusTone(property.status);
+  const locationLine = [
+    property.location.addressLine,
+    property.location.district,
+    property.location.city,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <>
-      <Container className="py-10 sm:py-14 pb-28 lg:pb-14">
+      <Container className="overflow-x-hidden py-10 sm:py-14 pb-28 lg:pb-14">
         <PageHeader
           title={property.title}
-          description={property.location.label ?? property.location.city ?? undefined}
-          breadcrumbs={[
-            { href: "/", label: "Domů" },
-            { href: "/nemovitosti", label: "Nemovitosti" },
-            { label: property.title },
-          ]}
+          description={
+            property.location.precision === "HIDDEN"
+              ? property.location.city
+                ? `${property.location.city} — přesná adresa je skrytá`
+                : "Přesná adresa je skrytá"
+              : locationLine || property.location.label || undefined
+          }
+          breadcrumbs={buildPropertyDetailBreadcrumbs(property)}
+          badge={
+            property.isDemo ? <Badge tone="premium">Demo</Badge> : undefined
+          }
         />
 
-        {property.isDemo ? (
-          <InlineAlert tone="warning" title="Demonstrační nemovitost" className="mb-8">
-            Tato stránka ukazuje kanonická demo data Majetio. Nejde o reálnou nabídku k prodeji.
-          </InlineAlert>
-        ) : null}
+        <div className="mb-8 space-y-3">
+          {property.isDemo ? (
+            <InlineAlert tone="warning" title="Demonstrační nemovitost">
+              Tato stránka ukazuje kanonická demo data Majetio. Nejde o reálnou
+              nabídku k prodeji.
+            </InlineAlert>
+          ) : null}
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-          <div className="space-y-8">
-            <AspectRatio ratio="16/9" className="rounded-[var(--radius-card)] bg-[var(--surface-sunken)]">
-              {primaryImage && !primaryImage.isPlaceholder ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={primaryImage.url}
-                  alt={primaryImage.alt ?? ""}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
-                  <Building2 className="size-10" aria-hidden />
-                  <span className="text-sm">Fotografie není k dispozici (demo)</span>
-                </div>
-              )}
-            </AspectRatio>
+          {statusTone === "unavailable" ? (
+            <InlineAlert tone="error" title="Nabídka nemusí být dostupná">
+              Stav nabídky je „nedostupná“. Údaje zůstávají pro kontext, ale
+              nemovitost už nemusí být na trhu.
+            </InlineAlert>
+          ) : null}
 
-            <div className="flex flex-wrap gap-2">
-              {property.dataQuality ? (
-                <DataQualityBadge quality={property.dataQuality} />
-              ) : null}
-              {property.risk ? <RiskBadge level={property.risk} /> : null}
-              {property.tags.map((tag) => (
-                <Badge key={tag} tone="neutral">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+          {statusTone === "archived" ? (
+            <InlineAlert tone="warning" title="Archivovaná nabídka">
+              Tato nabídka je v archivu. Informace slouží jako historický záznam.
+            </InlineAlert>
+          ) : null}
+        </div>
 
-            <Card>
-              <h2 className="font-display text-xl">Rychlé shrnutí</h2>
-              <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <dt className="text-caption text-[var(--text-muted)]">Nabídková cena</dt>
-                  <dd>
-                    <MetricValue
-                      value={
-                        property.askingPrice != null ? formatCzk(property.askingPrice) : "—"
-                      }
-                    />
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-caption text-[var(--text-muted)]">Cena za m²</dt>
-                  <dd className="font-metric font-semibold">
-                    {property.pricePerSqm != null
-                      ? formatCzkPerSqm(property.pricePerSqm)
-                      : "—"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-caption text-[var(--text-muted)]">Dispozice / plocha</dt>
-                  <dd>
-                    {[property.layout, property.usableAreaDisplay]
-                      .filter(Boolean)
-                      .join(" · ") || "—"}
-                  </dd>
-                  {areaConflict ? (
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">
-                      Zdroje se liší — zobrazujeme rozsah místo falešné přesnosti.
-                    </p>
-                  ) : null}
-                </div>
-                <div>
-                  <dt className="text-caption text-[var(--text-muted)]">Hrubý výnos (demo)</dt>
-                  <dd>
-                    <MetricValue
-                      tone="positive"
-                      value={
-                        property.grossYieldPct != null
-                          ? formatPercentPoints(property.grossYieldPct, { signed: true })
-                          : "—"
-                      }
-                    />
-                  </dd>
-                </div>
-              </dl>
-              {property.description ? (
-                <p className="mt-4 text-sm text-[var(--text-secondary)]">{property.description}</p>
-              ) : null}
-            </Card>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="min-w-0 space-y-10">
+            <PropertyGallery media={property.media} title={property.title} />
+            <PropertyIdentityGrid property={property} />
 
-            <MajetioScore score={property.majetioScore ?? null} />
-
-            <Card>
-              <h2 className="font-display text-xl">Historie ceny</h2>
-              <div className="mt-4">
-                <PropertyPriceHistory points={property.priceHistory} />
-              </div>
-            </Card>
-
-            <Card>
-              <h2 className="font-display text-xl">Zdroj a aktuálnost</h2>
-              <div className="mt-4">
-                <PropertySourceFreshness
-                  sources={property.sources}
-                  lastSeenAt={property.lastSeenAt}
-                  freshness={property.freshness}
-                />
-              </div>
-            </Card>
-
-            {property.fieldConflicts.length > 0 ? (
-              <Card>
-                <h2 className="font-display text-xl">Rozdíly mezi zdroji</h2>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {property.fieldConflicts.map((conflict) => (
-                    <li key={conflict.fieldKey}>
-                      <strong>{conflict.label}:</strong> {conflict.display}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
+            {property.description ? (
+              <section aria-labelledby="property-desc-heading">
+                <h2
+                  id="property-desc-heading"
+                  className="font-display text-xl text-[var(--text-primary)]"
+                >
+                  Popis
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+                  {property.description}
+                </p>
+              </section>
             ) : null}
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
             <Card elevation="raised">
-              <p className="text-caption uppercase text-[var(--text-muted)]">Cena (demo)</p>
+              <p className="text-caption uppercase text-[var(--text-muted)]">
+                Nabídková cena
+              </p>
               <MetricValue
                 size="xl"
-                value={property.askingPrice != null ? formatCzk(property.askingPrice) : "—"}
+                value={
+                  property.askingPrice != null
+                    ? formatCzk(property.askingPrice)
+                    : "—"
+                }
               />
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                {property.pricePerSqm != null
+                  ? formatCzkPerSqm(property.pricePerSqm)
+                  : "Kč/m² neuvedeno"}
+              </p>
               <div className="mt-6 flex flex-col gap-2">
                 <ButtonLink href="/analyza">Analyzovat nemovitost</ButtonLink>
-                <ButtonLink href="/porovnani" variant="secondary">
-                  Přidat do porovnání
-                </ButtonLink>
-                <ButtonLink href="/ucet/oblibene" variant="outline">
-                  Uložit (vyžaduje účet)
-                </ButtonLink>
-                <ButtonLink href="/kalkulacky/financovani" variant="ghost">
-                  Spočítat financování
-                </ButtonLink>
-                <ButtonLink href="/cenik" variant="link">
-                  Objednat kompletní analýzu
+                <ButtonLink href="/nemovitosti" variant="secondary">
+                  Zpět na katalog
                 </ButtonLink>
               </div>
-              <p className="mt-4 text-xs text-[var(--text-muted)]">
-                Uložení a porovnání vyžadují dokončenou autentizaci. CTA vedou na připravené
-                stránky bez falešného úspěchu.
-              </p>
             </Card>
           </aside>
         </div>

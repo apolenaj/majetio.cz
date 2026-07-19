@@ -38,7 +38,7 @@ export function mapPublicDtoToPropertyCard(
     grossYieldPct: dto.grossYieldPct ?? undefined,
     cashFlowMonthlyCzk: dto.cashFlowMonthlyCzk ?? undefined,
     majetioScore: dto.majetioScore,
-    imageUrl: dto.media.find((m) => m.isPrimary)?.url ?? dto.media[0]?.url,
+    imageUrl: dto.media.find((m) => m.isPrimary && m.url)?.url ?? dto.media.find((m) => m.url)?.url ?? undefined,
     dataQuality: (dto.dataQuality as DataQuality | null) ?? undefined,
     risk: dto.risk ?? undefined,
     tags: dto.tags,
