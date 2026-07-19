@@ -48,6 +48,25 @@ export type {
   PropertySearchQuery,
 } from "./search-provider";
 
+export {
+  createPropertySearchService,
+  normalizeSearchFilters,
+  buildSearchWhere,
+  resolveSearchSort,
+  toPrismaOrderBy,
+  propertySearchInputSchema,
+  SEARCH_SORT_PRESETS,
+} from "./search";
+export type {
+  PropertySearchService,
+  PropertySearchRepository,
+  PropertySearchInput,
+  PropertySearchPageDto,
+  PropertySearchHitDto,
+  NormalizedSearchFilters,
+  SearchSortPreset,
+} from "./search";
+
 export { createPropertyService } from "./property-service";
 export type { PropertyService, PropertyRepository } from "./property-service";
 

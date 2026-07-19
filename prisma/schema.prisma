@@ -588,6 +588,16 @@ model Property {
   @@index([transactionType, status, askingPrice])
   @@index([isDemo])
   @@index([ownerUserId])
+  /** Prompt 8 discovery / filter indexes */
+  @@index([status, propertyType, askingPrice])
+  @@index([status, publicCity, propertyType])
+  @@index([status, condition])
+  @@index([status, ownershipType])
+  @@index([status, publishedAt])
+  @@index([status, layout, askingPrice])
+  @@index([layout])
+  @@index([usableArea])
+  @@index([landArea])
 }
 
 /** Fixed boolean / count feature flags (1:1). */

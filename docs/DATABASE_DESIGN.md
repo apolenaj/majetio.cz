@@ -105,8 +105,8 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 **Pipeline:** Ingest → Validate → Sanitize → Normalize → Detect Duplicates → Canonical Update (`src/domains/property-sources/service/`).
 
 ### Search indexes (Property)
-Composite indexes for listing discovery: `status+askingPrice`, `status+publicCity+askingPrice`, `latitude+longitude`, `publicCity+publicDistrict`, `transactionType+status+askingPrice`.  
-Service layer: `PropertyService` + `PropertySearchProvider` with public DTOs (no precise address / notes / audit for anonymous viewers).
+Composite indexes for listing discovery (Prompt 7–8): `status+askingPrice`, `status+publicCity+askingPrice`, `status+propertyType+askingPrice`, `status+publicCity+propertyType`, `status+condition`, `status+ownershipType`, `status+publishedAt`, `status+layout+askingPrice`, `usableArea`, `landArea`, GPS, region.  
+**Prompt 8 service:** `PropertySearchService` — Zod input, whitelist sorts (`newest` / `price_asc` / `price_desc` / `price_per_sqm`), normalized filters (location, price, type, layout, area, condition, ownership), page/cursor pagination, always `ACTIVE`+`PUBLIC` for anonymous discovery.
 
 ### Demo + ownership (Part 5)
 **Fields:** `isDemo` (seed/UI demos), `ownerUserId` (PRIVATE / ACCOUNT_ONLY IDOR guard).  
