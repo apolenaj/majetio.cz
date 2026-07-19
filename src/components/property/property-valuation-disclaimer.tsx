@@ -1,12 +1,15 @@
 import type { PublicValuationDto, AnalystValuationDto } from "@/domains/valuation";
 import { VALUATION_LEGAL_DISCLAIMER } from "@/domains/valuation";
+import { PropertyValuationRecalcButton } from "@/components/property/property-valuation-analytics";
 
 /**
  * Legal disclaimer under automated estimate UI.
  */
 export function PropertyValuationDisclaimer({
+  slug,
   valuation,
 }: {
+  slug: string;
   valuation?: PublicValuationDto | AnalystValuationDto | null;
 }) {
   const text = valuation?.disclaimer ?? VALUATION_LEGAL_DISCLAIMER;
@@ -23,6 +26,7 @@ export function PropertyValuationDisclaimer({
           {valuation.isDemo ? " · demonstrační data" : null}
         </p>
       ) : null}
+      <PropertyValuationRecalcButton slug={slug} />
     </aside>
   );
 }

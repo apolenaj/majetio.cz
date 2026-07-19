@@ -159,6 +159,32 @@ export type AnalyticsEvent =
   | {
       name: "similar_property_clicked";
       props: { from_slug: string; to_slug: string };
+    }
+  /** Valuation engine — no CZK amounts, no addresses */
+  | {
+      name: "valuation_viewed";
+      props: {
+        slug: string;
+        status: string;
+        confidence_level: string;
+        is_demo: boolean;
+        has_estimate: boolean;
+      };
+    }
+  | {
+      name: "comparable_opened";
+      props: {
+        slug: string;
+        anonymized: boolean;
+        similarity_bucket: "0" | "1-39" | "40-69" | "70-99" | "100";
+      };
+    }
+  | {
+      name: "valuation_recalculation_requested";
+      props: {
+        slug: string;
+        reason: "manual" | "stale" | "price_changed";
+      };
     };
 
 const FORBIDDEN_PROP_KEYS = new Set([

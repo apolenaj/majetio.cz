@@ -78,3 +78,9 @@ export {
   type ValuationViewer,
   type ValuationServiceDeps,
 } from "./service/valuation-service";
+export {
+  buildAnalystOverrideAudit,
+  createAnalystOverrideAuditLog,
+  type AnalystOverrideInput,
+  type AnalystOverrideAuditRecord,
+} from "./service/analyst-override";

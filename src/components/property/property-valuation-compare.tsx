@@ -136,7 +136,25 @@ export function PropertyValuationCompare({
             </CardDescription>
           </CardHeader>
 
-          <div className="relative mt-2 h-16">
+          <p
+            id="valuation-range-summary"
+            className="mb-3 text-sm text-[var(--text-secondary)]"
+          >
+            Orientační interval odhadu Majetio: dolní {formatCzk(valuation.lowerBoundCzk!)},
+            střed {formatCzk(valuation.estimateMidCzk!)}, horní{" "}
+            {formatCzk(valuation.upperBoundCzk!)}
+            {askingPrice != null
+              ? `; nabídková cena ${formatCzk(askingPrice)}`
+              : ""}
+            . Nejde o oficiální cenu nabídky.
+          </p>
+
+          <div
+            className="relative mt-2 h-16"
+            role="img"
+            aria-labelledby="valuation-range-summary"
+            aria-label={`Interval odhadu od ${formatCzk(valuation.lowerBoundCzk!)} do ${formatCzk(valuation.upperBoundCzk!)}, střed ${formatCzk(valuation.estimateMidCzk!)}${askingPrice != null ? `, nabídka ${formatCzk(askingPrice)}` : ""}`}
+          >
             <div
               className="absolute top-6 h-2 w-full rounded-full bg-[var(--background-secondary)]"
               aria-hidden

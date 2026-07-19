@@ -1,6 +1,7 @@
 /**
- * SEO + structured data for property detail (Prompt 9 Part 5).
+ * SEO + structured data for property detail (Prompt 9 Part 5 / Prompt 10 Part 5).
  * No Product schema, no fake AggregateRating.
+ * Offer.price = asking price only — NEVER Majetio automated estimate (search penalty risk).
  */
 
 import type { Metadata } from "next";
@@ -65,6 +66,7 @@ export function buildPropertyDetailMetadata(
 
 /**
  * RealEstateListing + Offer — never Product, never AggregateRating.
+ * `offers.price` MUST be the listing asking price only. Do not inject valuation mid.
  */
 export function buildPropertyDetailJsonLd(property: PublicPropertyDto): object {
   const url = `${SITE}/nemovitosti/${property.slug}`;

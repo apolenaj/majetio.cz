@@ -15,6 +15,7 @@ import {
   THead,
   TR,
 } from "@/components/data-display/table";
+import { PropertyComparableCard } from "@/components/property/property-comparable-card";
 
 const NEU = "Neuvedeno";
 
@@ -42,7 +43,6 @@ function pickDisplayRows(
       .slice(0, 10)
       .map((c: AnalystComparableDto) => ({
         ...c,
-        // Analyst UI may show real identity; keep anonymized badge if licence says so
         label: c.anonymized
           ? `${c.label} (licence: anonymizovat veřejně)`
           : c.label,
@@ -56,8 +56,10 @@ function pickDisplayRows(
  * 3–10 most relevant comparables (anonymized when licence requires).
  */
 export function PropertyValuationComparables({
+  slug,
   valuation,
 }: {
+  slug: string;
   valuation: PublicValuationDto | AnalystValuationDto | null;
 }) {
   const rows = valuation ? pickDisplayRows(valuation) : [];
@@ -144,51 +146,15 @@ export function PropertyValuationComparables({
           <ul className="mt-4 grid gap-3 md:hidden">
             {rows.map((c) => (
               <li key={c.id}>
-                <Card padding="md">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-[var(--text-primary)]">
-                      {c.label}
-                    </p>
-                    {c.anonymized ? (
-                      <Badge tone="neutral">Anonymizováno</Badge>
-                    ) : null}
-                    <Badge tone="neutral">{c.similarityPct} % podobnost</Badge>
-                  </div>
-                  <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <dt className="text-[var(--text-muted)]">Lokalita</dt>
-                      <dd>{locationLine(c)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text-muted)]">Dispozice</dt>
-                      <dd>{c.layout ?? NEU}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text-muted)]">Plocha</dt>
-                      <dd>
-                        {c.usableArea != null ? `${c.usableArea} m²` : NEU}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text-muted)]">Cena</dt>
-                      <dd>
-                        {c.priceCzk != null ? formatCzk(c.priceCzk) : NEU}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text-muted)]">Kč/m²</dt>
-                      <dd>
-                        {c.pricePerSqm != null
-                          ? formatCzk(Math.round(c.pricePerSqm))
-                          : NEU}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text-muted)]">Pozorováno</dt>
-                      <dd>{formatObserved(c.observedAt, c.anonymized)}</dd>
-                    </div>
-                  </dl>
-                </Card>
+                <PropertyComparableCard
+                  slug={slug}
+                  comparable={c}
+                  weight={
+                    "weight" in c && typeof c.weight === "number"
+                      ? c.weight
+                      : undefined
+                  }
+                />
               </li>
             ))}
           </ul>

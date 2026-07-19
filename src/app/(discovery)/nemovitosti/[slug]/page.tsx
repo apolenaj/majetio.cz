@@ -29,13 +29,13 @@ import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
+import { loadPropertyValuationBySlug } from "@/domains/valuation/service/valuation-loader";
+import { PropertyValuationAnalytics } from "@/components/property/property-valuation-analytics";
 import {
   buildPropertyDetailBreadcrumbs,
   loadPropertyDetailBySlug,
   propertyListingStatusTone,
-  resolvePropertyViewer,
 } from "@/domains/properties/service/detail-loader";
-import { valuationService } from "@/domains/valuation";
 import {
   buildPropertyDetailJsonLd,
   buildPropertyDetailMetadata,
@@ -103,8 +103,8 @@ export default async function PropertyDetailPage({ params }: Props) {
 
   const financial = getPropertyFinancialDemo(property.slug);
   const context = getPropertyContextDemo(property.slug);
-  const viewer = await resolvePropertyViewer();
-  const valuation = valuationService.estimateForProperty(property, viewer);
+  const valuation = await loadPropertyValuationBySlug(property.slug);
+  if (!valuation) notFound();
 
   const daysOnMarket = resolveDaysOnMarket({
     publishedAt: property.publishedAt,
@@ -172,6 +172,13 @@ export default async function PropertyDetailPage({ params }: Props) {
         isDemo={property.isDemo}
         hasAskingPrice={property.askingPrice != null}
         visibility={property.visibility}
+      />
+      <PropertyValuationAnalytics
+        slug={property.slug}
+        status={valuation.status}
+        confidenceLevel={valuation.confidenceLevel}
+        isDemo={valuation.isDemo}
+        hasEstimate={valuation.estimateMidCzk != null}
       />
 
       <Container className="overflow-x-hidden py-10 sm:py-14 pb-28 lg:pb-14">
@@ -241,9 +248,15 @@ export default async function PropertyDetailPage({ params }: Props) {
 
             <section id="ekonomika" className="scroll-mt-28 space-y-10">
               <PropertyValuationCompare valuation={valuation} />
-              <PropertyValuationComparables valuation={valuation} />
+              <PropertyValuationComparables
+                slug={property.slug}
+                valuation={valuation}
+              />
               <PropertyValuationAdjustments valuation={valuation} />
-              <PropertyValuationDisclaimer valuation={valuation} />
+              <PropertyValuationDisclaimer
+                slug={property.slug}
+                valuation={valuation}
+              />
 
               <PropertyInvestmentOverview
                 investment={financial?.investment ?? null}
