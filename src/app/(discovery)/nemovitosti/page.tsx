@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 
 import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
-import { PropertyCard } from "@/components/property/property-card";
 import { PropertySearchFilters } from "@/components/property/search/property-search-filters";
+import { PropertySearchResults } from "@/components/property/search/property-search-results";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
-import { Grid } from "@/components/ui/layout-primitives";
 import { preparePageMeta } from "@/components/content/page-helpers";
 import { listDemoPublicProperties } from "@/content/demo-canonical-properties";
 import { mapPublicDtoToPropertyCard } from "@/domains/properties/service/card-mapper";
@@ -17,9 +16,9 @@ import {
 } from "@/domains/properties/search/apply-filters";
 import {
   parsePropertySearchParams,
+  RAZENI_OPTIONS,
   type SearchParamsLike,
 } from "@/domains/properties/search/url-state";
-import { RAZENI_OPTIONS } from "@/domains/properties/search/url-state";
 
 export const metadata: Metadata = preparePageMeta({
   title: "Nemovitosti",
@@ -38,22 +37,26 @@ function demoListings(): SearchableListing[] {
       extra.condition = "GOOD";
       extra.ownershipType = "PERSONAL";
       extra.strategySlugs = ["dlouhodoby-pronajem"];
+      extra.freshness = "FRESH";
     } else if (dto.slug.includes("rekonstrukce")) {
       extra.energyRating = "G";
       extra.condition = "NEEDS_RENOVATION";
       extra.ownershipType = "PERSONAL";
       extra.strategySlugs = ["rekonstrukce"];
       extra.landArea = 420;
+      extra.freshness = "STALE";
     } else if (dto.slug.includes("brno")) {
       extra.energyRating = "B";
       extra.condition = "EXCELLENT";
       extra.ownershipType = "PERSONAL";
       extra.strategySlugs = ["dlouhodoby-pronajem", "vlastni-bydleni"];
+      extra.freshness = "FRESH";
     } else if (dto.slug.includes("nizka")) {
       extra.energyRating = "E";
       extra.condition = "AVERAGE";
       extra.ownershipType = "COOPERATIVE";
       extra.strategySlugs = ["flip"];
+      extra.freshness = "STALE";
     }
     return extra;
   });
@@ -62,17 +65,26 @@ function demoListings(): SearchableListing[] {
 export default async function NemovitostiPage({ searchParams }: Props) {
   const params = await searchParams;
   const state = parsePropertySearchParams(params);
-  const filtered = applyUrlFiltersToListings(demoListings(), state);
+  const all = demoListings();
+  const filtered = applyUrlFiltersToListings(all, state);
   const cards = filtered.map(mapPublicDtoToPropertyCard);
   const sortLabel =
     RAZENI_OPTIONS.find((o) => o.sort === (state.razeni ?? "newest"))?.label ??
     "Nejnovější";
 
+  let relaxedCount: number | null = null;
+  if (state.cenaDo != null && filtered.length === 0) {
+    relaxedCount = applyUrlFiltersToListings(all, {
+      ...state,
+      cenaDo: Math.round(state.cenaDo * 1.25),
+    }).length;
+  }
+
   return (
-    <Container className="py-10 sm:py-14">
+    <Container className="py-10 sm:py-14 pb-28">
       <PageHeader
         title="Nemovitosti"
-        description="Filtry a řazení zůstávají v adrese — po refreshi se stav neztratí."
+        description="Filtry a řazení zůstávají v adrese — po návratu Zpět se hledání i scroll obnoví."
         breadcrumbs={[{ href: "/", label: "Domů" }, { label: "Nemovitosti" }]}
         badge={<Badge tone="premium">Demo data</Badge>}
         actions={
@@ -83,36 +95,18 @@ export default async function NemovitostiPage({ searchParams }: Props) {
       />
 
       <InlineAlert tone="warning" title="Demonstrační nabídky" className="mb-8">
-        Zobrazené nemovitosti slouží k ověření filtrů a URL stavu. Nejsou aktuální
+        Zobrazené nemovitosti slouží k ověření filtrů, karet a UX stavů. Nejsou aktuální
         inzeráty z trhu.
       </InlineAlert>
 
       <PropertySearchFilters state={state} resultCount={cards.length} />
 
-      <div className="mt-6 mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--text-secondary)]">
-        <p>
-          Nalezeno:{" "}
-          <strong className="font-metric text-[var(--text-primary)]">{cards.length}</strong>{" "}
-          (demo)
-        </p>
-        <p>Řazení: {sortLabel}</p>
-      </div>
-
-      {cards.length === 0 ? (
-        <p className="rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] p-8 text-center text-sm text-[var(--text-secondary)]">
-          Žádné nemovitosti neodpovídají filtrům. Upravte kritéria nebo{" "}
-          <ButtonLink href="/nemovitosti" variant="link" className="inline">
-            vymažte filtry
-          </ButtonLink>
-          .
-        </p>
-      ) : (
-        <Grid cols={3}>
-          {cards.map((property) => (
-            <PropertyCard key={property.href} property={property} />
-          ))}
-        </Grid>
-      )}
+      <PropertySearchResults
+        properties={cards}
+        state={state}
+        sortLabel={sortLabel}
+        relaxedCount={relaxedCount}
+      />
     </Container>
   );
 }

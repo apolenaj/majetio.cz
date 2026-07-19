@@ -1,15 +1,26 @@
 import { Building2, Heart, Columns2 } from "lucide-react";
 import Link from "next/link";
 
-import { DataQualityBadge, type DataQuality, RiskBadge, type RiskLevel, Badge } from "@/components/ui/badge";
+import {
+  DataQualityBadge,
+  type DataQuality,
+  RiskBadge,
+  type RiskLevel,
+  Badge,
+} from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
 import { AspectRatio } from "@/components/ui/layout-primitives";
 import { MetricValue } from "@/components/data-display/metric-card";
 import { formatCzk, formatCzkPerSqm, formatPercentPoints } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { saveSearchScrollPosition } from "@/domains/properties/search/scroll-restore";
+
+export type PropertyListingStatus = "active" | "stale" | "unavailable";
 
 export type PropertyCardData = {
+  id?: string;
+  slug?: string;
   href: string;
   title: string;
   location: string;
@@ -28,34 +39,60 @@ export type PropertyCardData = {
   /** Orientační tagy (strategie, stav, …). */
   tags?: string[];
   isDemo?: boolean;
+  listingStatus?: PropertyListingStatus;
 };
 
 export function PropertyCard({
   property,
   onFavourite,
   onCompare,
+  isFavourite,
+  isCompared,
   className,
 }: {
   property: PropertyCardData;
   onFavourite?: () => void;
   onCompare?: () => void;
+  isFavourite?: boolean;
+  isCompared?: boolean;
   className?: string;
 }) {
+  const status = property.listingStatus ?? "active";
+  const unavailable = status === "unavailable";
+  const stale = status === "stale";
+
   return (
     <Card
       as="article"
       variant="interactive"
       padding="none"
-      className={cn("overflow-hidden", className)}
+      className={cn(
+        "overflow-hidden",
+        unavailable && "opacity-75 grayscale-[0.35]",
+        className,
+      )}
     >
-      <Link href={property.href} className="block focus:outline-none">
-        <AspectRatio ratio="4/3" className="bg-[var(--surface-sunken)]">
+      <Link
+        href={property.href}
+        className="block focus:outline-none"
+        onClick={() => saveSearchScrollPosition()}
+      >
+        <AspectRatio
+          ratio="4/3"
+          className={cn(
+            "bg-[var(--surface-sunken)]",
+            unavailable && "bg-[color-mix(in_srgb,var(--surface-sunken)_70%,var(--text-muted))]",
+          )}
+        >
           {property.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={property.imageUrl}
               alt=""
-              className="property-photo h-full w-full rounded-none"
+              className={cn(
+                "property-photo h-full w-full rounded-none object-cover",
+                unavailable && "opacity-60",
+              )}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
@@ -63,11 +100,23 @@ export function PropertyCard({
               <span className="text-xs">Fotografie není k dispozici</span>
             </div>
           )}
-          {property.isDemo ? (
-            <span className="absolute top-3 left-3 rounded border border-[var(--action-premium)] bg-[color-mix(in_srgb,var(--action-premium)_20%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">
-              Demo
-            </span>
-          ) : null}
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+            {property.isDemo ? (
+              <span className="rounded border border-[var(--action-premium)] bg-[color-mix(in_srgb,var(--action-premium)_20%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">
+                Demo
+              </span>
+            ) : null}
+            {stale ? (
+              <span className="rounded border border-[var(--border-default)] bg-[var(--surface-primary)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                Zastaralé
+              </span>
+            ) : null}
+            {unavailable ? (
+              <span className="rounded border border-[var(--status-error)] bg-[color-mix(in_srgb,var(--status-error)_12%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--status-error)]">
+                Nedostupné
+              </span>
+            ) : null}
+          </div>
         </AspectRatio>
       </Link>
 
@@ -76,7 +125,11 @@ export function PropertyCard({
           <div className="min-w-0">
             <Link
               href={property.href}
-              className="font-display text-lg text-[var(--text-primary)] hover:underline"
+              className={cn(
+                "font-display text-lg hover:underline",
+                unavailable ? "text-[var(--text-muted)]" : "text-[var(--text-primary)]",
+              )}
+              onClick={() => saveSearchScrollPosition()}
             >
               <span className="line-clamp-2">{property.title}</span>
             </Link>
@@ -86,22 +139,42 @@ export function PropertyCard({
           </div>
           <div className="flex shrink-0 gap-1">
             {onFavourite ? (
-              <IconButton label="Přidat do oblíbených" variant="ghost" size="icon-sm" onClick={onFavourite}>
-                <Heart className="size-4" />
+              <IconButton
+                label={isFavourite ? "Odebrat z oblíbených" : "Přidat do oblíbených"}
+                variant={isFavourite ? "secondary" : "ghost"}
+                size="icon-sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onFavourite();
+                }}
+              >
+                <Heart
+                  className={cn("size-4", isFavourite && "fill-current text-[var(--status-error)]")}
+                />
               </IconButton>
             ) : null}
             {onCompare ? (
-              <IconButton label="Přidat do porovnání" variant="ghost" size="icon-sm" onClick={onCompare}>
-                <Columns2 className="size-4" />
+              <IconButton
+                label={isCompared ? "Odebrat z porovnání" : "Přidat do porovnání"}
+                variant={isCompared ? "secondary" : "ghost"}
+                size="icon-sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onCompare();
+                }}
+              >
+                <Columns2 className={cn("size-4", isCompared && "text-[var(--action-primary)]")} />
               </IconButton>
             ) : null}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {property.dataQuality ? <DataQualityBadge quality={property.dataQuality} /> : null}
+          {property.dataQuality ? (
+            <DataQualityBadge quality={property.dataQuality} />
+          ) : null}
           {property.risk ? <RiskBadge level={property.risk} /> : null}
-          {property.tags?.map((tag) => (
+          {property.tags?.slice(0, 2).map((tag) => (
             <Badge key={tag} tone="neutral">
               {tag}
             </Badge>
@@ -114,18 +187,30 @@ export function PropertyCard({
             <dd>
               <MetricValue
                 size="s"
-                value={property.priceCzk != null ? formatCzk(property.priceCzk) : "—"}
+                value={
+                  unavailable
+                    ? "Nedostupné"
+                    : property.priceCzk != null
+                      ? formatCzk(property.priceCzk)
+                      : "—"
+                }
               />
             </dd>
           </div>
           <div>
             <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">Kč/m²</dt>
             <dd className="font-metric font-medium">
-              {property.pricePerSqmCzk != null ? formatCzkPerSqm(property.pricePerSqmCzk) : "—"}
+              {unavailable
+                ? "—"
+                : property.pricePerSqmCzk != null
+                  ? formatCzkPerSqm(property.pricePerSqmCzk)
+                  : "—"}
             </dd>
           </div>
           <div>
-            <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">Dispozice / plocha</dt>
+            <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">
+              Dispozice / plocha
+            </dt>
             <dd>
               {[
                 property.disposition,
@@ -142,23 +227,26 @@ export function PropertyCard({
               <MetricValue
                 size="s"
                 tone={
-                  property.grossYieldPct == null
+                  property.grossYieldPct == null || unavailable
                     ? "neutral"
                     : property.grossYieldPct >= 0
                       ? "positive"
                       : "negative"
                 }
                 value={
-                  property.grossYieldPct != null
-                    ? formatPercentPoints(property.grossYieldPct, { signed: true })
-                    : "—"
+                  unavailable
+                    ? "—"
+                    : property.grossYieldPct != null
+                      ? formatPercentPoints(property.grossYieldPct, { signed: true })
+                      : "—"
                 }
               />
             </dd>
           </div>
         </dl>
 
-        {(property.cashFlowMonthlyCzk != null || property.majetioScore != null) && (
+        {(property.cashFlowMonthlyCzk != null || property.majetioScore != null) &&
+        !unavailable ? (
           <div className="flex items-center justify-between border-t border-[var(--border-default)] pt-3 text-sm">
             <span className="text-[var(--text-muted)]">
               Cash flow:{" "}
@@ -172,7 +260,7 @@ export function PropertyCard({
               {property.majetioScore != null ? `${property.majetioScore}/100` : "—"}
             </span>
           </div>
-        )}
+        ) : null}
       </div>
     </Card>
   );

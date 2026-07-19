@@ -15,7 +15,18 @@ function locationLabel(
 export function mapPublicDtoToPropertyCard(
   dto: PublicPropertyListItemDto | PublicPropertyDto,
 ): PropertyCardData {
+  const freshness = "freshness" in dto ? dto.freshness : null;
+  const status = "status" in dto ? dto.status : null;
+  let listingStatus: PropertyCardData["listingStatus"] = "active";
+  if (freshness === "UNAVAILABLE" || status === "UNAVAILABLE") {
+    listingStatus = "unavailable";
+  } else if (freshness === "STALE") {
+    listingStatus = "stale";
+  }
+
   return {
+    id: dto.id,
+    slug: dto.slug,
     href: `/nemovitosti/${dto.slug}`,
     title: dto.title,
     location: locationLabel(dto),
@@ -32,5 +43,6 @@ export function mapPublicDtoToPropertyCard(
     risk: dto.risk ?? undefined,
     tags: dto.tags,
     isDemo: dto.isDemo,
+    listingStatus,
   };
 }
