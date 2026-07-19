@@ -251,6 +251,34 @@ enum PropertyAlertType {
   SAVED_SEARCH_MATCH
 }
 
+// ─── Valuation engine (Prompt 10) ────────────────────────────────────────────
+
+/** How the valuation was produced. */
+enum ValuationType {
+  AUTOMATED_ESTIMATE
+  ANALYST_ADJUSTED
+  PROFESSIONAL_REVIEW
+  USER_SCENARIO
+}
+
+/** Lifecycle of a persisted valuation result. */
+enum ValuationStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  OUTDATED
+  FAILED
+  SUPERSEDED
+}
+
+/** Qualitative confidence band (engine + UI). */
+enum ValuationConfidenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+  UNKNOWN
+}
+
 // ─── Auth.js / User ──────────────────────────────────────────────────────────
 
 model User {
@@ -287,6 +315,8 @@ model User {
   fieldOverridesCreated   PropertyFieldOverride[]      @relation("FieldOverrideCreator")
   fieldOverridesUpdated   PropertyFieldOverride[]      @relation("FieldOverrideUpdater")
   ownedProperties         Property[]                   @relation("PropertyOwner")
+  valuationsCreated       Valuation[]                  @relation("ValuationCreator")
+  valuationAdjustments    ValuationAdjustmentAudit[]   @relation("ValuationAdjustmentActor")
 }
 
 model Account {
@@ -585,6 +615,7 @@ model Property {
   comparisonItems ComparisonItem[]
   leads           Lead[]
   valuations      Valuation[]
+  valuationComparablesAsComp ValuationComparable[] @relation("ValuationComparableProperty")
 
   @@index([status, visibility])
   @@index([propertyType, transactionType])
@@ -980,32 +1011,118 @@ model AnalysisScenario {
   analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 }
 
+/**
+ * Production valuation result (Prompt 10).
+ * inputSnapshot freezes the inputs used at calculation time so later property
+ * edits cannot rewrite historical estimates.
+ */
 model Valuation {
-  id                String   @id @default(cuid())
-  analysisId        String?
-  propertyId        String?
-  estimatedValueCzk Int
-  method            String
-  confidence        Float?
-  notes             String?  @db.Text
-  createdAt         DateTime @default(now())
+  id                   String                    @id @default(cuid())
+  propertyId           String
+  analysisId           String?
+  modelRegistryId      String?
+  type                 ValuationType
+  /** Denormalized algorithm version string for reproducibility (e.g. residential_apartment_v1.2.0). */
+  modelVersion         String
+  status               ValuationStatus           @default(DRAFT)
+  estimatedValue       Int?
+  lowerBound            Int?
+  upperBound            Int?
+  estimatedPricePerSqm Float?
+  confidenceLevel      ValuationConfidenceLevel  @default(UNKNOWN)
+  /** 0–100 score; null when not yet calculated. */
+  confidenceScore      Float?
+  comparableCount      Int                       @default(0)
+  currency             String                    @default("CZK")
+  /** Frozen inputs (areas, features, filters, model params) — never mutate in place. */
+  inputSnapshot        Json
+  calculatedAt         DateTime?
+  validUntil           DateTime?
+  createdByUserId      String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
 
-  analysis    PropertyAnalysis?     @relation(fields: [analysisId], references: [id], onDelete: SetNull)
-  property    Property?             @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  comparables ValuationComparable[]
+  property         Property                   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  analysis         PropertyAnalysis?          @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  modelRegistry    ValuationModelRegistry?    @relation(fields: [modelRegistryId], references: [id], onDelete: SetNull)
+  createdBy        User?                      @relation("ValuationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  comparables      ValuationComparable[]
+  adjustmentAudits ValuationAdjustmentAudit[]
+
+  @@index([propertyId, status])
+  @@index([propertyId, calculatedAt])
+  @@index([type, status])
+  @@index([modelVersion])
+  @@index([modelRegistryId])
+  @@index([analysisId])
+  @@index([validUntil])
 }
 
+/** Comparable used by a valuation — may link a canonical Property or external ref. */
 model ValuationComparable {
-  id              String  @id @default(cuid())
-  valuationId     String
-  label           String
-  priceCzk        Int?
-  areaSqm         Float?
-  distanceMeters  Int?
-  externalRef     String?
-  propertyId      String?
+  id                       String    @id @default(cuid())
+  valuationId              String
+  comparablePropertyId     String?
+  distanceMeters           Int?
+  pricePerSqm              Float?
+  transactionOrAskingPrice Int?
+  /** Observation / transaction date of the comparable. */
+  observedAt               DateTime?
+  similarityScore          Float?
+  weight                   Float?
+  included                 Boolean   @default(true)
+  exclusionReason          String?
+  label                    String?
+  externalRef              String?
+  createdAt                DateTime  @default(now())
+
+  valuation          Valuation @relation(fields: [valuationId], references: [id], onDelete: Cascade)
+  comparableProperty Property? @relation("ValuationComparableProperty", fields: [comparablePropertyId], references: [id], onDelete: SetNull)
+
+  @@index([valuationId, included])
+  @@index([comparablePropertyId])
+  @@index([valuationId, similarityScore])
+}
+
+/** Append-only history of analyst manual adjustments (never rewrite Valuation silently). */
+model ValuationAdjustmentAudit {
+  id            String   @id @default(cuid())
+  valuationId   String
+  actorUserId   String?
+  fieldKey      String
+  previousValue Json?
+  newValue      Json?
+  reason        String?  @db.Text
+  createdAt     DateTime @default(now())
 
   valuation Valuation @relation(fields: [valuationId], references: [id], onDelete: Cascade)
+  actor     User?     @relation("ValuationAdjustmentActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([valuationId, createdAt])
+  @@index([actorUserId])
+}
+
+/**
+ * Registry of valuation algorithm versions and supported property types.
+ * Example code: residential_apartment_v1
+ */
+model ValuationModelRegistry {
+  id                     String         @id @default(cuid())
+  code                   String         @unique
+  displayName            String
+  description            String?        @db.Text
+  algorithmVersion       String
+  supportedPropertyTypes PropertyType[]
+  isActive               Boolean        @default(true)
+  /** Non-secret config / notes (weights docs refs, changelog). */
+  metadata               Json?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  valuations Valuation[]
+
+  @@index([isActive])
+  @@index([algorithmVersion])
 }
 
 model InvestmentCalculation {

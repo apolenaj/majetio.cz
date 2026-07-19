@@ -123,10 +123,14 @@ Composite indexes for listing discovery (Prompt 7–8): `status+askingPrice`, `s
 **Key fields:** `analysisId`, `name`, `assumptions` (JSON), `results` (JSON).  
 **Sensitivity:** Derived; still user-linked.
 
-### Valuation / ValuationComparable
-**Purpose:** Estimated value + comps.  
-**Key fields:** `estimatedValueCzk`, `method`, `confidence`, comps linking other properties or external refs.  
-**Sensitivity:** Medium — commercial IP of methodology outputs.
+### Valuation / ValuationComparable / ValuationAdjustmentAudit / ValuationModelRegistry
+**Purpose:** Production valuation engine persistence (Prompt 10).  
+**Valuation:** `type`, `modelVersion`, `status`, value bounds, confidence, `comparableCount`, **`inputSnapshot` (frozen inputs)**, `calculatedAt` / `validUntil`.  
+**ValuationComparable:** linked `comparablePropertyId`, distance, ppsqm, price, similarity, weight, included/exclusionReason.  
+**ValuationAdjustmentAudit:** append-only analyst field changes (`fieldKey`, previous/new JSON, reason).  
+**ValuationModelRegistry:** algorithm versions (e.g. `residential_apartment_v1`) + supported `PropertyType[]`.  
+**Sensitivity:** Medium — methodology IP; snapshots must not include unnecessary PII.  
+**Retention:** Prefer supersede/outdate over hard delete when referenced by analyses/orders.
 
 ### InvestmentCalculation
 **Purpose:** Persisted calculation snapshot.  
