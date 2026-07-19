@@ -1,4 +1,4 @@
-import { ConsentType } from "@prisma/client";
+import type { ConsentType } from "@prisma/client";
 
 import { CURRENT_CONSENT_VERSIONS } from "@/lib/auth/constants";
 

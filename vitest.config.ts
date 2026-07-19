@@ -12,6 +12,16 @@ export default defineConfig({
     pool: "threads",
     maxWorkers: 2,
     fileParallelism: false,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary"],
+      include: [
+        "src/domains/properties/service/**/*.ts",
+        "src/domains/property-sources/service/**/*.ts",
+        "src/lib/properties/**/*.ts",
+      ],
+      exclude: ["**/*.test.ts", "**/*.test.tsx"],
+    },
   },
   resolve: {
     alias: {

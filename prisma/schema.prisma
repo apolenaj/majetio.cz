@@ -273,6 +273,7 @@ model User {
   reviewedDuplicates      PropertyDuplicateCandidate[] @relation("DuplicateReviewer")
   fieldOverridesCreated   PropertyFieldOverride[]      @relation("FieldOverrideCreator")
   fieldOverridesUpdated   PropertyFieldOverride[]      @relation("FieldOverrideUpdater")
+  ownedProperties         Property[]                   @relation("PropertyOwner")
 }
 
 model Account {
@@ -484,6 +485,10 @@ model Property {
   lastFetchedAt DateTime?
   freshness     PropertyFreshness  @default(FRESH)
   staleMarkedAt DateTime?
+  /** Demo / seed listings — never treated as live market offers. */
+  isDemo        Boolean            @default(false)
+  /** Owner for PRIVATE / ACCOUNT_ONLY access checks (IDOR guard). */
+  ownerUserId   String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -546,6 +551,7 @@ model Property {
   locationId         String?
 
   location        Location?               @relation(fields: [locationId], references: [id])
+  owner           User?                   @relation("PropertyOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   features        PropertyFeatures?
   attributes      PropertyAttribute[]
   fieldProvenance PropertyFieldProvenance[]
@@ -580,6 +586,8 @@ model Property {
   @@index([status, publicCity, askingPrice])
   @@index([freshness, lastSeenAt])
   @@index([transactionType, status, askingPrice])
+  @@index([isDemo])
+  @@index([ownerUserId])
 }
 
 /** Fixed boolean / count feature flags (1:1). */

@@ -1,0 +1,36 @@
+import type { PropertyCardData } from "@/components/property/property-card";
+import type { DataQuality } from "@/components/ui/badge";
+import type { PublicPropertyDto, PublicPropertyListItemDto } from "./dto";
+
+function locationLabel(
+  dto: Pick<PublicPropertyListItemDto, "location">,
+): string {
+  return (
+    dto.location.label ||
+    [dto.location.district, dto.location.city].filter(Boolean).join(", ") ||
+    "Lokalita neuvedena"
+  );
+}
+
+export function mapPublicDtoToPropertyCard(
+  dto: PublicPropertyListItemDto | PublicPropertyDto,
+): PropertyCardData {
+  return {
+    href: `/nemovitosti/${dto.slug}`,
+    title: dto.title,
+    location: locationLabel(dto),
+    disposition: dto.layout ?? undefined,
+    areaSqm: dto.usableArea ?? undefined,
+    areaDisplay: dto.usableAreaDisplay ?? undefined,
+    priceCzk: dto.askingPrice ?? undefined,
+    pricePerSqmCzk: dto.pricePerSqm ?? undefined,
+    grossYieldPct: dto.grossYieldPct ?? undefined,
+    cashFlowMonthlyCzk: dto.cashFlowMonthlyCzk ?? undefined,
+    majetioScore: dto.majetioScore,
+    imageUrl: dto.media.find((m) => m.isPrimary)?.url ?? dto.media[0]?.url,
+    dataQuality: (dto.dataQuality as DataQuality | null) ?? undefined,
+    risk: dto.risk ?? undefined,
+    tags: dto.tags,
+    isDemo: dto.isDemo,
+  };
+}

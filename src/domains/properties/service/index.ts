@@ -26,6 +26,8 @@ export type {
   PublicPropertyDto,
   PublicPropertyListItemDto,
   ToPublicDtoOptions,
+  PublicPriceHistoryPoint,
+  PublicFieldConflict,
 } from "./dto";
 
 export {
@@ -48,3 +50,9 @@ export type {
 
 export { createPropertyService } from "./property-service";
 export type { PropertyService, PropertyRepository } from "./property-service";
+
+export { canViewProperty, resolveViewerRole } from "./authorization";
+export type { PropertyViewer } from "./authorization";
+
+export { formatAreaConflict, formatNumericRangeConflict } from "./field-conflicts";
+export { mapPublicDtoToPropertyCard } from "./card-mapper";

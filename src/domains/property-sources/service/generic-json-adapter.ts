@@ -110,7 +110,7 @@ export class GenericJsonPropertySourceAdapter implements PropertySourceAdapter {
     parsed: AdapterParseResult,
     ctx?: PropertySourceAdapterContext,
   ): NormalizedListing {
-    const media = normalized.media ?? this.extractMedia(parsed, normalized);
+    const media = normalized.media ?? this.extractMedia(parsed);
     return {
       provider: normalized.provider ?? ctx?.provider ?? this.provider,
       sourceType: normalized.sourceType ?? ctx?.sourceType ?? "PARTNER_FEED",

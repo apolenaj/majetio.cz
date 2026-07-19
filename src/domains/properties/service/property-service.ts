@@ -1,7 +1,5 @@
 /**
- * PropertyService — public read API foundation (Prompt 7 Part 4).
- * Maps records → DTOs; search via PropertySearchProvider.
- * Persistence adapters are injectable for tests / future Prisma wiring.
+ * PropertyService — public read API (Prompt 7 Parts 4–5).
  */
 
 import {
@@ -12,6 +10,7 @@ import {
   type PublicPropertyListItemDto,
   type ToPublicDtoOptions,
 } from "./dto";
+import { canViewProperty, resolveViewerRole, type PropertyViewer } from "./authorization";
 import {
   createPropertySearchProvider,
   type PropertySearchFilters,
@@ -33,18 +32,18 @@ export type PropertyRepository = {
 export type PropertyService = {
   getPublicBySlug(
     slug: string,
-    opts?: ToPublicDtoOptions,
+    opts?: ToPublicDtoOptions & { viewer?: PropertyViewer },
   ): Promise<PublicPropertyDto | null>;
   getPublicById(
     id: string,
-    opts?: ToPublicDtoOptions,
+    opts?: ToPublicDtoOptions & { viewer?: PropertyViewer },
   ): Promise<PublicPropertyDto | null>;
   searchPublic(input: {
     filters?: PropertySearchFilters;
     sortField?: string | null;
     sortDirection?: string | null;
     pagination?: PaginationInput;
-    viewerRole?: ToPublicDtoOptions["viewerRole"];
+    viewer?: PropertyViewer;
   }): Promise<{
     items: PublicPropertyListItemDto[];
     page?: number;
@@ -54,6 +53,20 @@ export type PropertyService = {
     query: PropertySearchQuery;
   }>;
 };
+
+function viewerOpts(
+  record: PropertyRecord,
+  opts?: ToPublicDtoOptions & { viewer?: PropertyViewer },
+): ToPublicDtoOptions {
+  const viewer = opts?.viewer ?? {
+    userId: opts?.viewerUserId,
+    role: opts?.viewerRole,
+  };
+  return {
+    viewerRole: opts?.viewerRole ?? resolveViewerRole(record, viewer),
+    viewerUserId: viewer.userId,
+  };
+}
 
 export function createPropertyService(deps: {
   repository: PropertyRepository;
@@ -65,19 +78,23 @@ export function createPropertyService(deps: {
     async getPublicBySlug(slug, opts) {
       const record = await deps.repository.findBySlug(slug);
       if (!record) return null;
-      if (record.visibility === "PRIVATE" && (opts?.viewerRole ?? "PUBLIC") === "PUBLIC") {
-        return null;
-      }
-      return toPublicPropertyDto(record, opts);
+      const viewer = opts?.viewer ?? {
+        userId: opts?.viewerUserId,
+        role: opts?.viewerRole,
+      };
+      if (!canViewProperty(record, viewer)) return null;
+      return toPublicPropertyDto(record, viewerOpts(record, opts));
     },
 
     async getPublicById(id, opts) {
       const record = await deps.repository.findById(id);
       if (!record) return null;
-      if (record.visibility === "PRIVATE" && (opts?.viewerRole ?? "PUBLIC") === "PUBLIC") {
-        return null;
-      }
-      return toPublicPropertyDto(record, opts);
+      const viewer = opts?.viewer ?? {
+        userId: opts?.viewerUserId,
+        role: opts?.viewerRole,
+      };
+      if (!canViewProperty(record, viewer)) return null;
+      return toPublicPropertyDto(record, viewerOpts(record, opts));
     },
 
     async searchPublic(input) {
@@ -93,9 +110,14 @@ export function createPropertyService(deps: {
       });
 
       const result = await deps.repository.search(query);
-      const items = result.items.map((r) =>
-        toPublicPropertyListItemDto(r, { viewerRole: input.viewerRole ?? "PUBLIC" }),
-      );
+      const viewer = input.viewer ?? {};
+      const items = result.items
+        .filter((r) => canViewProperty(r, viewer))
+        .map((r) =>
+          toPublicPropertyListItemDto(r, {
+            viewerRole: resolveViewerRole(r, viewer),
+          }),
+        );
 
       const last = result.items[result.items.length - 1];
       const sortField = query.sort.field;

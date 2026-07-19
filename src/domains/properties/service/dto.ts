@@ -1,10 +1,43 @@
 /**
- * Public property DTOs (Prompt 7 Part 4).
+ * Public property DTOs (Prompt 7 Parts 4–5).
  * Strip internal notes, audit, and precise address for private / restricted listings.
  */
 
+export type DataQualityLevel =
+  | "verified"
+  | "estimated"
+  | "pending"
+  | "stale"
+  | "incomplete"
+  | "unavailable";
+
 export type AddressPrecision = "EXACT" | "APPROXIMATE" | "CITY" | "HIDDEN" | string;
 export type PropertyVisibility = "PUBLIC" | "PRIVATE" | "ACCOUNT_ONLY" | string;
+
+export type PublicPriceHistoryPoint = {
+  amount: number;
+  currency: string;
+  changeType: string;
+  observedAt: string;
+  sourceLabel?: string | null;
+};
+
+export type PublicSourceFreshness = {
+  provider: string;
+  sourceType?: string | null;
+  lastSeenAt: string | null;
+  lastFetchedAt: string | null;
+  freshness: "FRESH" | "STALE" | "UNAVAILABLE" | string;
+  isPrimary?: boolean;
+};
+
+export type PublicFieldConflict = {
+  fieldKey: string;
+  label: string;
+  /** Human-readable range, e.g. "72–74 m² podle zdrojů". */
+  display: string;
+  values: Array<{ value: string; sourceLabel?: string }>;
+};
 
 /** Internal row shape — may include precise address & admin fields. */
 export type PropertyRecord = {
@@ -39,6 +72,20 @@ export type PropertyRecord = {
   longitude?: number | null;
   publishedAt?: Date | string | null;
   updatedAt?: Date | string | null;
+  lastSeenAt?: Date | string | null;
+  freshness?: string | null;
+  isDemo?: boolean;
+  ownerUserId?: string | null;
+  dataQuality?: DataQualityLevel | null;
+  tags?: string[];
+  completenessScore?: number | null;
+  grossYieldPct?: number | null;
+  cashFlowMonthlyCzk?: number | null;
+  majetioScore?: number | null;
+  risk?: "low" | "medium" | "high" | "critical" | "unknown" | null;
+  priceHistory?: PublicPriceHistoryPoint[];
+  sources?: PublicSourceFreshness[];
+  fieldConflicts?: PublicFieldConflict[];
   /** Internal — never expose publicly. */
   internalNotes?: string | null;
   auditMeta?: unknown;
@@ -58,7 +105,6 @@ export type PublicPropertyLocation = {
   city: string | null;
   district: string | null;
   region: string | null;
-  /** Only when precision allows and visibility is public. */
   latitude: number | null;
   longitude: number | null;
 };
@@ -76,6 +122,8 @@ export type PublicPropertyDto = {
   currency: string;
   pricePerSqm: number | null;
   usableArea: number | null;
+  /** Prefer conflict display when sources disagree. */
+  usableAreaDisplay: string | null;
   layout: string | null;
   location: PublicPropertyLocation;
   media: Array<{
@@ -87,6 +135,19 @@ export type PublicPropertyDto = {
   }>;
   publishedAt: string | null;
   updatedAt: string | null;
+  isDemo: boolean;
+  dataQuality: DataQualityLevel | null;
+  tags: string[];
+  completenessScore: number | null;
+  grossYieldPct: number | null;
+  cashFlowMonthlyCzk: number | null;
+  majetioScore: number | null;
+  risk: PropertyRecord["risk"];
+  priceHistory: PublicPriceHistoryPoint[];
+  sources: PublicSourceFreshness[];
+  fieldConflicts: PublicFieldConflict[];
+  freshness: string | null;
+  lastSeenAt: string | null;
 };
 
 export type PublicPropertyListItemDto = Pick<
@@ -98,17 +159,25 @@ export type PublicPropertyListItemDto = Pick<
   | "currency"
   | "pricePerSqm"
   | "usableArea"
+  | "usableAreaDisplay"
   | "layout"
   | "propertyType"
   | "transactionType"
   | "location"
   | "media"
   | "publishedAt"
+  | "isDemo"
+  | "dataQuality"
+  | "tags"
+  | "grossYieldPct"
+  | "cashFlowMonthlyCzk"
+  | "majetioScore"
+  | "risk"
 >;
 
 export type ToPublicDtoOptions = {
-  /** Staff / owner may see more location detail. */
   viewerRole?: "PUBLIC" | "OWNER" | "STAFF";
+  viewerUserId?: string | null;
 };
 
 function iso(value: Date | string | null | undefined): string | null {
@@ -159,13 +228,24 @@ function publicLocation(
 
   return {
     label: record.publicLabel ?? null,
-    precision: exact ? record.addressPrecision : record.addressPrecision === "EXACT" ? "APPROXIMATE" : record.addressPrecision,
+    precision: exact
+      ? record.addressPrecision
+      : record.addressPrecision === "EXACT"
+        ? "APPROXIMATE"
+        : record.addressPrecision,
     city: record.publicCity ?? null,
     district: record.publicDistrict ?? null,
     region: record.publicRegion ?? null,
     latitude: coords ? (record.latitude ?? null) : null,
     longitude: coords ? (record.longitude ?? null) : null,
   };
+}
+
+function areaDisplay(record: PropertyRecord): string | null {
+  const conflict = record.fieldConflicts?.find((c) => c.fieldKey === "usableArea");
+  if (conflict) return conflict.display;
+  const area = record.usableArea ?? record.areaSqm;
+  return area != null ? `${area} m²` : null;
 }
 
 /**
@@ -197,11 +277,25 @@ export function toPublicPropertyDto(
     currency: record.currency,
     pricePerSqm: record.pricePerSqm ?? null,
     usableArea: record.usableArea ?? record.areaSqm ?? null,
+    usableAreaDisplay: areaDisplay(record),
     layout: record.layout ?? record.disposition ?? null,
     location: publicLocation(record, { viewerRole: role }),
     media,
     publishedAt: iso(record.publishedAt),
     updatedAt: iso(record.updatedAt),
+    isDemo: record.isDemo === true,
+    dataQuality: record.dataQuality ?? null,
+    tags: record.tags ?? [],
+    completenessScore: record.completenessScore ?? null,
+    grossYieldPct: record.grossYieldPct ?? null,
+    cashFlowMonthlyCzk: record.cashFlowMonthlyCzk ?? null,
+    majetioScore: record.majetioScore ?? null,
+    risk: record.risk ?? null,
+    priceHistory: record.priceHistory ?? [],
+    sources: record.sources ?? [],
+    fieldConflicts: record.fieldConflicts ?? [],
+    freshness: record.freshness ?? null,
+    lastSeenAt: iso(record.lastSeenAt),
   };
 }
 
@@ -218,11 +312,19 @@ export function toPublicPropertyListItemDto(
     currency: full.currency,
     pricePerSqm: full.pricePerSqm,
     usableArea: full.usableArea,
+    usableAreaDisplay: full.usableAreaDisplay,
     layout: full.layout,
     propertyType: full.propertyType,
     transactionType: full.transactionType,
     location: full.location,
     media: full.media.slice(0, 1),
     publishedAt: full.publishedAt,
+    isDemo: full.isDemo,
+    dataQuality: full.dataQuality,
+    tags: full.tags,
+    grossYieldPct: full.grossYieldPct,
+    cashFlowMonthlyCzk: full.cashFlowMonthlyCzk,
+    majetioScore: full.majetioScore,
+    risk: full.risk,
   };
 }

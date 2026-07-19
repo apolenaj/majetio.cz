@@ -1,4 +1,4 @@
-import { PropertyType } from "@prisma/client";
+import type { PropertyType } from "@prisma/client";
 
 import {
   CZECH_REGIONS,

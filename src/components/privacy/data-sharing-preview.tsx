@@ -33,24 +33,31 @@ export function DataSharingPreview({
   onSuccess,
 }: Props) {
   const selectable = preview.fields.filter((f) => f.value || f.always);
-  const [selected, setSelected] = React.useState<string[]>(() =>
-    selectable.filter((f) => f.included || f.always).map((f) => f.key),
-  );
+  const defaultSelected = selectable
+    .filter((f) => f.included || f.always)
+    .map((f) => f.key);
+  const [selected, setSelected] = React.useState<string[]>(defaultSelected);
   const [explicit, setExplicit] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [wasOpen, setWasOpen] = React.useState(open);
+
+  if (open && !wasOpen) {
+    setWasOpen(true);
+    setSelected(defaultSelected);
+    setExplicit(false);
+    setError(null);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   React.useEffect(() => {
     if (open) {
-      setSelected(selectable.filter((f) => f.included || f.always).map((f) => f.key));
-      setExplicit(false);
-      setError(null);
       track({
         name: "partner_handoff_preview_opened",
         props: { partner: "hypotekajasne" },
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when dialog opens
   }, [open]);
 
   function toggleField(key: string, always: boolean) {

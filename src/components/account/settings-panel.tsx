@@ -7,7 +7,8 @@ import { Field, TextInput } from "@/components/forms/field";
 import { PasswordInput } from "@/components/forms/inputs";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildAccountExport, exportToCsv } from "@/lib/account/export";
+import { buildAccountExport } from "@/lib/account/export";
+import { exportToCsv } from "@/lib/account/export-csv";
 import {
   changePassword,
   deleteAccount,

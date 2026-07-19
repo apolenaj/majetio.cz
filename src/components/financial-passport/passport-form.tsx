@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PropertyType } from "@prisma/client";
+import type { PropertyType } from "@prisma/client";
 
 import { PassportSummaryCard } from "@/components/financial-passport/passport-summary";
 import { InlineAlert } from "@/components/feedback/states";

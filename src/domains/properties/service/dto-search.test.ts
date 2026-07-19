@@ -122,7 +122,11 @@ describe("PropertySearchProvider + PropertyService", () => {
 
   it("hides private listings from public getBySlug", async () => {
     const repository: PropertyRepository = {
-      findBySlug: async () => ({ ...baseRecord, visibility: "PRIVATE" }),
+      findBySlug: async () => ({
+        ...baseRecord,
+        visibility: "PRIVATE",
+        ownerUserId: "owner-x",
+      }),
       findById: async () => null,
       search: async () => ({ items: [], hasMore: false }),
     };

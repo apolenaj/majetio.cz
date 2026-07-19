@@ -108,6 +108,10 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 Composite indexes for listing discovery: `status+askingPrice`, `status+publicCity+askingPrice`, `latitude+longitude`, `publicCity+publicDistrict`, `transactionType+status+askingPrice`.  
 Service layer: `PropertyService` + `PropertySearchProvider` with public DTOs (no precise address / notes / audit for anonymous viewers).
 
+### Demo + ownership (Part 5)
+**Fields:** `isDemo` (seed/UI demos), `ownerUserId` (PRIVATE / ACCOUNT_ONLY IDOR guard).  
+**Seed:** `npm run db:seed:demo-properties` · in-memory catalog `src/content/demo-canonical-properties.ts`.
+
 ### PropertyAnalysis
 **Purpose:** Container for analysis run (free or paid).  
 **Key fields:** `userId`, `propertyId`, `status`, `tier` (BASIC/FULL), `majetioScore`, `summary`, `createdAt`.  
