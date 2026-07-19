@@ -22,6 +22,8 @@ import {
   countActiveFilters,
   type PropertyUrlFilterState,
 } from "@/domains/properties/search/url-state";
+import { aggregateSearchFilters } from "@/domains/properties/search/analytics-aggregates";
+import { track } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
 function readStateFromRoot(root: ParentNode): PropertyUrlFilterState {
@@ -279,6 +281,21 @@ export function PropertySearchFilters({
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const activeCount = countActiveFilters(state);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const sheetRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSheetOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    // Move focus into dialog for keyboard users
+    const closeBtn = sheetRef.current?.querySelector<HTMLElement>(
+      "[data-sheet-close]",
+    );
+    closeBtn?.focus();
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheetOpen]);
 
   function commitFromVisibleRoot() {
     const form = formRef.current;
@@ -289,7 +306,33 @@ export function PropertySearchFilters({
         desktop ? "[data-filters-root='desktop']" : "[data-filters-root='mobile']",
       ) ?? form;
     const next = readStateFromRoot(root);
-    // Search input lives in both; prefer mobile sticky q when on mobile sheet closed
+    const agg = aggregateSearchFilters(next);
+    track({
+      name: "filter_applied",
+      props: {
+        filter_count: agg.filter_count,
+        price_max_bucket: agg.price_max_bucket,
+        price_min_bucket: agg.price_min_bucket,
+        property_types: agg.property_types,
+        layout_count: agg.layout_count,
+        sort: agg.sort,
+        location_token: agg.location_token,
+      },
+    });
+    if (agg.has_query || agg.location_token) {
+      track({
+        name: "search_query_submitted",
+        props: {
+          has_query: agg.has_query,
+          location_token: agg.location_token,
+          filter_count: agg.filter_count,
+          sort: agg.sort,
+        },
+      });
+    }
+    if (next.razeni && next.razeni !== state.razeni) {
+      track({ name: "sort_changed", props: { sort: next.razeni } });
+    }
     router.push(buildPropertySearchHref(next));
     setSheetOpen(false);
   }
@@ -390,6 +433,7 @@ export function PropertySearchFilters({
               onClick={() => setSheetOpen(false)}
             />
             <div
+              ref={sheetRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby="mobile-filters-title"
@@ -411,7 +455,8 @@ export function PropertySearchFilters({
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Zavřít"
+                  data-sheet-close
+                  aria-label="Zavřít filtry"
                   onClick={() => setSheetOpen(false)}
                 >
                   <X className="size-4" />

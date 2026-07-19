@@ -34,10 +34,9 @@ export function SaveSearchButton({
   const [pending, setPending] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [nameEdited, setNameEdited] = React.useState(false);
 
-  React.useEffect(() => {
-    setName(defaultName(state));
-  }, [state]);
+  const displayName = nameEdited ? name : defaultName(state);
 
   async function onSave() {
     setError(null);
@@ -49,7 +48,7 @@ export function SaveSearchButton({
     }
     setPending(true);
     const result = await createSavedSearch({
-      name: name.trim() || defaultName(state),
+      name: displayName.trim() || defaultName(state),
       state,
       sort: state.razeni ?? "newest",
     });
@@ -60,6 +59,7 @@ export function SaveSearchButton({
     }
     setMessage("Hledání uloženo.");
     setOpen(false);
+    setNameEdited(false);
   }
 
   return (
@@ -73,7 +73,13 @@ export function SaveSearchButton({
             router.push(buildLoginUrl(buildPropertySearchHref(state)));
             return;
           }
-          setOpen((v) => !v);
+          setOpen((v) => {
+            if (!v) {
+              setName(defaultName(state));
+              setNameEdited(false);
+            }
+            return !v;
+          });
         }}
       >
         <BookmarkPlus className="size-4" aria-hidden />
@@ -102,8 +108,11 @@ export function SaveSearchButton({
           <label className="block text-xs font-medium text-[var(--text-secondary)]">
             Název
             <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={displayName}
+              onChange={(e) => {
+                setNameEdited(true);
+                setName(e.target.value);
+              }}
               className="mt-1 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--background-primary)] px-3 py-2 text-sm text-[var(--text-primary)]"
               maxLength={80}
             />

@@ -15,9 +15,11 @@ import {
 import { syncAlertSubscriptionsForSavedSearch } from "@/domains/notifications/service/property-alerts";
 import {
   buildPropertySearchHref,
+  countActiveFilters,
   EMPTY_PROPERTY_URL_STATE,
   type PropertyUrlFilterState,
 } from "@/domains/properties/search/url-state";
+import { track } from "@/lib/analytics/events";
 
 export type SavedSearchDto = {
   id: string;
@@ -119,6 +121,15 @@ export async function createSavedSearch(input: {
     entityId: row.id,
   });
 
+  track({
+    name: "saved_search_created",
+    props: {
+      filter_count: countActiveFilters(input.state),
+      sort: parsed.data.sort ?? input.state.razeni ?? "newest",
+      alert_frequency: frequency,
+    },
+  });
+
   revalidatePath("/ucet/ulozena-hledani");
   return { ok: true, item: toDto(row) };
 }
@@ -201,6 +212,11 @@ export async function setSavedSearchAlertFrequency(input: {
     userId: session.user.id,
     savedSearchId: row.id,
     alertFrequency: parsed.data.alertFrequency,
+  });
+
+  track({
+    name: "saved_search_alert_updated",
+    props: { alert_frequency: parsed.data.alertFrequency },
   });
 
   revalidatePath("/ucet/ulozena-hledani");

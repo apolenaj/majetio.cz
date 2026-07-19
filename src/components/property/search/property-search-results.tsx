@@ -31,6 +31,7 @@ import {
 } from "@/domains/properties/search/url-state";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics/events";
 
 function slugFromHref(href: string): string {
   const parts = href.split("/").filter(Boolean);
@@ -143,6 +144,13 @@ export function PropertySearchResults({
       if (result.added) return [...new Set([...prev, item.id])];
       return prev.filter((id) => id !== item.id);
     });
+    track({
+      name: "property_saved",
+      props: {
+        action: result.added ? "add" : "remove",
+        is_demo: Boolean(property.isDemo),
+      },
+    });
     setToast(result.added ? "Přidáno do oblíbených" : "Odebráno z oblíbených");
   }
 
@@ -153,6 +161,13 @@ export function PropertySearchResults({
       setToast(`Porovnání je plné (max ${COMPARE_MAX}). Odeberte položku.`);
       return;
     }
+    track({
+      name: "property_compared",
+      props: {
+        action: result.added ? "add" : "remove",
+        tray_count: result.items.length,
+      },
+    });
     setToast(result.added ? "Přidáno do porovnání" : "Odebráno z porovnání");
   }
 

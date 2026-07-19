@@ -47,9 +47,13 @@ Sitemap: `/sitemap.xml`.
 
 ## Canonical a duplicity
 
-- Filtry zůstávají na `/nemovitosti?…` bez samostatných kanonických variant
-- Demo detail má canonical na slug, ale označení demo v obsahu
+- **Indexovatelné SEO landings:** jen top kategorie `/nemovitosti/praha`, `/nemovitosti/brno`, `/nemovitosti/ostrava` (+ čistý `/nemovitosti`)
+- **Filtrované URL** `/nemovitosti?lokalita=…&cena-do=…` → `noindex, follow` + canonical na `/nemovitosti`
+- Stránkování `?stranka>1` → noindex
+- Demo detail má canonical na slug, ale `noindex` (demo data)
 - Slug změny → budoucí 301 (zatím stabilní slugy)
+
+Viz také `docs/PROPERTY_SEARCH.md` a `docs/SEARCH_FILTERS.md`.
 
 ## Interní linking
 

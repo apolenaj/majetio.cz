@@ -73,4 +73,46 @@ describe("analytics track", () => {
     expect(percentBucket(85)).toBe("70-99");
     expect(percentBucket(100)).toBe("100");
   });
+
+  it("allows discovery events with aggregate buckets only", () => {
+    const events: AnalyticsEvent[] = [
+      {
+        name: "search_query_submitted",
+        props: {
+          has_query: true,
+          location_token: "praha",
+          filter_count: 3,
+          sort: "newest",
+        },
+      },
+      {
+        name: "filter_applied",
+        props: {
+          filter_count: 2,
+          price_max_bucket: "5_8m",
+          price_min_bucket: "none",
+          property_types: ["byt"],
+          layout_count: 1,
+          sort: "recommended",
+          location_token: "brno",
+        },
+      },
+      {
+        name: "property_saved",
+        props: { action: "add", is_demo: true },
+      },
+      {
+        name: "saved_search_created",
+        props: {
+          filter_count: 4,
+          sort: "newest",
+          alert_frequency: "WEEKLY",
+        },
+      },
+    ];
+    for (const event of events) {
+      expect(() => assertAnalyticsSafe(event)).not.toThrow();
+      expect(JSON.stringify(event)).not.toMatch(/8000000|Kč|@|Vinohradská/i);
+    }
+  });
 });

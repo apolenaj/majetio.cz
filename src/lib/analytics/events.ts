@@ -87,10 +87,73 @@ export type AnalyticsEvent =
       name: "notification_prefs_updated";
       props: { marketing_enabled: boolean; transactional_email: boolean };
     }
-  | { name: "email_change_requested"; props: Record<string, never> };
+  | { name: "email_change_requested"; props: Record<string, never> }
+  /** Discovery / search — aggregates only (no exact CZK, no street addresses) */
+  | {
+      name: "search_query_submitted";
+      props: {
+        has_query: boolean;
+        location_token: string | null;
+        filter_count: number;
+        sort: string;
+      };
+    }
+  | {
+      name: "filter_applied";
+      props: {
+        filter_count: number;
+        price_max_bucket: string;
+        price_min_bucket: string;
+        property_types: string[];
+        layout_count: number;
+        sort: string;
+        location_token: string | null;
+      };
+    }
+  | {
+      name: "sort_changed";
+      props: { sort: string };
+    }
+  | {
+      name: "property_saved";
+      props: { action: "add" | "remove"; is_demo: boolean };
+    }
+  | {
+      name: "property_compared";
+      props: { action: "add" | "remove"; tray_count: number };
+    }
+  | {
+      name: "saved_search_created";
+      props: {
+        filter_count: number;
+        sort: string;
+        alert_frequency: "OFF" | "INSTANT" | "WEEKLY";
+      };
+    }
+  | {
+      name: "saved_search_alert_updated";
+      props: { alert_frequency: "OFF" | "INSTANT" | "WEEKLY" };
+    }
+  | {
+      name: "recommendation_sort_viewed";
+      props: { profile_complete: boolean; result_count_bucket: string };
+    };
 
-const FORBIDDEN_PROP_KEYS =
-  /^(email|password|phone|token|amount|price|equity|income|liabilit|czk|rodne|birth)/i;
+const FORBIDDEN_PROP_KEYS = new Set([
+  "email",
+  "password",
+  "phone",
+  "token",
+  "amount",
+  "price",
+  "equity",
+  "income",
+  "liabilities",
+  "liability",
+  "czk",
+  "rodne",
+  "birth",
+]);
 
 /** Runtime guard — analytics must never carry PII or raw finance amounts. */
 export function assertAnalyticsSafe(event: AnalyticsEvent): void {
@@ -99,7 +162,7 @@ export function assertAnalyticsSafe(event: AnalyticsEvent): void {
     throw new Error(`Analytics event ${event.name} contains an e-mail-like value.`);
   }
   for (const key of Object.keys(event.props)) {
-    if (FORBIDDEN_PROP_KEYS.test(key)) {
+    if (FORBIDDEN_PROP_KEYS.has(key.toLowerCase())) {
       throw new Error(`Analytics event ${event.name} uses forbidden prop key: ${key}`);
     }
   }

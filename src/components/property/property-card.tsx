@@ -1,3 +1,5 @@
+"use client";
+
 import { Building2, Heart, Columns2 } from "lucide-react";
 import Link from "next/link";
 

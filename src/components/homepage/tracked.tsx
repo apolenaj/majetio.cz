@@ -1,20 +1,32 @@
 "use client";
 
+import Link from "next/link";
 import * as React from "react";
 
-import { ButtonLink } from "@/components/ui/button-link";
+import { buttonVariants } from "@/components/ui/button";
 import { track, type AnalyticsEvent } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
+import type { VariantProps } from "class-variance-authority";
 
-type TrackedButtonLinkProps = React.ComponentProps<typeof ButtonLink> & {
-  event: AnalyticsEvent;
-};
+type TrackedButtonLinkProps = React.ComponentProps<typeof Link> &
+  VariantProps<typeof buttonVariants> & {
+    event: AnalyticsEvent;
+  };
 
 /** Button-styled link that fires a typed analytics event on click (no PII). */
-export function TrackedButtonLink({ event, onClick, ...props }: TrackedButtonLinkProps) {
+export function TrackedButtonLink({
+  event,
+  onClick,
+  className,
+  variant,
+  size,
+  fullWidth,
+  ...props
+}: TrackedButtonLinkProps) {
   return (
-    <ButtonLink
+    <Link
       {...props}
+      className={cn(buttonVariants({ variant, size, fullWidth }), className)}
       onClick={(e) => {
         track(event);
         onClick?.(e);

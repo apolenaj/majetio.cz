@@ -73,6 +73,10 @@ describe("search sorts", () => {
       direction: "desc",
     });
     expect(resolveSearchSort({ sort: "price_per_sqm" }).field).toBe("pricePerSqm");
+    expect(resolveSearchSort({ sort: "recommended" })).toEqual({
+      field: "publishedAt",
+      direction: "desc",
+    });
     expect(
       resolveSearchSort({ sortField: "askingPrice; DROP TABLE Property" }),
     ).toEqual({ field: "publishedAt", direction: "desc" });
