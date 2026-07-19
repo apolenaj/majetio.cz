@@ -18,7 +18,10 @@ type SummaryItem = {
   tone?: "neutral" | "positive" | "negative" | "muted";
 };
 
-function buildItems(property: PublicPropertyDto): SummaryItem[] {
+function buildItems(
+  property: PublicPropertyDto,
+  estimatedValueMidCzk: number | null,
+): SummaryItem[] {
   return [
     {
       label: "Nabídková cena",
@@ -30,9 +33,11 @@ function buildItems(property: PublicPropertyDto): SummaryItem[] {
     },
     {
       label: "Odhad hodnoty",
-      // Valuation engine not wired on detail yet — never invent a number
-      value: UNAVAILABLE,
-      tone: "muted",
+      value:
+        estimatedValueMidCzk != null
+          ? formatCzk(estimatedValueMidCzk)
+          : UNAVAILABLE,
+      tone: estimatedValueMidCzk != null ? "neutral" : "muted",
     },
     {
       label: "Cena za m²",
@@ -108,10 +113,13 @@ function buildItems(property: PublicPropertyDto): SummaryItem[] {
 
 export function PropertyQuickSummary({
   property,
+  estimatedValueMidCzk = null,
 }: {
   property: PublicPropertyDto;
+  /** Mid estimate from demo overlay / engine — never invent */
+  estimatedValueMidCzk?: number | null;
 }) {
-  const items = buildItems(property);
+  const items = buildItems(property, estimatedValueMidCzk ?? null);
 
   return (
     <section aria-labelledby="quick-decision-heading">
