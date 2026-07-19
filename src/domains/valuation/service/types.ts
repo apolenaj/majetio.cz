@@ -89,4 +89,23 @@ export type ValuationCoreResult = {
   engineVersion: string;
 };
 
-export const VALUATION_CORE_ENGINE_VERSION = "residential_apartment_v1.core.0.1.0";
+/** Outcome of automated estimate including Part 3 range + confidence. */
+export type ValuationRunStatus =
+  | "CALCULATED"
+  | "INSUFFICIENT_DATA"
+  | "REQUIRES_INDIVIDUAL_APPRAISAL";
+
+export type ValuationEstimateResult = ValuationCoreResult & {
+  status: ValuationRunStatus;
+  lowerBoundCzk: number | null;
+  upperBoundCzk: number | null;
+  relativeRangeWidth: number | null;
+  confidenceScore: number;
+  confidenceLevel: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN" | "INSUFFICIENT";
+  confidenceExplanations: string[];
+  /** Human-readable block / insufficient message for UI. */
+  statusReason: string | null;
+};
+
+export const VALUATION_CORE_ENGINE_VERSION =
+  "residential_apartment_v1.core.0.2.0";

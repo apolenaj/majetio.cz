@@ -20,12 +20,23 @@ export type {
   FeatureAdjustment,
   BaseValuationResult,
   ValuationCoreResult,
+  ValuationEstimateResult,
+  ValuationRunStatus,
 } from "./service/types";
 export { VALUATION_CORE_ENGINE_VERSION } from "./service/types";
 
 export {
   selectAndWeightComparables,
   runValuationCore,
+  runValuationEstimate,
+  computeValuationRange,
+  computeConfidence,
+  confidenceLevelFromScore,
+  MIN_COMPS_FOR_ESTIMATE,
+  evaluateSubjectEdgeCases,
+  shouldRecalculateValuation,
+  buildSubjectFingerprint,
+  DEFAULT_VALUATION_MAX_AGE_DAYS,
 } from "./service";
 export { resolveGeoTier, haversineMeters, geoTierWeight } from "./service/geo-hierarchy";
 export { timeDecayWeight, daysBetween } from "./service/time-decay";
