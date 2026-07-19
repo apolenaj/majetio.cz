@@ -12,6 +12,11 @@ import { PropertyInvestmentOverview } from "@/components/property/property-inves
 import { ScenarioSwitcher } from "@/components/property/property-scenario-switcher";
 import { PropertyFinancingSection } from "@/components/property/property-financing-section";
 import { PropertyRenovationSection } from "@/components/property/property-renovation-section";
+import { PropertyRisksSection } from "@/components/property/property-risks-section";
+import { PropertyLocationSection } from "@/components/property/property-location-section";
+import { PropertyMarketHistorySection } from "@/components/property/property-market-history-section";
+import { PropertyProvenanceSection } from "@/components/property/property-provenance-section";
+import { PropertySimilarSection } from "@/components/property/property-similar-section";
 import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +30,12 @@ import { resolveMatchProfile } from "@/components/property/search/discovery-list
 import {
   computePropertyMatchScore,
   listingToMatchInput,
+  mapPublicDtoToPropertyCard,
 } from "@/domains/properties/service";
 import { getPropertyFinancialDemo } from "@/content/demo-property-financial";
+import { getPropertyContextDemo } from "@/content/demo-property-context";
+import { getDemoPublicProperty } from "@/content/demo-canonical-properties";
+import { resolveDaysOnMarket } from "@/domains/properties/service/market-timing";
 import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import {
   loadHypotekaHandoffPreview,
@@ -88,6 +97,24 @@ export default async function PropertyDetailPage({ params }: Props) {
   );
 
   const financial = getPropertyFinancialDemo(property.slug);
+  const context = getPropertyContextDemo(property.slug);
+
+  const daysOnMarket = resolveDaysOnMarket({
+    publishedAt: property.publishedAt,
+    overrideDays: context?.market?.daysOnMarket ?? null,
+  });
+
+  const similarItems = (context?.similar ?? [])
+    .map((alt) => {
+      const dto = getDemoPublicProperty(alt.slug);
+      if (!dto || dto.slug === property.slug) return null;
+      return {
+        card: mapPublicDtoToPropertyCard(dto),
+        reason: alt.reason,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x != null)
+    .slice(0, 6);
 
   let equityUsedCzk: number | null = null;
   let equitySource: "passport" | "demo" | "none" = "none";
@@ -218,6 +245,35 @@ export default async function PropertyDetailPage({ params }: Props) {
             <PropertyRenovationSection
               renovation={financial?.renovation ?? null}
             />
+
+            <PropertyRisksSection
+              risks={context?.risks ?? []}
+              checklist={context?.checklist ?? []}
+              dueDiligenceStatus={context?.dueDiligenceStatus ?? null}
+              dueDiligenceNote={context?.dueDiligenceNote ?? null}
+            />
+
+            <PropertyLocationSection
+              location={property.location}
+              benchmark={context?.location ?? null}
+            />
+
+            <PropertyMarketHistorySection
+              points={property.priceHistory}
+              daysOnMarket={daysOnMarket}
+              relisted={context?.market?.relisted ?? false}
+              relistNote={context?.market?.relistNote ?? null}
+              publishedAt={property.publishedAt}
+            />
+
+            <PropertyProvenanceSection
+              sources={property.sources}
+              lastSeenAt={property.lastSeenAt}
+              freshness={property.freshness}
+              fieldConflicts={property.fieldConflicts}
+            />
+
+            <PropertySimilarSection items={similarItems} />
 
             <PropertyIdentityGrid property={property} />
 
