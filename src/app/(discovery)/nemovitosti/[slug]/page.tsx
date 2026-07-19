@@ -8,6 +8,9 @@ import { PropertyPriceBlock } from "@/components/property/property-price-block";
 import { PropertyQuickSummary } from "@/components/property/property-quick-summary";
 import { PropertyScorePanel } from "@/components/property/property-score-panel";
 import { PropertyValuationCompare } from "@/components/property/property-valuation-compare";
+import { PropertyValuationComparables } from "@/components/property/property-valuation-comparables";
+import { PropertyValuationAdjustments } from "@/components/property/property-valuation-adjustments";
+import { PropertyValuationDisclaimer } from "@/components/property/property-valuation-disclaimer";
 import { PropertyInvestmentOverview } from "@/components/property/property-investment-overview";
 import { ScenarioSwitcher } from "@/components/property/property-scenario-switcher";
 import { PropertyFinancingSection } from "@/components/property/property-financing-section";
@@ -30,7 +33,9 @@ import {
   buildPropertyDetailBreadcrumbs,
   loadPropertyDetailBySlug,
   propertyListingStatusTone,
+  resolvePropertyViewer,
 } from "@/domains/properties/service/detail-loader";
+import { valuationService } from "@/domains/valuation";
 import {
   buildPropertyDetailJsonLd,
   buildPropertyDetailMetadata,
@@ -98,6 +103,8 @@ export default async function PropertyDetailPage({ params }: Props) {
 
   const financial = getPropertyFinancialDemo(property.slug);
   const context = getPropertyContextDemo(property.slug);
+  const viewer = await resolvePropertyViewer();
+  const valuation = valuationService.estimateForProperty(property, viewer);
 
   const daysOnMarket = resolveDaysOnMarket({
     publishedAt: property.publishedAt,
@@ -222,7 +229,7 @@ export default async function PropertyDetailPage({ params }: Props) {
 
               <PropertyQuickSummary
                 property={property}
-                estimatedValueMidCzk={financial?.valuation?.midCzk ?? null}
+                estimatedValueMidCzk={valuation.estimateMidCzk}
               />
 
               <PropertyScorePanel
@@ -233,10 +240,10 @@ export default async function PropertyDetailPage({ params }: Props) {
             </section>
 
             <section id="ekonomika" className="scroll-mt-28 space-y-10">
-              <PropertyValuationCompare
-                askingPrice={property.askingPrice}
-                valuation={financial?.valuation ?? null}
-              />
+              <PropertyValuationCompare valuation={valuation} />
+              <PropertyValuationComparables valuation={valuation} />
+              <PropertyValuationAdjustments valuation={valuation} />
+              <PropertyValuationDisclaimer valuation={valuation} />
 
               <PropertyInvestmentOverview
                 investment={financial?.investment ?? null}

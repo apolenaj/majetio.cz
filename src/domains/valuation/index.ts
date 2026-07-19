@@ -59,3 +59,22 @@ export {
   computeFeatureAdjustments,
   applyAdjustments,
 } from "./service/adjustments";
+
+export type {
+  PublicConfidenceLevel,
+  PublicValuationAdjustmentDto,
+  PublicComparableDto,
+  PublicValuationDto,
+  AnalystComparableDto,
+  AnalystValuationDto,
+  ValuationDto,
+} from "./dto";
+export { VALUATION_LEGAL_DISCLAIMER } from "./dto";
+export {
+  createValuationService,
+  valuationService,
+  toValuationSubject,
+  adjustmentPublicLabel,
+  type ValuationViewer,
+  type ValuationServiceDeps,
+} from "./service/valuation-service";

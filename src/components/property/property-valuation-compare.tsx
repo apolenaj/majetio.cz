@@ -1,8 +1,5 @@
 import { formatCzk } from "@/lib/format";
-import {
-  confidenceLabel,
-  type PropertyValuationDemo,
-} from "@/content/demo-property-financial";
+import type { PublicValuationDto, AnalystValuationDto } from "@/domains/valuation";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MetricValue } from "@/components/data-display/metric-card";
@@ -14,18 +11,46 @@ function clamp01(n: number) {
   return Math.min(1, Math.max(0, n));
 }
 
+function confidenceTone(
+  level: PublicValuationDto["confidenceLevel"],
+): "success" | "warning" | "neutral" {
+  if (level === "HIGH") return "success";
+  if (level === "LOW" || level === "INSUFFICIENT") return "warning";
+  return "neutral";
+}
+
+function confidenceLabelCz(level: PublicValuationDto["confidenceLevel"]): string {
+  switch (level) {
+    case "HIGH":
+      return "Vysoká";
+    case "MEDIUM":
+      return "Střední";
+    case "LOW":
+      return "Nízká";
+    case "INSUFFICIENT":
+      return "Nedostatečná";
+    default:
+      return "Neznámá";
+  }
+}
+
 /**
- * Dominant price vs mid-estimate section with a simple 1D range visual (no 3D).
+ * Asking price vs mid-estimate with visual interval (Prompt 10 Part 4).
  */
 export function PropertyValuationCompare({
-  askingPrice,
   valuation,
 }: {
-  askingPrice: number | null;
-  valuation: PropertyValuationDemo | null;
+  valuation: PublicValuationDto | AnalystValuationDto | null;
 }) {
-  const hasRange = valuation != null;
-  const mid = valuation?.midCzk ?? null;
+  const askingPrice = valuation?.askingPriceCzk ?? null;
+  const hasRange =
+    valuation != null &&
+    valuation.status === "CALCULATED" &&
+    valuation.lowerBoundCzk != null &&
+    valuation.upperBoundCzk != null &&
+    valuation.estimateMidCzk != null;
+
+  const mid = valuation?.estimateMidCzk ?? null;
 
   let askingPct = 0.5;
   let lowPct = 0;
@@ -33,22 +58,22 @@ export function PropertyValuationCompare({
   let highPct = 1;
 
   if (hasRange && valuation) {
-    const span = Math.max(valuation.highCzk - valuation.lowCzk, 1);
+    const low = valuation.lowerBoundCzk!;
+    const high = valuation.upperBoundCzk!;
+    const span = Math.max(high - low, 1);
     const pad = span * 0.15;
-    const min = valuation.lowCzk - pad;
-    const max = valuation.highCzk + pad;
+    const min = low - pad;
+    const max = high + pad;
     const width = Math.max(max - min, 1);
-    lowPct = clamp01((valuation.lowCzk - min) / width);
-    midPct = clamp01((valuation.midCzk - min) / width);
-    highPct = clamp01((valuation.highCzk - min) / width);
+    lowPct = clamp01((low - min) / width);
+    midPct = clamp01((valuation.estimateMidCzk! - min) / width);
+    highPct = clamp01((high - min) / width);
     askingPct =
-      askingPrice != null
-        ? clamp01((askingPrice - min) / width)
-        : midPct;
+      askingPrice != null ? clamp01((askingPrice - min) / width) : midPct;
   }
 
-  const delta =
-    askingPrice != null && mid != null ? askingPrice - mid : null;
+  const deltaCzk = valuation?.askingVsMidCzk ?? null;
+  const deltaPct = valuation?.askingVsMidPct ?? null;
 
   return (
     <section aria-labelledby="valuation-compare-heading">
@@ -59,8 +84,8 @@ export function PropertyValuationCompare({
         Cena vs. odhad hodnoty
       </h2>
       <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-        Porovnání nabídkové ceny se středním odhadem. Bez enginu ukazujeme jen
-        dostupná demo data — chybějící hodnoty nejsou nahrazovány nulou.
+        Porovnání nabídkové ceny se středním odhadem Majetio. Chybějící hodnoty
+        nejsou nahrazovány nulou.
       </p>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -81,22 +106,22 @@ export function PropertyValuationCompare({
             size="xl"
             value={mid != null ? formatCzk(mid) : NEU}
           />
-          {delta != null ? (
+          {deltaCzk != null && deltaPct != null ? (
             <p
               className={cn(
                 "mt-2 text-sm font-medium",
-                delta > 0
+                deltaCzk > 0
                   ? "text-[var(--investment-negative)]"
-                  : delta < 0
+                  : deltaCzk < 0
                     ? "text-[var(--investment-positive)]"
                     : "text-[var(--text-secondary)]",
               )}
             >
-              {delta === 0
+              {deltaCzk === 0
                 ? "Na úrovni středu odhadu"
-                : delta > 0
-                  ? `Nabídka je o ${formatCzk(delta)} nad středem`
-                  : `Nabídka je o ${formatCzk(Math.abs(delta))} pod středem`}
+                : deltaCzk > 0
+                  ? `Nabídka je o ${formatCzk(deltaCzk)} (+${deltaPct} %) nad středem`
+                  : `Nabídka je o ${formatCzk(Math.abs(deltaCzk))} (${deltaPct} %) pod středem`}
             </p>
           ) : null}
         </Card>
@@ -125,9 +150,9 @@ export function PropertyValuationCompare({
               aria-hidden
             />
             {[
-              { pct: lowPct, label: "Dolní", value: valuation.lowCzk },
-              { pct: midPct, label: "Střed", value: valuation.midCzk },
-              { pct: highPct, label: "Horní", value: valuation.highCzk },
+              { pct: lowPct, label: "Dolní", value: valuation.lowerBoundCzk! },
+              { pct: midPct, label: "Střed", value: valuation.estimateMidCzk! },
+              { pct: highPct, label: "Horní", value: valuation.upperBoundCzk! },
             ].map((m) => (
               <div
                 key={m.label}
@@ -160,27 +185,29 @@ export function PropertyValuationCompare({
           </div>
 
           <div className="mt-16 flex flex-wrap items-start gap-3 border-t border-[var(--border-default)] pt-4">
-            <Badge
-              tone={
-                valuation.confidence === "high"
-                  ? "success"
-                  : valuation.confidence === "low"
-                    ? "warning"
-                    : "neutral"
-              }
-            >
-              Spolehlivost: {confidenceLabel(valuation.confidence)}
+            <Badge tone={confidenceTone(valuation.confidenceLevel)}>
+              Spolehlivost: {confidenceLabelCz(valuation.confidenceLevel)}
             </Badge>
-            <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-              {valuation.confidenceReason}
-            </p>
+            <div className="min-w-0 flex-1 space-y-1 text-sm text-[var(--text-secondary)]">
+              {valuation.confidenceExplanations.length > 0 ? (
+                valuation.confidenceExplanations.map((line) => (
+                  <p key={line}>{line}</p>
+                ))
+              ) : (
+                <p>{NEU}</p>
+              )}
+            </div>
           </div>
         </Card>
       ) : (
         <Card className="mt-4" padding="lg" variant="muted">
           <p className="text-sm text-[var(--text-secondary)]">
-            Interval odhadu hodnoty: <strong>{NEU}</strong>. Valuation engine zatím
-            není napojený — u této nemovitosti nejsou dostupná demo data odhadu.
+            {valuation?.statusReason ?? (
+              <>
+                Interval odhadu hodnoty: <strong>{NEU}</strong>. Pro tuto
+                nemovitost zatím není k dispozici vypočtený odhad.
+              </>
+            )}
           </p>
         </Card>
       )}

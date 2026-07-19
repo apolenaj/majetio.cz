@@ -66,6 +66,7 @@ export type PropertyRecord = {
   floor?: number | null;
   floorsTotal?: number | null;
   hasElevator?: boolean | null;
+  hasBalcony?: boolean | null;
   publicLabel?: string | null;
   addressPrecision: AddressPrecision;
   publicCity?: string | null;

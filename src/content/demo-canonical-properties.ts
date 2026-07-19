@@ -45,6 +45,7 @@ export const DEMO_PROPERTY_RECORDS: PropertyRecord[] = [
     floor: 3,
     floorsTotal: 5,
     hasElevator: true,
+    hasBalcony: true,
     publicLabel: "Praha 2 — Vinohrady (demo)",
     addressPrecision: "EXACT",
     publicCity: "Praha",

@@ -13,8 +13,9 @@ loadPropertyDetailBySlug (React cache)
         ├─► canViewProperty (IDOR → null → 404)
         ├─► toPublicPropertyDto (strip internals)
         │
-        ├─► getPropertyFinancialDemo(slug)   // Part 3 overlay
-        └─► getPropertyContextDemo(slug)     // Part 4 overlay
+        ├─► valuationService.estimateForProperty  // Prompt 10 Part 4
+        ├─► getPropertyFinancialDemo(slug)       // investment/scenarios overlay
+        └─► getPropertyContextDemo(slug)         // risks/location/similar
                  │
                  ▼
         Decision Cockpit UI + sticky section nav
@@ -28,6 +29,7 @@ loadPropertyDetailBySlug (React cache)
 | Loader | `src/domains/properties/service/detail-loader.ts` |
 | SEO | `src/domains/properties/service/detail-seo.ts` |
 | DTO | `src/domains/properties/service/dto.ts` |
+| Valuation API | `src/domains/valuation/service/valuation-service.ts` |
 | Financial overlay | `src/content/demo-property-financial.ts` |
 | Context overlay | `src/content/demo-property-context.ts` |
 | UI | `src/components/property/property-*.tsx` |
