@@ -10,13 +10,13 @@ import {
 import { MethodologySectionBody } from "@/components/methodology/methodology-blocks";
 import { MethodologyLink } from "@/components/trust";
 import {
-  METHODOLOGY_REVALIDATE_SECONDS,
   getMethodologySection,
   listMethodologySlugs,
 } from "@/content/methodology/hub";
 import { buildMethodologySectionJsonLd } from "@/lib/seo/methodology-jsonld";
 
-export const revalidate = METHODOLOGY_REVALIDATE_SECONDS;
+// Literal required — Next.js segment config must be statically analyzable.
+export const revalidate = 86400;
 
 type Props = { params: Promise<{ section: string }> };
 

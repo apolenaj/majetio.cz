@@ -12,16 +12,14 @@ import {
 } from "@/components/methodology/methodology-blocks";
 import { ContextualDisclaimer, MethodologyLink } from "@/components/trust";
 import { InlineAlert } from "@/components/feedback/states";
-import {
-  METHODOLOGY_REVALIDATE_SECONDS,
-  METHODOLOGY_SECTIONS,
-} from "@/content/methodology/hub";
+import { METHODOLOGY_SECTIONS } from "@/content/methodology/hub";
 import {
   buildMethodologyFaqJsonLd,
   buildMethodologyHubJsonLd,
 } from "@/lib/seo/methodology-jsonld";
 
-export const revalidate = METHODOLOGY_REVALIDATE_SECONDS;
+// Literal required — Next.js segment config must be statically analyzable.
+export const revalidate = 86400;
 
 export const metadata: Metadata = preparePageMeta({
   title: "Metodika",

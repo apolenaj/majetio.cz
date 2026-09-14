@@ -9,16 +9,14 @@ import {
 import { InlineAlert } from "@/components/feedback/states";
 import { LastUpdated } from "@/components/trust";
 import {
-  METHODOLOGY_REVALIDATE_SECONDS,
-} from "@/content/methodology/hub";
-import {
   METHODOLOGY_PACKAGE_VERSION,
   currentMethodologyComponentStamps,
   getCurrentMethodologyPublishedAt,
   listMethodologyHistoryNewestFirst,
 } from "@/content/methodology/versions";
 
-export const revalidate = METHODOLOGY_REVALIDATE_SECONDS;
+// Literal required — Next.js segment config must be statically analyzable.
+export const revalidate = 86400;
 
 export const metadata: Metadata = preparePageMeta({
   title: "Verze metodiky",

@@ -9,10 +9,10 @@ import {
 import { ContextualDisclaimer, MethodologyLink } from "@/components/trust";
 import { InlineAlert } from "@/components/feedback/states";
 import { groupPublicDataSources } from "@/content/data-sources/public-catalog";
-import { METHODOLOGY_REVALIDATE_SECONDS } from "@/content/methodology/hub";
 import { buildDataSourcesJsonLd } from "@/lib/seo/methodology-jsonld";
 
-export const revalidate = METHODOLOGY_REVALIDATE_SECONDS;
+// Literal required — Next.js segment config must be statically analyzable.
+export const revalidate = 86400;
 
 export const metadata: Metadata = preparePageMeta({
   title: "Zdroje dat",
