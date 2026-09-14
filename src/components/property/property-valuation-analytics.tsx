@@ -31,6 +31,9 @@ export function PropertyValuationAnalytics({
         has_estimate: hasEstimate,
       },
     });
+    void import("@/lib/analytics/decision-metrics").then(({ observeFunnelStep }) => {
+      observeFunnelStep("analysis");
+    });
   }, [slug, status, confidenceLevel, isDemo, hasEstimate]);
 
   return null;

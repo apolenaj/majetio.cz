@@ -2,10 +2,11 @@
 
 import * as React from "react";
 
-import { track } from "@/lib/analytics/events";
+import { trackOnce } from "@/lib/analytics/track-once";
+import { observeFunnelStep } from "@/lib/analytics/decision-metrics";
 
 /**
- * Fires property_detail_viewed once per mount — no prices, addresses, or PII.
+ * Fires property_detail_viewed once per slug/session — no prices, addresses, or PII.
  */
 export function PropertyDetailAnalytics({
   slug,
@@ -19,7 +20,7 @@ export function PropertyDetailAnalytics({
   visibility: string;
 }) {
   React.useEffect(() => {
-    track({
+    trackOnce(`property_detail:${slug}`, {
       name: "property_detail_viewed",
       props: {
         slug,
@@ -28,6 +29,7 @@ export function PropertyDetailAnalytics({
         visibility,
       },
     });
+    observeFunnelStep("viewed");
   }, [slug, isDemo, hasAskingPrice, visibility]);
 
   return null;

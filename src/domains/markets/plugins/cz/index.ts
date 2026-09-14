@@ -1,0 +1,90 @@
+/**
+ * CZ — Czech Republic. Primary LIVE market (Majetio.cz Core production).
+ */
+
+import type { MarketPlugin } from "@/domains/markets/plugins/types";
+
+export const czMarketPlugin: MarketPlugin = {
+  marketCode: "CZ",
+  definition: {
+    marketCode: "CZ",
+    countryCode: "CZ",
+    displayNameEn: "Czech Republic",
+    displayNameLocal: "Česko",
+    defaultLocale: "cs-CZ",
+    supportedLocales: ["cs-CZ", "en-GB"],
+    defaultCurrency: "CZK",
+    timezone: "Europe/Prague",
+    measurementSystem: "METRIC",
+    enabled: true,
+    launchStatus: "LIVE",
+    regulatoryConfigVersion: "cz-reg.v2026.07",
+    hasMinimumPublicData: true,
+    notesEn: "Home market — full Core product surface.",
+  },
+  property: {
+    areaUnit: "sqm",
+    supportedPropertyTypes: [
+      "APARTMENT",
+      "HOUSE",
+      "VILLA",
+      "LAND",
+      "COMMERCIAL",
+      "OTHER",
+    ],
+    addressModel: "EU_STREET",
+    titleDeedLabelEn: "Katastr nemovitostí / title extract",
+    layoutNotation: "CZ_DISPOSITION",
+    detailSectionExtraIds: ["svj", "penb"],
+    searchFilterExtraKeys: ["layout", "ownership", "condition", "energy"],
+  },
+  transactionCosts: {
+    packId: "cz-tx-costs.v2026.07",
+    buyerClosingCostBpsEstimate: 450,
+    sellerClosingCostBpsEstimate: 300,
+    transferTaxLabelEn: "Real estate transfer / related fees (illustrative)",
+    notesEn: "Estimates only — not tax advice. Prefer versioned pack lines.",
+  },
+  financing: {
+    mortgageAvailable: true,
+    partnerHandoffEnabled: true,
+    typicalLtvMaxPct: 90,
+    rateBenchmarkLabelEn: "CZ mortgage rate pack",
+    currency: "CZK",
+    primaryProviderCode: "hypotekajasne",
+  },
+  taxation: {
+    standardVatRateBp: 2100,
+    propertyTaxModel: "ANNUAL",
+    rentalIncomeTaxNotesEn: "Personal income tax on rental — regulatory pack.",
+    regulatoryPackId: "cz-tax.v2026.07",
+    taxPluginId: "cz_tax_limited_v1",
+  },
+  regulatory: {
+    rulesVersion: "cz-reg.v2026.07",
+    renovationCatalogAvailable: true,
+    valuationModelCodes: ["CZ_APARTMENT_V1", "CZ_HOUSE_V1"],
+  },
+  capabilities: {
+    PROPERTY_SEARCH: "FULL",
+    VALUATION: "FULL",
+    INVESTMENT_ENGINE: "FULL",
+    MORTGAGE_CALCULATOR: "FULL",
+    MORTGAGE_LEAD_HANDOFF: "FULL",
+    COMPARISON: "FULL",
+    LOCATION_INTELLIGENCE: "FULL",
+    LISTING_BOOST: "FULL",
+    B2B_CRM: "FULL",
+    QUALIFIED_LEADS: "BETA",
+    TAX_ESTIMATES: "LIMITED",
+    TRANSACTION_COST_ESTIMATES: "LIMITED",
+    PROFESSIONAL_SERVICES: "FULL",
+  },
+  featureFlagDefaults: {
+    MARKET_CZ_VALUATION_ENABLED: true,
+    MARKET_CZ_INVESTMENT_ENGINE_ENABLED: true,
+    MARKET_CZ_MORTGAGE_ENABLED: true,
+    MARKET_CZ_LOCATION_INTELLIGENCE_ENABLED: true,
+    MARKET_CZ_B2B_CRM_ENABLED: true,
+  },
+};

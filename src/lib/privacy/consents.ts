@@ -30,10 +30,13 @@ export type DataHandoffHistoryItem = {
   purpose: string;
   fields: string[];
   version: string;
+  consentTextVersion: string | null;
+  consentAt: string | null;
   source: string;
   createdAt: string;
   status: string;
   externalLeadId: string | null;
+  consentType: string;
 };
 
 export type ConsentsPageData = {
@@ -123,40 +126,62 @@ export async function loadConsentsPage(): Promise<
     history.push({
       id: lead.id,
       recipient: String(payload.recipient ?? "HypotekaJasne.cz"),
-      purpose: String(payload.purpose ?? "Nabídka financování"),
+      purpose: String(payload.purpose ?? "Posouzení možností financování"),
       fields: Array.isArray(payload.sharedFieldLabels)
         ? (payload.sharedFieldLabels as string[])
         : [],
       version: String(payload.consentVersion ?? "—"),
+      consentTextVersion:
+        typeof payload.consentTextVersion === "string"
+          ? payload.consentTextVersion
+          : null,
+      consentAt:
+        typeof payload.consentAt === "string" ? payload.consentAt : null,
       source: String(payload.source ?? "ucet"),
       createdAt: lead.createdAt.toISOString(),
       status: lead.status,
       externalLeadId:
         typeof payload.externalLeadId === "string" ? payload.externalLeadId : null,
+      consentType: String(
+        payload.consentType ?? "MORTGAGE_LEAD_DATA_TRANSFER",
+      ),
     });
   }
 
-  // Also include consent grant events for HJ that might not have a lead yet
+  // Consent receipts without lead (or as supplement for MORTGAGE_LEAD_DATA_TRANSFER)
+  const handoffConsentTypes = [
+    ConsentType.MORTGAGE_LEAD_DATA_TRANSFER,
+    ConsentType.HYPOTEKAJASNE_HANDOFF,
+  ] as const;
+
   for (const row of consentRows) {
-    if (row.type !== ConsentType.HYPOTEKAJASNE_HANDOFF || !row.granted) continue;
+    if (!handoffConsentTypes.includes(row.type as (typeof handoffConsentTypes)[number])) continue;
+    if (!row.granted) continue;
     const meta =
       row.metadata && typeof row.metadata === "object"
         ? (row.metadata as Record<string, unknown>)
         : {};
+    if (meta.leadId && history.some((h) => h.id === String(meta.leadId))) continue;
     if (history.some((h) => h.id === row.id)) continue;
-    if (meta.leadId) continue;
     history.push({
       id: row.id,
       recipient: String(meta.recipient ?? "HypotekaJasne.cz"),
-      purpose: String(meta.purpose ?? "Nabídka financování"),
+      purpose: String(meta.purpose ?? "Posouzení možností financování"),
       fields: Array.isArray(meta.sharedFieldLabels)
         ? (meta.sharedFieldLabels as string[])
         : [],
       version: row.version,
+      consentTextVersion:
+        typeof meta.consentTextVersion === "string"
+          ? meta.consentTextVersion
+          : null,
+      consentAt: (row.grantedAt ?? row.createdAt).toISOString(),
       source: String(meta.source ?? "unknown"),
       createdAt: (row.grantedAt ?? row.createdAt).toISOString(),
       status: "CONSENT_RECORDED",
-      externalLeadId: null,
+      externalLeadId:
+        typeof meta.externalLeadId === "string" ? meta.externalLeadId : null,
+      consentType: row.type,
     });
   }
 

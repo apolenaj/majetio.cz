@@ -2,6 +2,7 @@ import { formatCzk, formatCzkPerSqm } from "@/lib/format";
 import type { PublicPriceHistoryPoint } from "@/domains/properties/service/dto";
 import { derivePriceDecrease } from "@/domains/properties/service/price-change";
 import { MetricValue } from "@/components/data-display/metric-card";
+import { DataSourceBadge } from "@/components/trust";
 import { cn } from "@/lib/utils";
 
 export function PropertyPriceBlock({
@@ -21,9 +22,12 @@ export function PropertyPriceBlock({
 
   return (
     <div className={cn(className)}>
-      <p className="text-caption uppercase tracking-wide text-[var(--text-muted)]">
-        Nabídková cena
-      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-caption uppercase tracking-wide text-[var(--text-muted)]">
+          Nabídková cena
+        </p>
+        <DataSourceBadge kind="source_record" size="sm" />
+      </div>
       <MetricValue
         size={compact ? "l" : "xl"}
         value={askingPrice != null ? formatCzk(askingPrice) : "Cena neuvedena"}

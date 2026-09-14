@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" fill="none" role="img" aria-label="Majetio">
+  <title>Majetio compact</title>
+  <g fill="currentColor">
+    <path d="M4 2h4.2c.66 0 1.2.54 1.2 1.2v17.6c0 .66-.54 1.2-1.2 1.2H4c-.66 0-1.2-.54-1.2-1.2V3.2C2.8 2.54 3.34 2 4 2zm8.2 0H27c.66 0 1.2.54 1.2 1.2v2.6c0 .66-.54 1.2-1.2 1.2H12.2c-.66 0-1.2-.54-1.2-1.2V3.2c0-.66.54-1.2 1.2-1.2zm0 8H23.5c.66 0 1.2.54 1.2 1.2v2.6c0 .66-.54 1.2-1.2 1.2H12.2c-.66 0-1.2-.54-1.2-1.2V11.2c0-.66.54-1.2 1.2-1.2zm0 8H20c.66 0 1.2.54 1.2 1.2v2.6c0 .66-.54 1.2-1.2 1.2h-7.8c-.66 0-1.2-.54-1.2-1.2v-2.6c0-.66.54-1.2 1.2-1.2z"/>
+  </g>
+  <text x="16" y="36" text-anchor="middle" fill="currentColor" font-family="Georgia, 'Times New Roman', serif" font-size="7" font-weight="600">Majetio</text>
+</svg>

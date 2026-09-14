@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Concept D  Decision Bearing">
+  <title>Majetio Concept D  Decision Bearing</title>
+  <rect width="64" height="64" fill="#F7F4EF"/>
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#0B1F33" stroke-width="3"/>
+  <circle cx="32" cy="32" r="3" fill="#0B1F33"/>
+  <path fill="#1F6F54" d="M32 16l3.2 12.5L32 30l-3.2-1.5L32 16z"/>
+  <path fill="#0B1F33" opacity="0.35" d="M32 48l-2.4-9.5L32 36l2.4 2.5L32 48z"/>
+  <rect x="46" y="30.5" width="8" height="3" rx="1" fill="#C4A574"/>
+</svg>

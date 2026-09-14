@@ -173,6 +173,9 @@ export function buildSearchWhere(
   const where: Record<string, unknown> = {
     status: filters.status,
     visibility: filters.visibility,
+    /** Over-quota / banned listings stay out of organic discovery. */
+    listingQuotaState: "WITHIN_LIMIT",
+    listingModerationStatus: "CLEAR",
   };
 
   if (filters.transactionType) {

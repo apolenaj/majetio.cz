@@ -56,11 +56,26 @@ export type PropertyScenarioDemo = {
 };
 
 export type RenovationDemo = {
+  /** @deprecated Prefer costBaseCzk — kept as alias for older callers. */
   costCzk: number | null;
+  costLowCzk?: number | null;
+  costBaseCzk?: number | null;
+  costHighCzk?: number | null;
+  /** Expected renovation duration in days. */
+  durationDays?: number | null;
   reserveCzk: number | null;
   valueAfterCzk: number | null;
   maxOfferCzk: number | null;
   note: string;
+  risks?: Array<{
+    title: string;
+    severity: "critical" | "high" | "medium" | "low";
+  }>;
+  locationScore?: number | null;
+  locationConfidence?: ValuationConfidence | null;
+  /** Demo IRR % — omit when unknown (never invent 0). */
+  irrPct?: number | null;
+  irrAssumptionsCs?: string;
 };
 
 export type PropertyFinancialDemo = {
@@ -158,10 +173,23 @@ const VINOHRADY: PropertyFinancialDemo = {
   ],
   renovation: {
     costCzk: 450_000,
+    costLowCzk: 320_000,
+    costBaseCzk: 450_000,
+    costHighCzk: 620_000,
+    durationDays: 75,
     reserveCzk: 90_000,
     valueAfterCzk: 6_900_000,
     maxOfferCzk: 6_200_000,
     note: "Lehká modernizace kuchyně a koupelny (demo). Nejde o stavební rozpočet.",
+    risks: [
+      { title: "Cena nad odhadem", severity: "medium" },
+      { title: "SVJ omezení rekonstrukce", severity: "low" },
+    ],
+    locationScore: 78,
+    locationConfidence: "medium",
+    irrPct: 6.2,
+    irrAssumptionsCs:
+      "IRR demo: hold 7 let, nájem +2 %/rok, exit na ARV, CapEx = base pásmo. Citlivé na exit yield.",
   },
 };
 
@@ -327,10 +355,24 @@ const REKO: PropertyFinancialDemo = {
   ],
   renovation: {
     costCzk: 1_800_000,
+    costLowCzk: 1_200_000,
+    costBaseCzk: 1_800_000,
+    costHighCzk: 2_600_000,
+    durationDays: 180,
     reserveCzk: 360_000,
     valueAfterCzk: 14_200_000,
     maxOfferCzk: 10_900_000,
     note: "Demonstrační odhad rozsahu rekonstrukce domu — ne stavební výkaz.",
+    risks: [
+      { title: "Statika / skryté vady", severity: "critical" },
+      { title: "Překročení rozpočtu", severity: "high" },
+      { title: "Doba výstavby", severity: "medium" },
+    ],
+    locationScore: 61,
+    locationConfidence: "low",
+    irrPct: 4.1,
+    irrAssumptionsCs:
+      "IRR demo: CapEx high pásmo, hold 5 let, exit na ARV −10 %. Citlivé na delay.",
   },
 };
 
@@ -405,10 +447,17 @@ const LOW_PRICE: PropertyFinancialDemo = {
   ],
   renovation: {
     costCzk: 650_000,
+    costLowCzk: 480_000,
+    costBaseCzk: 650_000,
+    costHighCzk: 890_000,
+    durationDays: 90,
     reserveCzk: 130_000,
     valueAfterCzk: 4_550_000,
     maxOfferCzk: 3_400_000,
     note: "Orientační modernizace (demo) — ověřte stav na místě.",
+    risks: [{ title: "Lokalita méně likvidní", severity: "medium" }],
+    locationScore: 55,
+    locationConfidence: "medium",
   },
 };
 

@@ -43,10 +43,23 @@ PostgreSQL via Prisma. Fields are intentionally lean and extensible.
 **Key fields:** `key` (ip:email), `failCount`, `lockedUntil`.
 
 ### AuditLog
-**Purpose:** Security and compliance trail (login, password reset, consent, …).  
-**Key fields:** `actorId`, `action`, `entity`, `entityId`, `ip`, `userAgent`, `meta`, `createdAt`.  
-**Sensitivity:** Security; append-only.  
+**Purpose:** Security and compliance trail (login, password reset, consent, ops actions).  
+**Key fields:** `actorId`, `actorType`, `action`, `entity` / `entityType`, `entityId`, `reason`, `beforeSummary`, `afterSummary`, `correlationId`, `ip`, `userAgent`, `meta`, `createdAt` (timestamp).  
+**Sensitivity:** Security; **strictly append-only** (DB triggers block UPDATE/DELETE). Never store secrets — `meta` and summaries are sanitized.  
+**Indexes:** `(entityType, entityId)`, `(action, createdAt)`, `(correlationId)`, `(actorType, createdAt)`.  
 **Retention:** Long-lived.
+
+### Incident (+ Timeline + Linked Entities)
+**Purpose:** Ops incident management (126–131).  
+**Severity:** `SEV1`…`SEV4`. **Status:** `OPEN` → `ACKNOWLEDGED` → `INVESTIGATING` → `MITIGATED` → `RESOLVED` / `CLOSED`.  
+**Fields:** `title`, `description`, `ownerUserId`, `startedAt`, `resolvedAt`, `affectedSystems[]`, `internalNotes`.  
+**Relations:** `IncidentTimelineEvent`, `IncidentLinkedEntity`.
+
+### DatasetRegistry (+ QualityScore + Lineage)
+**Purpose:** Dataset governance metadata (218–227).  
+**Fields:** owner, steward, source, update frequency, quality SLA (minutes + min score).  
+**Health:** `HEALTHY` | `STALE` | `DEGRADED` | `DISABLED`.  
+**Relations:** append-only-ish `DatasetQualityScore` history; directed `DatasetLineage`.
 
 
 ### Property
@@ -119,9 +132,10 @@ Composite indexes for listing discovery (Prompt 7–8): `status+askingPrice`, `s
 **Retention:** Keep for account history; anonymize on erasure if legally needed.
 
 ### AnalysisScenario
-**Purpose:** Alternative assumptions (rent, rate, hold period).  
-**Key fields:** `analysisId`, `name`, `assumptions` (JSON), `results` (JSON).  
-**Sensitivity:** Derived; still user-linked.
+**Purpose:** Named investment scenario with frozen inputs and engine version stamps.  
+**Key fields:** `propertyId`, `analysisId`, `scenarioType`, `status`, `inputSnapshot`, `assumptionSet`, `calculationEngineVersion`, `formulaRegistryVersion`, `inputHash`, `results`.  
+**Rules:** Formula/code changes must not rewrite historical rows — insert new calculations. Cache via `inputHash` + `engineVersion`.  
+**Sensitivity:** Derived; still user-linked via analysis.
 
 ### Valuation / ValuationComparable / ValuationAdjustmentAudit / ValuationModelRegistry
 **Purpose:** Production valuation engine persistence (Prompt 10).  
@@ -133,35 +147,82 @@ Composite indexes for listing discovery (Prompt 7–8): `status+askingPrice`, `s
 **Retention:** Prefer supersede/outdate over hard delete when referenced by analyses/orders.
 
 ### InvestmentCalculation
-**Purpose:** Persisted calculation snapshot.  
-**Key fields:** `analysisId`, `inputs`, `outputs`, `engineVersion`.  
-**Sensitivity:** Medium. Engine version enables reproducibility.
+**Purpose:** Append-only engine run snapshot (cacheable).  
+**Key fields:** `analysisId`, `scenarioId`, `propertyId`, `inputs`, `outputs`, `engineVersion`, `formulaRegistryVersion`, `inputHash`.  
+**Sensitivity:** Medium. Version stamps enable reproducibility without mutating history.
 
 ### RenovationEstimate
-**Purpose:** Capex estimate.  
+**Purpose:** Legacy CapEx estimate row.  
 **Key fields:** `analysisId`, `scope`, `estimatedCostCzk`, `contingencyPct`, `lineItems` (JSON).  
+**Sensitivity:** Medium.  
+**Note:** Prefer **`RenovationAnalysis`** for new Renovation Engine work (Prompt 12).
+
+### RenovationAnalysis
+**Purpose:** Primary Renovation Engine entity — versioned CapEx analysis linked to property / analysis / scenario.  
+**Key fields:** `type` (AUTOMATIC | USER_DEFINED | ANALYST_ADJUSTED | PROFESSIONAL), `status`, `scopeVersion`, `costModelVersion`, `locationCostVersion`, `estimatedLow|Base|High`, `contingencyAmount`, `estimatedDuration`, `confidence`, `calculatedAt`.
+**Concept split:** `estimated*` = costs (C) only — not ARV (D). Condition (A) and scope (B) live in domain services / version stamps.  
 **Sensitivity:** Medium.
 
 ### Location / LocationMetric
-**Purpose:** Area context and time-series metrics.  
-**Key fields:** `slug`, `name`, `region`, metrics (`type`, `value`, `period`, `source`).  
-**Sensitivity:** Mostly public aggregates.
+**Purpose:** Area context and time-series metrics (Location & Market Intelligence foundation).  
+**Key fields:** `type` (COUNTRY → MICRO_LOCATION), `parentId`, `countryCode`, `slug`, `name`, `publicLabel`, official codes (`ruianCode`, `lauCode`, `nutsCode`), GeoJSON `boundary`, `centroidLat/Lon`, `population`, `areaSqKm`.  
+**Property link:** `Property.locationId` + `locationResolutionConfidence` + `locationResolutionMeta` — assigned via `LocationResolutionService` (never inflate beyond input).  
+**LocationMetric:** Registry key (`metricKey`), category (`PROPERTY_MARKET` … `DEVELOPMENT`), segmented rows (`segmentKey` + JSON `segment`), `priceKind` (`ASKING` | `TRANSACTION` | `NONE` — never merge asking/transaction), primary `value` (median for prices), `sampleCount`, quartiles, `confidence`, `methodologyVersion`, validity window.  
+**LocationMetricHistory:** Append-only series for trend charts (MoM/QoQ/YoY).  
+**Sensitivity:** Mostly public aggregates; boundaries may be licensed — access-controlled ingestion. Small samples → suppressed or low confidence (no false precision).  
+**See:** `docs/LOCATION_DATA_MODEL.md`
 
 ### Favourite / Comparison / SavedSearch
-**Purpose:** User workspace.  
+**Purpose:** User workspace / Property Decision Workspace.  
+**Favourite key fields:** `id`, `userId`, `propertyId`, `createdAt`, `status` (`SAVED` | `SHORTLISTED` | `VIEWING_PLANNED` | `ANALYZING` | `REJECTED`), optional `folder`, `priority`, `note`, `priceAtSave`.  
+**Shortlist:** `SHORTLISTED` („Ve výběru“) — užší výběr oddělený od běžného „Uloženo“. UI vždy české labely, nikoli raw enum.  
+**Comparison:** `Comparison` + `ComparisonProperty` (order/`sortOrder`, `addedAt`) + optional `manualOrder`. Max **4** properties — `comparisonConfig.maxProperties`. Canonical `ComparisonViewModel` for `/porovnani`.  
+**Decision Workspace (private):** `PropertyUserNote`, `PropertyDecisionTask`, `DecisionPreference` — owner-only, never public/SEO/analytics.  
 **Sensitivity:** User preference PII linkage.
 
-### Lead / LeadActivity
-**Purpose:** CRM pipeline (analysis interest, financing, partners).  
-**Key fields:** `type`, `status`, `userId`, `propertyId`, `payload`, activities timeline.  
+### Lead / LeadActivity / LeadAssignment
+**Purpose:** Internal CRM pipeline (status timeline, routing, nextAction, XSS-safe notes).  
+**Key fields:** `type`, `status`, `assignedToUserId`, `organizationId`, `routingTarget`, `nextAction*`.  
+**Routing:** mortgages → HypotekaJasne; inquiries → listing agent; audits → analysts.  
+**RBAC:** agent = own; agency manager = org; system admin = all.  
+**Docs:** `docs/CRM_PIPELINE.md`.  
 **Sensitivity:** **High** — sales PII. Staff-only.  
 **Retention:** CRM policy + consent.
 
-### Order / Payment
+### Inquiry / QualifiedBuyerLead (marketplace)
+**Purpose:** Property inquiry vs product-qualified buyer lead (strictly separate).  
+**Inquiry:** message interest only — no budget / financing / FinancialProfile.  
+**QualifiedBuyerLead:** verified contact + budget band + financing stance; agent pre-accept sees anonymized profile only.  
+**Consent:** `AGENT_BUYER_PROFILE_SHARE` required before agent sees full FinancialProfile (and only after ACCEPTED).  
+**Docs:** `docs/MARKETPLACE_LEADS.md`.
+
+### Revenue attribution (B2B leads)
+**Purpose:** Org billing MODE A Pay Per Lead / MODE B Success Fee; canonical `RevenueEvent` ledger; attribution window; lead disputes.  
+**Models:** `SuccessFeeRecord`, `RevenueEvent`, `LeadAttribution`, `LeadDispute`.  
+**Double-count:** unique `(sourceType, sourceEntityId)` + `idempotencyKey`.  
+**Docs:** `docs/REVENUE_ATTRIBUTION.md`.
+
+### Professional services / Partner Marketplace / PropertyTransaction
+**Purpose:** Human-in-the-loop Expert Review & Investment Audit; partner agreements (FIXED / REVENUE_SHARE); protected deal records.  
+**Models:** `ProfessionalServiceRequest`, `PartnerCommercialAgreement`, `PartnerServiceOffering`, `PropertyTransaction` (+ access log).  
+**Sensitivity:** `agreedPriceMinor` = **PROTECTED** (audited accessors only).  
+**Feature flag:** `TRANSACTION_SUCCESS_FEE_ENABLED` (default false) gates Purchase Concierge.  
+**Docs:** `docs/PROFESSIONAL_SERVICES.md`.
+
+### Order / Payment / Commerce Data Layer
 **Purpose:** Commerce for paid analysis (and later services).  
-**Key fields:** amounts from config snapshot, currency, status, provider refs.  
-**Sensitivity:** Financial; PCI via payment provider (store tokens/refs only).  
+**Models:** `PricingPlan` (versioned catalog), `Promotion`, `Order`, `OrderItem` (price snapshot), `Payment`, `PaymentWebhookEvent`.  
+**Key fields:** amounts from plan/promo quote frozen on `OrderItem`; currency CZK; provider refs only (no PAN).  
+**Sensitivity:** Financial; PCI via payment provider.  
+**Docs:** `docs/COMMERCE_DATA_LAYER.md`, `docs/PAYMENTS.md`.  
 **Retention:** Accounting statutory period.
+
+### Organization / OrganizationMember (B2B)
+**Purpose:** Real-estate professional tenants (agent, agency, developer, partner).  
+**Models:** `Organization`, `OrganizationMember`, `OrganizationPlanChange`.  
+**Property links:** `organizationId`, `listedByUserId`, `listingVerificationStatus`, `listingQuotaState` (`WITHIN_LIMIT` | `OVER_LIMIT`).  
+**Downgrade:** never auto-delete listings — mark `OVER_LIMIT` + CTA.  
+**Docs:** `docs/ORGANIZATIONS_B2B.md`.
 
 ### Partner
 **Purpose:** Partner directory for future commissions.  

@@ -23,6 +23,10 @@ export type PropertyUrlFilterState = {
   strategie: string[];
   kvalita: string[];
   stranka: number;
+  /** Market filters — shown only when coverage >= 40 % */
+  cenovaHladina?: string;
+  vynosVsBenchmark?: string;
+  cenovyTrend?: string;
 };
 
 export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
@@ -162,6 +166,9 @@ export function parsePropertySearchParams(
     strategie: list(params.strategie),
     kvalita: list(params.kvalita),
     stranka: page,
+    cenovaHladina: first(params["cenova-hladina"]),
+    vynosVsBenchmark: first(params["vynos-benchmark"]),
+    cenovyTrend: first(params["cenovy-trend"]),
   };
 }
 
@@ -193,6 +200,9 @@ export function serializePropertySearchParams(
   if (state.energie.length) out.energie = state.energie.join(",");
   if (state.strategie.length) out.strategie = state.strategie.join(",");
   if (state.kvalita.length) out.kvalita = state.kvalita.join(",");
+  if (state.cenovaHladina) out["cenova-hladina"] = state.cenovaHladina;
+  if (state.vynosVsBenchmark) out["vynos-benchmark"] = state.vynosVsBenchmark;
+  if (state.cenovyTrend) out["cenovy-trend"] = state.cenovyTrend;
   if (state.stranka > 1) out.stranka = String(state.stranka);
   return out;
 }
@@ -220,6 +230,9 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   n += state.energie.length;
   n += state.strategie.length;
   n += state.kvalita.length;
+  if (state.cenovaHladina) n += 1;
+  if (state.vynosVsBenchmark) n += 1;
+  if (state.cenovyTrend) n += 1;
   return n;
 }
 

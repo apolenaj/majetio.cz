@@ -10,11 +10,10 @@ import {
 } from "@/components/property/property-card";
 import { PropertySearchEmptyState } from "@/components/property/search/property-search-empty";
 import { SaveSearchButton } from "@/components/property/search/save-search-button";
-import { CompareTray } from "@/components/navigation/mobile-nav";
 import { InlineAlert } from "@/components/feedback/states";
 import { Button } from "@/components/ui/button";
+import { comparisonConfig } from "@/config/comparison";
 import {
-  COMPARE_MAX,
   isInCompareTray,
   readCompareTray,
   toggleCompareItem,
@@ -22,8 +21,10 @@ import {
 } from "@/domains/properties/search/compare-tray";
 import {
   isFavourite,
-  toggleFavourite,
+  toggleSaveProperty,
+  SAVE_FAILURE_MESSAGE,
 } from "@/domains/properties/search/favourites";
+import { FAVOURITES_CHANGED_EVENT } from "@/domains/favourites/guest-storage";
 import { restoreSearchScrollPosition } from "@/domains/properties/search/scroll-restore";
 import {
   buildPropertySearchHref,
@@ -120,10 +121,10 @@ export function PropertySearchResults({
     };
     sync();
     window.addEventListener("majetio:compare-changed", sync);
-    window.addEventListener("majetio:favourites-changed", sync);
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, sync);
     return () => {
       window.removeEventListener("majetio:compare-changed", sync);
-      window.removeEventListener("majetio:favourites-changed", sync);
+      window.removeEventListener(FAVOURITES_CHANGED_EVENT, sync);
     };
   }, [properties]);
 
@@ -135,11 +136,34 @@ export function PropertySearchResults({
 
   async function handleFavourite(property: PropertyCardData) {
     const item = cardToCompareItem(property);
-    const result = await toggleFavourite(item);
+    const wasSaved = favouriteIds.includes(item.id) || isFavourite(item.id);
+    const optimistic = !wasSaved;
+    setFavouriteIds((prev) => {
+      if (optimistic) return [...new Set([...prev, item.id])];
+      return prev.filter((id) => id !== item.id);
+    });
+
+    const result = await toggleSaveProperty({
+      propertyId: item.id,
+      slug: item.slug,
+      title: item.title,
+      href: item.href,
+      priceCzk: item.priceCzk,
+    });
+
     if (!result.ok) {
-      router.push(result.loginUrl);
+      setFavouriteIds((prev) => {
+        if (wasSaved) return [...new Set([...prev, item.id])];
+        return prev.filter((id) => id !== item.id);
+      });
+      if (result.reason === "login_required") {
+        router.push(result.loginUrl);
+        return;
+      }
+      setToast(result.message || SAVE_FAILURE_MESSAGE);
       return;
     }
+
     setFavouriteIds((prev) => {
       if (result.added) return [...new Set([...prev, item.id])];
       return prev.filter((id) => id !== item.id);
@@ -151,14 +175,20 @@ export function PropertySearchResults({
         is_demo: Boolean(property.isDemo),
       },
     });
-    setToast(result.added ? "Přidáno do oblíbených" : "Odebráno z oblíbených");
+    setToast(
+      result.added
+        ? result.mode === "guest"
+          ? "Uloženo v tomto zařízení"
+          : "Uloženo"
+        : "Odebráno z uložených",
+    );
   }
 
   function handleCompare(property: PropertyCardData) {
     const result = toggleCompareItem(cardToCompareItem(property));
     setCompareIds(result.items.map((c) => c.id));
     if (!result.ok) {
-      setToast(`Porovnání je plné (max ${COMPARE_MAX}). Odeberte položku.`);
+      setToast(comparisonConfig.trayFullMessageCs);
       return;
     }
     track({
@@ -226,12 +256,13 @@ export function PropertySearchResults({
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((property) => {
+          {properties.map((property, index) => {
             const id = property.id ?? property.slug ?? slugFromHref(property.href);
             return (
               <PropertyCard
                 key={property.href}
                 property={property}
+                priority={index < 3}
                 isFavourite={favouriteIds.includes(id) || isFavourite(id)}
                 isCompared={compareIds.includes(id) || isInCompareTray(id)}
                 onFavourite={() => void handleFavourite(property)}
@@ -241,12 +272,6 @@ export function PropertySearchResults({
           })}
         </div>
       )}
-
-      <CompareTray
-        count={compareCount}
-        onOpen={() => router.push("/porovnani")}
-        className="lg:bottom-6"
-      />
 
       {toast ? (
         <div

@@ -1,7 +1,9 @@
 /**
- * Import job status helpers (Prompt 7 Part 4).
+ * Import job status helpers (Prompt 7 Part 4 / Admin Prompt 3).
  * Pure counters — persistence belongs in server actions / workers.
  */
+
+import { finalizeOpsImportJobStatus } from "@/domains/property-sources/service/import-status";
 
 export type ImportJobCounters = {
   processedCount: number;
@@ -18,7 +20,15 @@ export type ImportJobErrorEntry = {
 };
 
 export type ImportJobSnapshot = ImportJobCounters & {
-  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "PARTIAL";
+  status:
+    | "PENDING"
+    | "QUEUED"
+    | "RUNNING"
+    | "SUCCEEDED"
+    | "FAILED"
+    | "CANCELLED"
+    | "PARTIAL"
+    | "COMPLETED_WITH_WARNINGS";
   errors: ImportJobErrorEntry[];
 };
 
@@ -42,14 +52,13 @@ export function applyItemOutcome(
   return next;
 }
 
+/**
+ * Finalize job status from counters (Prompt 3: COMPLETED_WITH_WARNINGS).
+ */
 export function finalizeImportJobStatus(
   counters: ImportJobCounters,
 ): ImportJobSnapshot["status"] {
-  if (counters.processedCount === 0) return "SUCCEEDED";
-  if (counters.errorCount === 0) return "SUCCEEDED";
-  if (counters.successCount === 0 && counters.skippedCount === 0) return "FAILED";
-  if (counters.successCount > 0 || counters.skippedCount > 0) return "PARTIAL";
-  return "FAILED";
+  return finalizeOpsImportJobStatus(counters);
 }
 
 export function appendImportError(

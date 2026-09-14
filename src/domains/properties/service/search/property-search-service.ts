@@ -198,8 +198,11 @@ export function createPropertySearchService(deps: {
             })
           : null;
 
+      const organicHits = pageItems.map((r) => toSearchHitDto(r));
       const page: PropertySearchPageDto = {
-        items: pageItems.map((r) => toSearchHitDto(r)),
+        items: organicHits,
+        organicResults: organicHits,
+        sponsoredPlacements: [],
         pagination: {
           mode: plan.pagination.mode,
           page: plan.pagination.mode === "page" ? plan.pagination.page : undefined,
@@ -211,6 +214,13 @@ export function createPropertySearchService(deps: {
         sort: plan.sort,
         warnings: plan.warnings,
         appliedFilters: plan.appliedFilters,
+        integrity: {
+          boostAffectsOrganicRanking: false,
+          boostAffectsMajetioScore: false,
+          boostAffectsValuation: false,
+          boostAffectsRiskAnalysis: false,
+          sponsoredLabelRequired: true,
+        },
       };
 
       return { ok: true, page };

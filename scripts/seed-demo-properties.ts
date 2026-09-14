@@ -4,6 +4,7 @@
  *
  * Usage: npx tsx scripts/seed-demo-properties.ts
  * Requires DATABASE_URL and applied migrations.
+ * REFUSED in production unless ALLOW_DEMO_SEED=true (staging only).
  */
 import {
   AddressPrecision,
@@ -18,6 +19,20 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "../src/lib/db";
+
+function assertSeedAllowed(): void {
+  const prodLike =
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production";
+  const allow =
+    process.env.ALLOW_DEMO_SEED === "true" ||
+    process.env.ALLOW_DEMO_SEED === "1";
+  if (prodLike && !allow) {
+    throw new Error(
+      "Refused: seed-demo-properties must not run in production. Set ALLOW_DEMO_SEED=true only on staging.",
+    );
+  }
+}
 
 async function upsertDemo(input: {
   slug: string;
@@ -154,6 +169,7 @@ async function upsertDemo(input: {
 }
 
 async function main() {
+  assertSeedAllowed();
   await upsertDemo({
     slug: "demo-byt-3kk-vinohrady",
     canonicalKey: "demo:byt-3kk-vinohrady",

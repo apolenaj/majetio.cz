@@ -88,7 +88,7 @@ describe("Prompt 9 Part 5 — IDOR on private property", () => {
 });
 
 describe("Prompt 9 Part 5 — SEO", () => {
-  it("demo and private listings are noindex", () => {
+  it("demo, private, and over-quota listings are noindex", () => {
     const demo = toPublicPropertyDto(getDemoPropertyRecord("demo-byt-3kk-vinohrady")!);
     expect(isPropertyDetailIndexable(demo)).toBe(false);
     const meta = buildPropertyDetailMetadata(demo);
@@ -98,6 +98,16 @@ describe("Prompt 9 Part 5 — SEO", () => {
     const privateDto = toPublicPropertyDto(privateRec);
     expect(privateDto.visibility).toBe("PRIVATE");
     expect(isPropertyDetailIndexable(privateDto)).toBe(false);
+
+    expect(
+      isPropertyDetailIndexable({
+        ...demo,
+        isDemo: false,
+        visibility: "PUBLIC",
+        status: "ACTIVE",
+        listingQuotaState: "OVER_LIMIT",
+      } as never),
+    ).toBe(false);
   });
 
   it("JSON-LD is RealEstateListing without Product or AggregateRating", () => {

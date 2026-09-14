@@ -9,6 +9,10 @@ import {
 } from "@/domains/properties/search/url-state";
 import { shouldNoIndexPropertySearch } from "@/domains/properties/search/seo-landings";
 import { track } from "@/lib/analytics/events";
+import { loadSponsoredPropertyCards } from "@/domains/listing-promotions";
+import { EmptyState } from "@/components/feedback/states";
+import { Container } from "@/components/ui/container";
+import { enforcePublicSearchRateLimit } from "@/lib/security/public-search-guard";
 
 type Props = { searchParams: Promise<SearchParamsLike> };
 
@@ -19,27 +23,50 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const noIndex = shouldNoIndexPropertySearch({
     filterCount,
     page: state.stranka,
+    hasNonDefaultSort: Boolean(state.razeni && state.razeni !== "newest"),
   });
 
   return preparePageMeta({
     title: noIndex ? "Výsledky hledání nemovitostí" : "Nemovitosti",
     description:
-      "Procházejte demonstrační nabídky Majetio s filtry v URL. Nejde o živý trh.",
+      "Procházejte nabídky Majetio s filtry v URL. Modelované metriky a odhady — ne znalecký posudek ani živý tržní index.",
     path: "/nemovitosti",
     noIndex,
   });
 }
 
 export default async function NemovitostiPage({ searchParams }: Props) {
+  const guard = await enforcePublicSearchRateLimit();
+  if (!guard.ok) {
+    return (
+      <Container className="py-10 sm:py-14">
+        <EmptyState
+          title="Příliš mnoho požadavků"
+          description={`Zkuste to znovu za ${guard.retryAfterSec} s. Limit chrání katalog před scrapingem.`}
+        />
+      </Container>
+    );
+  }
+
   const params = await searchParams;
   const state = parsePropertySearchParams(params);
-  const { isAuthenticated, matchProfile, profileComplete } =
+  const { isAuthenticated, matchProfile, profileComplete, rejectedPropertyIds } =
     await resolveMatchProfile();
   const { cards, sortLabel, relaxedCount, showPassportCta } = buildDiscoveryCards(
     state,
     matchProfile,
     profileComplete,
+    { rejectedPropertyIds },
   );
+
+  // Sponsored slots — separate from organic demo/organic sort (firewall 218)
+  const sponsoredCards = await loadSponsoredPropertyCards({
+    city: state.lokalita ?? undefined,
+    propertyType: state.typ.length ? state.typ : undefined,
+    priceMin: state.cenaOd ?? undefined,
+    priceMax: state.cenaDo ?? undefined,
+    limit: 4,
+  });
 
   if (state.razeni === "recommended") {
     track({
@@ -61,7 +88,7 @@ export default async function NemovitostiPage({ searchParams }: Props) {
   return (
     <DiscoveryListingShell
       title="Nemovitosti"
-      description="Filtry a řazení zůstávají v adrese — po návratu Zpět se hledání i scroll obnoví."
+      description="Filtry a řazení zůstávají v adrese — po návratu Zpět se hledání i scroll obnoví. Sponzorováno ≠ organika."
       breadcrumbs={[{ href: "/", label: "Domů" }, { label: "Nemovitosti" }]}
       state={state}
       cards={cards}
@@ -69,6 +96,7 @@ export default async function NemovitostiPage({ searchParams }: Props) {
       relaxedCount={relaxedCount}
       isAuthenticated={isAuthenticated}
       showPassportCta={showPassportCta}
+      sponsoredCards={sponsoredCards}
     />
   );
 }

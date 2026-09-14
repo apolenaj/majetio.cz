@@ -51,7 +51,7 @@ export default async function OvereniEmailuPage({ searchParams }: Props) {
         </ButtonLink>
       </div>
       <p className="text-xs text-[var(--text-muted)]">
-        <Link href="/ochrana-osobnich-udaju" className="underline-offset-2 hover:underline">
+        <Link href="/ochrana-soukromi" className="underline-offset-2 hover:underline">
           Ochrana osobních údajů
         </Link>
       </p>

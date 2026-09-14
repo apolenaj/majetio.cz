@@ -19,7 +19,7 @@ export const PROPERTY_SEO_LANDINGS: readonly SeoLanding[] = [
     slug: "praha",
     title: "Nemovitosti Praha",
     description:
-      "Přehled demonstračních nabídek v Praze. Filtry a personalizace podle Finančního pasu.",
+      "Přehled nabídek v Praze. Modelované metriky Majetio — ověřte aktuálnost před rozhodnutím.",
     lokalita: "Praha",
     h1: "Nemovitosti v Praze",
   },
@@ -27,7 +27,7 @@ export const PROPERTY_SEO_LANDINGS: readonly SeoLanding[] = [
     slug: "brno",
     title: "Nemovitosti Brno",
     description:
-      "Přehled demonstračních nabídek v Brně. Transparentní filtry a investiční metriky Majetio.",
+      "Přehled nabídek v Brně. Transparentní filtry a modelované investiční metriky Majetio.",
     lokalita: "Brno",
     h1: "Nemovitosti v Brně",
   },
@@ -35,7 +35,7 @@ export const PROPERTY_SEO_LANDINGS: readonly SeoLanding[] = [
     slug: "ostrava",
     title: "Nemovitosti Ostrava",
     description:
-      "Přehled demonstračních nabídek v Ostravě. Katalog s URL filtry a doporučením podle profilu.",
+      "Přehled nabídek v Ostravě. Katalog s URL filtry a doporučením podle profilu.",
     lokalita: "Ostrava",
     h1: "Nemovitosti v Ostravě",
   },
@@ -50,13 +50,16 @@ export function isSeoLandingSlug(slug: string): boolean {
 }
 
 /**
- * Filtered discovery URLs must not be indexed.
- * Clean /nemovitosti and SEO landings stay indexable.
+ * Filtered / sorted / paginated discovery URLs must not be indexed.
+ * Clean /nemovitosti and path SEO landings stay indexable.
  */
 export function shouldNoIndexPropertySearch(state: {
   filterCount: number;
   page?: number;
+  /** True when `razeni` is set to a non-default sort (crawl-trap protection). */
+  hasNonDefaultSort?: boolean;
 }): boolean {
   if ((state.page ?? 1) > 1) return true;
+  if (state.hasNonDefaultSort) return true;
   return state.filterCount > 0;
 }

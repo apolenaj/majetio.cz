@@ -150,10 +150,14 @@ export async function changePassword(input: {
   }
 
   const passwordHash = await hashPassword(input.newPassword);
-  await prisma.user.update({
-    where: { id: sessionUser.id },
-    data: { passwordHash },
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: sessionUser.id },
+      data: { passwordHash },
+    }),
+    // Invalidate DB sessions (OAuth/adapter); JWT sessions revoked via cfp mismatch
+    prisma.session.deleteMany({ where: { userId: sessionUser.id } }),
+  ]);
   await clearAuthFailures([ip, "password-change", sessionUser.id]);
   await writeAuditLog({
     action: "auth.password_change",
@@ -221,7 +225,8 @@ export async function requestEmailChange(input: {
     }),
   ]);
 
-  const base = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+  const { getPublicAppUrl } = await import("@/lib/app-url");
+  const base = getPublicAppUrl();
   const confirmUrl = `${base}/overeni-emailu?token=${rawToken}&uid=${sessionUser.id}`;
 
   if (process.env.NODE_ENV !== "production") {

@@ -1,26 +1,450 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "..";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Majetio Design System tokens
+   Semantic names for components. Brand palette from Prompt 2.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand primitives (internal — prefer semantic tokens in components) */
+  --brand-ink-950: #07131f;
+  --brand-ink-900: #0b1f33;
+  --brand-ink-800: #243b53;
+  --brand-ink-600: #486581;
+  --brand-ink-400: #829ab1;
+  --brand-growth-700: #1a5c46;
+  --brand-growth-600: #1f6f54;
+  --brand-growth-500: #2a8a68;
+  --brand-sand-500: #c4a574;
+  --brand-sand-400: #d4bc94;
+  --brand-canvas-100: #f7f4ef;
+  --brand-canvas-200: #efeae2;
+  --brand-canvas-300: #e4dfd6;
+  --brand-canvas-400: #cfc7ba;
+  --brand-white: #ffffff;
+  --brand-danger-700: #9b2c2c;
+  --brand-warning-700: #b45309;
+  --brand-info-700: #0369a1;
+  --brand-neutral-500: #627d98;
+
+  /* Semantic surfaces */
+  --background-primary: var(--brand-canvas-100);
+  --background-secondary: var(--brand-canvas-200);
+  --surface-primary: var(--brand-white);
+  --surface-elevated: var(--brand-white);
+  --surface-sunken: var(--brand-canvas-200);
+  --surface-inverse: var(--brand-ink-900);
+
+  /* Semantic text */
+  --text-primary: var(--brand-ink-900);
+  --text-secondary: var(--brand-ink-800);
+  --text-muted: var(--brand-ink-600);
+  --text-inverse: var(--brand-canvas-100);
+  --text-link: var(--brand-ink-900);
+  --text-link-hover: var(--brand-growth-600);
+
+  /* Borders */
+  --border-default: var(--brand-canvas-300);
+  --border-strong: var(--brand-canvas-400);
+  --border-focus: var(--brand-sand-500);
+
+  /* Actions */
+  --action-primary: var(--brand-ink-900);
+  --action-primary-hover: var(--brand-ink-800);
+  --action-accent: var(--brand-growth-600);
+  --action-accent-hover: var(--brand-growth-700);
+  --action-destructive: var(--brand-danger-700);
+  --action-premium: var(--brand-sand-500);
+
+  /* Status */
+  --status-success: var(--brand-growth-600);
+  --status-warning: var(--brand-warning-700);
+  --status-error: var(--brand-danger-700);
+  --status-info: var(--brand-info-700);
+
+  /* Data quality */
+  --data-verified: var(--brand-growth-600);
+  --data-estimated: var(--brand-warning-700);
+  --data-stale: var(--brand-neutral-500);
+  --data-missing: var(--brand-ink-400);
+
+  /* Investment */
+  --investment-positive: var(--brand-growth-600);
+  --investment-negative: var(--brand-danger-700);
+
+  /* Risk */
+  --risk-low: var(--brand-growth-600);
+  --risk-medium: var(--brand-warning-700);
+  --risk-high: #c2410c;
+  --risk-critical: var(--brand-danger-700);
+
+  /* Charts (max 5) */
+  --chart-1: var(--brand-ink-900);
+  --chart-2: var(--brand-growth-600);
+  --chart-3: var(--brand-sand-500);
+  --chart-4: var(--brand-info-700);
+  --chart-5: var(--brand-ink-600);
+
+  /* Focus / elevation */
+  --focus-ring: var(--brand-sand-500);
+  --shadow-raised: 0 1px 2px rgb(11 31 51 / 4%), 0 4px 12px rgb(11 31 51 / 5%);
+  --shadow-overlay: 0 4px 16px rgb(11 31 51 / 10%);
+  --shadow-modal: 0 12px 40px rgb(11 31 51 / 16%);
+  --shadow-sticky: 0 1px 0 rgb(11 31 51 / 6%);
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-dialog: 0.75rem;
+  --radius-pill: 9999px;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-brand: var(--ease-standard);
+
+  /* Legacy aliases (Prompt 1–2 compatibility) */
+  --color-ink: var(--brand-ink-900);
+  --color-ink-soft: var(--brand-ink-800);
+  --color-ink-muted: var(--brand-ink-600);
+  --color-growth: var(--brand-growth-600);
+  --color-growth-soft: var(--brand-growth-500);
+  --color-sand: var(--brand-sand-500);
+  --color-sand-soft: var(--brand-sand-400);
+  --color-canvas: var(--brand-canvas-100);
+  --color-canvas-deep: var(--brand-canvas-200);
+  --color-surface: var(--brand-white);
+  --color-line: var(--brand-canvas-300);
+  --color-line-strong: var(--brand-canvas-400);
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-danger: var(--status-error);
+  --color-info: var(--status-info);
+  --color-positive: var(--investment-positive);
+  --color-negative: var(--investment-negative);
+  --color-verified: var(--data-verified);
+  --color-estimated: var(--data-estimated);
+  --color-stale: var(--data-stale);
+  --color-focus: var(--focus-ring);
+  --shadow-soft: var(--shadow-raised);
+
+  --background: var(--background-primary);
+  --foreground: var(--text-primary);
+
+  /* Typography */
+  --text-display-xl: clamp(2.5rem, 4vw, 3.75rem);
+  --text-display-l: clamp(2rem, 3vw, 3rem);
+  --text-h1: clamp(1.75rem, 2.5vw, 2.25rem);
+  --text-h2: clamp(1.5rem, 2vw, 1.875rem);
+  --text-h3: 1.375rem;
+  --text-h4: 1.125rem;
+  --text-h5: 1rem;
+  --text-body-xl: 1.25rem;
+  --text-body-l: 1.125rem;
+  --text-body-m: 1rem;
+  --text-body-s: 0.875rem;
+  --text-label-l: 0.875rem;
+  --text-label-m: 0.8125rem;
+  --text-label-s: 0.75rem;
+  --text-caption: 0.75rem;
+  --text-overline: 0.6875rem;
+  --text-metric-xl: clamp(1.75rem, 2.5vw, 2.25rem);
+  --text-metric-l: 1.5rem;
+  --text-metric-m: 1.25rem;
+  --text-metric-s: 1.125rem;
+
+  /* Admin dense tables (156–165, 193–202) */
+  --admin-table-font: 0.8125rem;
+  --admin-cell-px: 0.5rem;
+  --admin-cell-py: 0.375rem;
+  --admin-row-min-h: 2rem;
+}
+
+.admin-dense {
+  --admin-table-font: 0.8125rem;
+  --admin-cell-px: 0.5rem;
+  --admin-cell-py: 0.375rem;
+  line-height: 1.35;
+}
+
+.admin-dense :where(th, td) {
+  min-height: var(--admin-row-min-h);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--brand-ink-900);
+  --color-ink-soft: var(--brand-ink-800);
+  --color-ink-muted: var(--brand-ink-600);
+  --color-growth: var(--brand-growth-600);
+  --color-sand: var(--brand-sand-500);
+  --color-canvas: var(--brand-canvas-100);
+  --color-surface: var(--brand-white);
+  --color-line: var(--brand-canvas-300);
+  --color-danger: var(--status-error);
+  --color-warning: var(--status-warning);
+  --color-info: var(--status-info);
+  --color-success: var(--status-success);
+  --color-positive: var(--investment-positive);
+  --color-negative: var(--investment-negative);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-source-serif);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-dm-sans), var(--font-noto-arabic), system-ui, sans-serif;
+  font-size: var(--text-body-m);
+  line-height: 1.6;
+}
+
+/* RTL-ready: prefer logical properties; flip directional icons under [dir=rtl] */
+html[dir="rtl"] body {
+  font-family: var(--font-noto-arabic), var(--font-dm-sans), system-ui, sans-serif;
+}
+
+html[dir="rtl"] .icon-dir {
+  transform: scaleX(-1);
+}
+
+.ms-auto {
+  margin-inline-start: auto;
+}
+
+.me-auto {
+  margin-inline-end: auto;
+}
+
+.ps-4 {
+  padding-inline-start: 1rem;
+}
+
+.pe-4 {
+  padding-inline-end: 1rem;
+}
+
+.text-start {
+  text-align: start;
+}
+
+.text-end {
+  text-align: end;
+}
+
+.font-display {
+  font-family: var(--font-source-serif), "Times New Roman", serif;
+}
+
+.font-metric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+.text-display-xl {
+  font-family: var(--font-source-serif), serif;
+  font-size: var(--text-display-xl);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-display-l {
+  font-family: var(--font-source-serif), serif;
+  font-size: var(--text-display-l);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-h1 {
+  font-family: var(--font-source-serif), serif;
+  font-size: var(--text-h1);
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.text-h2 {
+  font-family: var(--font-source-serif), serif;
+  font-size: var(--text-h2);
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.text-h3 {
+  font-family: var(--font-source-serif), serif;
+  font-size: var(--text-h3);
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.text-metric-xl {
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-size: var(--text-metric-xl);
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-caption {
+  font-size: var(--text-caption);
+  line-height: 1.4;
+}
+
+.text-overline {
+  font-size: var(--text-overline);
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-fade-in {
+    animation: majetio-fade-in var(--duration-normal) var(--ease-enter) both;
+  }
+
+  .motion-hover-lift {
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+
+  .motion-hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-in,
+  .motion-hover-lift,
+  .skeleton {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .motion-hover-lift:hover {
+    transform: none;
+  }
+}
+
+@keyframes majetio-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes majetio-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes majetio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.skeleton {
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: majetio-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+.property-photo {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+}
+
+/* Comparison print / export (BOD 101–103) */
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .comparison-workspace {
+    background: white;
+    color: black;
+  }
+
+  .comparison-print-block,
+  .comparison-print-footer {
+    break-inside: avoid;
+  }
+
+  .comparison-print-footer {
+    margin-top: 1.5rem;
+    border-top: 1px solid #ccc;
+    padding-top: 0.75rem;
+    font-size: 10pt;
+  }
+
+  /* Prefer desktop table layout when printing */
+  .comparison-workspace .lg\:hidden {
+    display: none !important;
+  }
+
+  .comparison-workspace .hidden.lg\:block {
+    display: block !important;
+  }
+
+  .comparison-workspace table {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 9pt;
+  }
+
+  .comparison-workspace th,
+  .comparison-workspace td {
+    position: static !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
 }

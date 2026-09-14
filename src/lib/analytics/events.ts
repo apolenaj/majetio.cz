@@ -3,6 +3,11 @@
  * Integration is a thin adapter; swap provider later without rewriting call sites.
  */
 
+import { scrubPii } from "@/lib/analytics/scrub-pii";
+import { getAnalyticsProvider } from "@/lib/analytics/provider";
+import { buildAnalyticsContext } from "@/lib/analytics/context";
+import { isAnalyticsAllowedForEvent, readCookieConsentFromDocument } from "@/lib/analytics/consent-gate";
+
 export type AnalyticsEvent =
   | { name: "navigation_item_clicked"; props: { label: string; href: string } }
   | { name: "primary_cta_clicked"; props: { label: string; href: string; location: string } }
@@ -38,7 +43,7 @@ export type AnalyticsEvent =
     }
   | {
       name: "pricing_cta_clicked";
-      props: { product: "basic" | "full"; href: string };
+      props: { product: "basic" | "full" | "cenik"; href: string };
     }
   | {
       name: "final_cta_clicked";
@@ -48,7 +53,12 @@ export type AnalyticsEvent =
   /** Auth & account funnel — never include email, password, or CZK amounts */
   | { name: "signup_completed"; props: { consents: "terms_privacy" } }
   | { name: "login_succeeded"; props: Record<string, never> }
-  | { name: "login_failed"; props: { reason: "credentials" | "rate_limit" | "unknown" } }
+  | {
+      name: "login_failed";
+      props: {
+        reason: "credentials" | "rate_limit" | "unknown" | "account_status";
+      };
+    }
   | { name: "password_reset_requested"; props: Record<string, never> }
   | { name: "password_reset_completed"; props: Record<string, never> }
   | { name: "password_changed"; props: Record<string, never> }
@@ -75,11 +85,16 @@ export type AnalyticsEvent =
     }
   | {
       name: "partner_handoff_preview_opened";
-      props: { partner: "hypotekajasne" };
+      props: { partner: "hypotekajasne"; step?: string };
     }
   | {
       name: "partner_handoff_confirmed";
-      props: { partner: "hypotekajasne"; field_count: number; is_mock: boolean };
+      props: {
+        partner: "hypotekajasne";
+        field_count: number;
+        is_mock: boolean;
+        consent_type?: string;
+      };
     }
   | { name: "account_export_requested"; props: { format: "json" | "csv" } }
   | { name: "account_delete_requested"; props: Record<string, never> }
@@ -122,17 +137,63 @@ export type AnalyticsEvent =
       name: "property_compared";
       props: { action: "add" | "remove"; tray_count: number };
     }
+  /** Decision Workspace funnel (BOD 125–126) — never notes content / CZK */
+  | {
+      name: "property_favorited";
+      props: { action: "add" | "remove"; is_demo: boolean; status?: string };
+    }
+  | {
+      name: "property_shortlisted";
+      props: { is_demo: boolean };
+    }
+  | {
+      name: "comparison_created";
+      props: { property_count: number };
+    }
+  | {
+      name: "comparison_shared";
+      props: { mode: "secret_link" | "invited_users"; property_count: number };
+    }
+  | {
+      name: "comparison_share_opened";
+      props: { mode: "secret_link" | "invited_users" };
+    }
+  | {
+      name: "price_alert_opened";
+      props: { alert_type: string; channel: string };
+    }
+  | {
+      name: "decision_funnel_step";
+      props: {
+        step:
+          | "viewed"
+          | "saved"
+          | "shortlisted"
+          | "compared"
+          | "analysis"
+          | "purchase_intent";
+      };
+    }
   | {
       name: "saved_search_created";
       props: {
         filter_count: number;
         sort: string;
-        alert_frequency: "OFF" | "INSTANT" | "WEEKLY";
+        alert_frequency: "OFF" | "INSTANT" | "DAILY" | "WEEKLY";
       };
     }
   | {
       name: "saved_search_alert_updated";
-      props: { alert_frequency: "OFF" | "INSTANT" | "WEEKLY" };
+      props: { alert_frequency: "OFF" | "INSTANT" | "DAILY" | "WEEKLY" };
+    }
+  /** Note / task — length or type only, never body text */
+  | {
+      name: "decision_note_saved";
+      props: { length_bucket: "0" | "1-80" | "81-400" | "401+" };
+    }
+  | {
+      name: "decision_task_created";
+      props: { task_type: string };
     }
   | {
       name: "recommendation_sort_viewed";
@@ -185,6 +246,120 @@ export type AnalyticsEvent =
         slug: string;
         reason: "manual" | "stale" | "price_changed";
       };
+    }
+  /** Investment calculator — no CZK amounts, no personal data */
+  | {
+      name: "investment_analysis_viewed";
+      props: {
+        entry: "calculator" | "analysis" | "shared";
+        strategy: string;
+        mode: "simple" | "advanced";
+      };
+    }
+  | {
+      name: "scenario_selected";
+      props: {
+        variant: string;
+        strategy: string;
+      };
+    }
+  | {
+      name: "sensitivity_opened";
+      props: {
+        surface: "heatmap" | "one_way";
+      };
+    }
+  | {
+      name: "investment_assumption_changed";
+      props: {
+        field_bucket: string;
+        strategy: string;
+      };
+    }
+  | {
+      name: "investment_scenario_saved";
+      props: {
+        authenticated: boolean;
+      };
+    }
+  /** Location Intelligence — no street addresses, no exact CZK in props */
+  | {
+      name: "location_page_view";
+      props: {
+        location_slug: string;
+        path_depth: number;
+        is_demo: boolean;
+        indexable: boolean;
+      };
+    }
+  | {
+      name: "location_metric_viewed";
+      props: { location_slug: string; metric_key: string };
+    }
+  | {
+      name: "location_chart_viewed";
+      props: { location_slug: string; chart: "price" | "rent" | "dual" };
+    }
+  | {
+      name: "location_map_viewed";
+      props: { location_slug: string; layer: "price" | "rent" | "yield" | "supply" };
+    }
+  | {
+      name: "location_map_layer_changed";
+      props: { location_slug: string; layer: "price" | "rent" | "yield" | "supply" };
+    }
+  | {
+      name: "location_comparison_viewed";
+      props: { location_count: number; segment_bucket: string; has_match: boolean };
+    }
+  | {
+      name: "location_internal_link_clicked";
+      props: {
+        location_slug: string;
+        target: "properties" | "strategy" | "guide" | "mortgage" | "comparison";
+      };
+    }
+  /** Monetization funnel — no amounts, emails, or notes (157/158) */
+  | {
+      name: "checkout_started";
+      props: { product_key: string; has_promo: boolean };
+    }
+  | {
+      name: "checkout_completed";
+      props: { product_key: string; billing_kind: "one_time" | "subscription" };
+    }
+  | {
+      name: "subscription_renew_consent_shown";
+      props: { product_key: string };
+    }
+  | {
+      name: "admin_monetization_dashboard_viewed";
+      props: { has_mrr: boolean; has_gmv: boolean };
+    }
+  | {
+      name: "admin_audit_log_viewed";
+      props: { row_count_bucket: "0" | "1-20" | "21+" };
+    }
+  | {
+      name: "reconciliation_completed";
+      props: {
+        repair: boolean;
+        finding_count_bucket: "0" | "1-5" | "6+";
+        has_errors: boolean;
+      };
+    }
+  /** B2B funnel — org → publish → lead (no PII / addresses) */
+  | {
+      name: "organization_created";
+      props: { org_type: string; market_code: string };
+    }
+  | {
+      name: "listing_published";
+      props: { market_code: string };
+    }
+  | {
+      name: "lead_inquiry_created";
+      props: { has_message: boolean; authenticated_buyer: boolean };
     };
 
 const FORBIDDEN_PROP_KEYS = new Set([
@@ -201,6 +376,13 @@ const FORBIDDEN_PROP_KEYS = new Set([
   "czk",
   "rodne",
   "birth",
+  /** Private Decision Workspace — never ship note bodies. */
+  "note",
+  "notes",
+  "content",
+  "privateNotes",
+  "rejectionReason",
+  "passport",
 ]);
 
 /** Runtime guard — analytics must never carry PII or raw finance amounts. */
@@ -225,9 +407,19 @@ export function percentBucket(percent: number): "0" | "1-39" | "40-69" | "70-99"
 }
 
 export function track(event: AnalyticsEvent): void {
-  assertAnalyticsSafe(event);
-  if (process.env.NODE_ENV === "development") {
-    console.debug("[analytics]", event.name, event.props);
+  const isServer = typeof window === "undefined";
+  const consent = isServer ? null : readCookieConsentFromDocument();
+  if (
+    !isAnalyticsAllowedForEvent(event.name, consent, { isServer })
+  ) {
+    return;
   }
-  // Future: send to single analytics provider
+
+  const cleaned = {
+    name: event.name,
+    props: scrubPii(event.props),
+  } as AnalyticsEvent;
+  assertAnalyticsSafe(cleaned);
+  const context = buildAnalyticsContext(isServer ? "server" : "client");
+  void getAnalyticsProvider().send({ ...cleaned, context });
 }

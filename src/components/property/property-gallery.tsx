@@ -31,9 +31,13 @@ function MediaPlaceholder({
 function MediaImage({
   item,
   className,
+  priority = false,
+  fallbackAlt,
 }: {
   item: PublicMediaItem;
   className?: string;
+  priority?: boolean;
+  fallbackAlt: string;
 }) {
   if (!item.url || item.isPlaceholder || item.restricted) {
     return (
@@ -48,10 +52,15 @@ function MediaImage({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- remote listing hosts
     <img
       src={item.url}
-      alt={item.alt ?? ""}
+      alt={item.alt?.trim() || fallbackAlt}
+      width={1200}
+      height={800}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+      decoding="async"
       className={cn("h-full w-full object-cover", className)}
       draggable={false}
     />
@@ -127,7 +136,11 @@ export function PropertyGallery({
             onTouchEnd={onTouchEnd}
             aria-label="Otevřít galerii na celou obrazovku"
           >
-            <MediaImage item={current} />
+            <MediaImage
+              item={current}
+              fallbackAlt={title}
+              priority={index === 0}
+            />
           </button>
         </AspectRatio>
 
@@ -188,7 +201,7 @@ export function PropertyGallery({
                 aria-current={i === index ? "true" : undefined}
               >
                 <AspectRatio ratio="4/3">
-                  <MediaImage item={item} />
+                  <MediaImage item={item} fallbackAlt={`${title} — náhled ${i + 1}`} />
                 </AspectRatio>
               </button>
             </li>
@@ -225,7 +238,7 @@ export function PropertyGallery({
           >
             <div className="relative max-h-full w-full max-w-5xl overflow-hidden rounded-[var(--radius-md)]">
               <AspectRatio ratio="16/9">
-                <MediaImage item={current} />
+                <MediaImage item={current} fallbackAlt={title} />
               </AspectRatio>
             </div>
             {items.length > 1 ? (

@@ -13,6 +13,7 @@ import {
   SAVED_SEARCH_FILTERS_VERSION,
 } from "@/domains/saved-searches/service/filters-version";
 import { syncAlertSubscriptionsForSavedSearch } from "@/domains/notifications/service/property-alerts";
+import { syncSavedSearchMatches } from "@/domains/saved-searches/service/match-service";
 import {
   buildPropertySearchHref,
   countActiveFilters,
@@ -31,18 +32,38 @@ export type SavedSearchDto = {
   createdAt: string;
   updatedAt: string;
   state: PropertyUrlFilterState;
+  matchCount: number;
+  newMatchCount: number;
+  lastCheckedAt: string | null;
+  filterSummary: string;
 };
 
-function toDto(row: {
-  id: string;
-  name: string;
-  sort: string | null;
-  filtersVersion: number;
-  alertFrequency: SavedSearchAlertFrequency;
-  filters: unknown;
-  createdAt: Date;
-  updatedAt: Date;
-}): SavedSearchDto {
+function summarizeFilters(state: PropertyUrlFilterState): string {
+  const parts: string[] = [];
+  if (state.lokalita) parts.push(state.lokalita);
+  if (state.cenaDo != null) {
+    parts.push(`do ${Math.round(state.cenaDo / 1_000_000)} mil. Kč`);
+  }
+  if (state.typ.length) parts.push(state.typ.join(", "));
+  if (state.dispozice.length) parts.push(state.dispozice.join(", "));
+  if (parts.length === 0) return "Bez filtrů (všechny nabídky)";
+  return parts.join(" · ");
+}
+
+function toDto(
+  row: {
+    id: string;
+    name: string;
+    sort: string | null;
+    filtersVersion: number;
+    alertFrequency: SavedSearchAlertFrequency;
+    filters: unknown;
+    createdAt: Date;
+    updatedAt: Date;
+    lastCheckedAt?: Date | null;
+  },
+  stats?: { matchCount: number; newMatchCount: number },
+): SavedSearchDto {
   const parsed = parseSavedSearchFilters(row.filters);
   return {
     id: row.id,
@@ -54,6 +75,10 @@ function toDto(row: {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     state: parsed.state,
+    matchCount: stats?.matchCount ?? 0,
+    newMatchCount: stats?.newMatchCount ?? 0,
+    lastCheckedAt: row.lastCheckedAt?.toISOString() ?? null,
+    filterSummary: summarizeFilters(parsed.state),
   };
 }
 
@@ -66,8 +91,23 @@ export async function listSavedSearches(): Promise<
   const rows = await prisma.savedSearch.findMany({
     where: { userId: session.user.id },
     orderBy: { updatedAt: "desc" },
+    include: {
+      _count: { select: { matches: true } },
+      matches: {
+        where: { notifiedAt: null },
+        select: { id: true },
+      },
+    },
   });
-  return { ok: true, items: rows.map(toDto) };
+  return {
+    ok: true,
+    items: rows.map((row) =>
+      toDto(row, {
+        matchCount: row._count.matches,
+        newMatchCount: row.matches.length,
+      }),
+    ),
+  };
 }
 
 const createSchema = z.object({
@@ -114,6 +154,21 @@ export async function createSavedSearch(input: {
     alertFrequency: frequency,
   });
 
+  // Baseline sync — current catalog matches are not "new"
+  await syncSavedSearchMatches({
+    savedSearchId: row.id,
+    baseline: true,
+    notify: false,
+  }).catch(() => undefined);
+
+  const refreshed = await prisma.savedSearch.findUnique({
+    where: { id: row.id },
+    include: {
+      _count: { select: { matches: true } },
+      matches: { where: { notifiedAt: null }, select: { id: true } },
+    },
+  });
+
   await writeAuditLog({
     actorId: session.user.id,
     action: "saved_search.create",
@@ -131,7 +186,15 @@ export async function createSavedSearch(input: {
   });
 
   revalidatePath("/ucet/ulozena-hledani");
-  return { ok: true, item: toDto(row) };
+  revalidatePath("/ucet");
+  const dtoSource = refreshed ?? row;
+  return {
+    ok: true,
+    item: toDto(dtoSource, {
+      matchCount: refreshed?._count.matches ?? 0,
+      newMatchCount: refreshed?.matches.length ?? 0,
+    }),
+  };
 }
 
 const renameSchema = z.object({
@@ -159,6 +222,7 @@ export async function renameSavedSearch(input: {
   });
 
   revalidatePath("/ucet/ulozena-hledani");
+  revalidatePath("/ucet");
   return { ok: true, item: toDto(row) };
 }
 
@@ -181,6 +245,7 @@ export async function deleteSavedSearch(
     entityId: id,
   });
   revalidatePath("/ucet/ulozena-hledani");
+  revalidatePath("/ucet");
   return { ok: true };
 }
 
@@ -220,5 +285,6 @@ export async function setSavedSearchAlertFrequency(input: {
   });
 
   revalidatePath("/ucet/ulozena-hledani");
+  revalidatePath("/ucet");
   return { ok: true, item: toDto(row) };
 }

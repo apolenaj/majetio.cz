@@ -1,42 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { Columns2, Heart, Share2 } from "lucide-react";
+import { Columns2, Share2 } from "lucide-react";
 
+import { SavePropertyControl } from "@/components/favourites/save-property-control";
 import { PropertyPriceBlock } from "@/components/property/property-price-block";
+import { ReportListingDialog } from "@/components/property/report-listing-dialog";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
-import { IconButton } from "@/components/ui/icon-button";
+import { comparisonConfig } from "@/config/comparison";
 import type { PublicPriceHistoryPoint } from "@/domains/properties/service/dto";
+import { FAVOURITES_CHANGED_EVENT } from "@/domains/favourites/guest-storage";
 import {
-  isFavourite,
-  toggleFavourite,
-  type FavouriteItem,
-} from "@/domains/properties/search/favourites";
-import {
+  COMPARE_CHANGED_EVENT,
   isInCompareTray,
   toggleCompareItem,
   type CompareTrayItem,
 } from "@/domains/properties/search/compare-tray";
+import { mortgageLeadFinancingPageHref } from "@/domains/leads/service/user-messaging";
+import type { MortgageLeadDuplicateInfo } from "@/domains/leads/schemas/mortgage-lead";
 import { cn } from "@/lib/utils";
-
-const PENDING_FAVOURITE_KEY = "majetio.pendingFavourite.v1";
-
-function toFavourite(item: {
-  id: string;
-  slug: string;
-  title: string;
-  href: string;
-}): FavouriteItem {
-  return {
-    id: item.id,
-    slug: item.slug,
-    title: item.title,
-    href: item.href,
-  };
-}
 
 function toCompare(item: {
   id: string;
@@ -58,6 +42,7 @@ function toCompare(item: {
 
 export function PropertyDecisionActions({
   property,
+  activeFinancingLead = null,
 }: {
   property: {
     id: string;
@@ -69,15 +54,16 @@ export function PropertyDecisionActions({
     locationLabel: string;
     isDemo: boolean;
   };
+  activeFinancingLead?: MortgageLeadDuplicateInfo | null;
 }) {
-  const router = useRouter();
   const href = `/nemovitosti/${property.slug}`;
-  const favItem = toFavourite({
-    id: property.id,
+  const saveItem = {
+    propertyId: property.id,
     slug: property.slug,
     title: property.title,
     href,
-  });
+    priceCzk: property.askingPrice,
+  };
   const compareItem = toCompare({
     id: property.id,
     slug: property.slug,
@@ -87,44 +73,20 @@ export function PropertyDecisionActions({
     location: property.locationLabel,
   });
 
-  const [saved, setSaved] = React.useState(false);
   const [compared, setCompared] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
   const [shareHint, setShareHint] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setSaved(isFavourite(property.id) || isFavourite(property.slug));
     setCompared(isInCompareTray(property.id));
-
-    async function completePendingFavourite() {
-      try {
-        const raw = sessionStorage.getItem(PENDING_FAVOURITE_KEY);
-        if (!raw) return;
-        const pending = JSON.parse(raw) as FavouriteItem;
-        if (pending.id !== property.id && pending.slug !== property.slug) return;
-        sessionStorage.removeItem(PENDING_FAVOURITE_KEY);
-        const result = await toggleFavourite(pending);
-        if (result.ok && result.added) {
-          setSaved(true);
-          setToast("Přidáno do oblíbených");
-        }
-      } catch {
-        sessionStorage.removeItem(PENDING_FAVOURITE_KEY);
-      }
-    }
-    void completePendingFavourite();
-
-    const sync = () => {
-      setSaved(isFavourite(property.id) || isFavourite(property.slug));
-      setCompared(isInCompareTray(property.id));
-    };
-    window.addEventListener("majetio:favourites-changed", sync);
-    window.addEventListener("majetio:compare-changed", sync);
+    const sync = () => setCompared(isInCompareTray(property.id));
+    window.addEventListener(COMPARE_CHANGED_EVENT, sync);
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, sync);
     return () => {
-      window.removeEventListener("majetio:favourites-changed", sync);
-      window.removeEventListener("majetio:compare-changed", sync);
+      window.removeEventListener(COMPARE_CHANGED_EVENT, sync);
+      window.removeEventListener(FAVOURITES_CHANGED_EVENT, sync);
     };
-  }, [property.id, property.slug]);
+  }, [property.id]);
 
   React.useEffect(() => {
     if (!toast) return;
@@ -132,21 +94,10 @@ export function PropertyDecisionActions({
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  async function onSave() {
-    const result = await toggleFavourite(favItem);
-    if (!result.ok) {
-      sessionStorage.setItem(PENDING_FAVOURITE_KEY, JSON.stringify(favItem));
-      router.push(result.loginUrl);
-      return;
-    }
-    setSaved(result.added);
-    setToast(result.added ? "Přidáno do oblíbených" : "Odebráno z oblíbených");
-  }
-
   function onCompare() {
     const result = toggleCompareItem(compareItem);
     if (!result.ok) {
-      setToast("Porovnání je plné (max 4). Odeberte položku.");
+      setToast(comparisonConfig.trayFullMessageCs);
       return;
     }
     setCompared(result.added);
@@ -171,7 +122,12 @@ export function PropertyDecisionActions({
   }
 
   const analyzeHref = `/analyza?nemovitost=${encodeURIComponent(property.slug)}`;
-  const financeHref = `/kalkulacky/financovani`;
+  const financeHref = activeFinancingLead
+    ? mortgageLeadFinancingPageHref(activeFinancingLead.correlationId)
+    : `#financovani`;
+  const financeLabel = activeFinancingLead
+    ? "Zobrazit stav financování"
+    : "Zjistit financování";
 
   return (
     <>
@@ -191,25 +147,17 @@ export function PropertyDecisionActions({
         <div className="flex flex-col gap-2">
           <ButtonLink href={analyzeHref}>Analyzovat nemovitost</ButtonLink>
           <ButtonLink href={financeHref} variant="secondary">
-            Spočítat financování
+            {financeLabel}
           </ButtonLink>
         </div>
 
         <div className="flex flex-wrap gap-2 border-t border-[var(--border-default)] pt-4">
-          <Button
-            type="button"
+          <SavePropertyControl
+            item={saveItem}
+            variant="button"
             size="sm"
-            variant={saved ? "secondary" : "outline"}
-            onClick={() => void onSave()}
-            leftIcon={
-              <Heart
-                className={cn(saved && "fill-current text-[var(--status-error)]")}
-                aria-hidden
-              />
-            }
-          >
-            {saved ? "Uloženo" : "Uložit"}
-          </Button>
+            onToast={setToast}
+          />
           <Button
             type="button"
             size="sm"
@@ -228,6 +176,10 @@ export function PropertyDecisionActions({
           >
             Sdílet
           </Button>
+          <ReportListingDialog
+            propertyId={property.id}
+            propertyTitle={property.title}
+          />
         </div>
         {shareHint ? (
           <p className="text-xs text-[var(--text-muted)]" role="status">
@@ -253,17 +205,12 @@ export function PropertyDecisionActions({
           <ButtonLink href={analyzeHref} className="min-w-0 flex-1" size="md">
             Analyzovat
           </ButtonLink>
-          <IconButton
-            type="button"
-            label={saved ? "Odebrat z oblíbených" : "Uložit do oblíbených"}
-            variant={saved ? "secondary" : "outline"}
+          <SavePropertyControl
+            item={saveItem}
+            variant="icon"
             size="icon"
-            onClick={() => void onSave()}
-          >
-            <Heart
-              className={cn("size-5", saved && "fill-current text-[var(--status-error)]")}
-            />
-          </IconButton>
+            onToast={setToast}
+          />
         </div>
       </div>
 

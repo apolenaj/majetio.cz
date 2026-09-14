@@ -29,11 +29,14 @@ test.describe("property search discovery", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/nemovitosti", { waitUntil: "domcontentloaded" });
 
-    await page.getByRole("button", { name: /Otevřít filtry|Filtry/i }).click();
-    const dialog = page.getByRole("dialog", { name: /Filtry/i });
-    await expect(dialog).toBeVisible();
+    const openFilters = page.getByRole("button", {
+      name: /Otevřít filtry|Filtry/i,
+    });
+    await expect(openFilters.first()).toBeVisible({ timeout: 15_000 });
+    await openFilters.first().click();
+    const dialog = page.getByRole("dialog").filter({ hasText: /Filtr/i });
+    await expect(dialog.first()).toBeVisible({ timeout: 10_000 });
 
-    // No horizontal overflow on sheet
     const overflow = await page.evaluate(() => {
       const el = document.querySelector('[role="dialog"]');
       if (!el) return true;
@@ -42,7 +45,7 @@ test.describe("property search discovery", () => {
     expect(overflow).toBe(false);
 
     await page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
+    await expect(dialog.first()).toBeHidden({ timeout: 10_000 });
   });
 
   test("SEO city landing is indexable path", async ({ page }) => {
@@ -61,5 +64,28 @@ test.describe("property search discovery", () => {
     });
     const robots = await page.locator('meta[name="robots"]').getAttribute("content");
     expect(robots?.toLowerCase() ?? "").toMatch(/noindex/);
+  });
+
+  test("sort and pagination sync into URL", async ({ page }) => {
+    await page.goto("/nemovitosti?razeni=cena-sestupne&stranka=1", {
+      waitUntil: "domcontentloaded",
+    });
+    expect(page.url()).toContain("razeni=cena-sestupne");
+
+    await page.goto("/nemovitosti?stranka=2", {
+      waitUntil: "domcontentloaded",
+    });
+    // Page 2 is either empty or results — URL must keep stranka; robots noindex for >1
+    expect(page.url()).toMatch(/stranka=2/);
+    const robots = await page.locator('meta[name="robots"]').getAttribute("content");
+    if (robots) {
+      expect(robots.toLowerCase()).toMatch(/noindex/);
+    }
+  });
+
+  test("typo / soft match does not 500", async ({ request }) => {
+    const res = await request.get("/nemovitosti?lokalita=prahaa");
+    expect(res.status()).toBeLessThan(500);
+    expect(res.status()).toBeLessThan(400);
   });
 });

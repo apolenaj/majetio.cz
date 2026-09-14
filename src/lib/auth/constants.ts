@@ -7,7 +7,9 @@ export const CURRENT_CONSENT_VERSIONS = {
   PRIVACY: "2026-07-01",
   MARKETING: "2026-07-01",
   HYPOTEKAJASNE_HANDOFF: "2026-07-01",
+  MORTGAGE_LEAD_DATA_TRANSFER: "mortgage-lead-transfer.v2026.07",
   PARTNER_SHARE: "2026-07-01",
+  AGENT_BUYER_PROFILE_SHARE: "agent-buyer-profile-share.v2026.07",
 } as const;
 
 export const AUTH_MESSAGES = {
@@ -22,3 +24,13 @@ export const AUTH_MESSAGES = {
   resetInvalid: "Odkaz pro obnovení hesla je neplatný nebo vypršel.",
   resetSuccess: "Heslo bylo změněno. Můžete se přihlásit.",
 } as const;
+
+/** UX: include wait time so lockout does not feel indefinite (Security Performance P0). */
+export function rateLimitedMessage(retryAfterSec: number): string {
+  const sec = Math.max(1, Math.ceil(retryAfterSec));
+  if (sec < 60) {
+    return `Příliš mnoho pokusů. Zkuste to prosím za ${sec} s.`;
+  }
+  const min = Math.max(1, Math.ceil(sec / 60));
+  return `Příliš mnoho pokusů. Zkuste to prosím za ${min} min.`;
+}

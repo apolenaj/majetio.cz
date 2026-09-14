@@ -12,8 +12,24 @@ import {
 
 export type PropertySearchHitDto = PublicPropertyListItemDto;
 
+/**
+ * Legacy page shape — `items` is organic-only.
+ * Prefer DiscoverySearchPageDto (`organicResults` + `sponsoredPlacements`).
+ */
 export type PropertySearchPageDto = {
+  /** @deprecated Use organicResults — organic-only, never boost-ranked. */
   items: PropertySearchHitDto[];
+  /** Organic results — sort/rank never uses ListingBoost. */
+  organicResults: PropertySearchHitDto[];
+  /** Paid slots — always labeled Sponzorováno; separate from organic. */
+  sponsoredPlacements: Array<{
+    placementId: string;
+    sponsored: true;
+    label: string;
+    productKey: string;
+    endsAt: string | null;
+    property: PropertySearchHitDto;
+  }>;
   pagination: {
     mode: "page" | "cursor";
     page?: number;
@@ -29,6 +45,13 @@ export type PropertySearchPageDto = {
   warnings: string[];
   /** Echo of applied (normalized) filters for UI chips — safe values only. */
   appliedFilters: Record<string, unknown>;
+  integrity: {
+    boostAffectsOrganicRanking: false;
+    boostAffectsMajetioScore: false;
+    boostAffectsValuation: false;
+    boostAffectsRiskAnalysis: false;
+    sponsoredLabelRequired: true;
+  };
 };
 
 export function toSearchHitDto(

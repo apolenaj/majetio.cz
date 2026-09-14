@@ -67,6 +67,16 @@ export type PublicValuationDto = {
   isDemo: boolean;
   calculatedAt: string;
   disclaimer: string;
+  /** Location market context — supplementary to comparables, not a replacement. */
+  locationMarketContext?: {
+    medianAskingPriceSqm: number | null;
+    medianTransactionPriceSqm: number | null;
+    priceTrendYoYPct: number | null;
+    segmentLabel: string;
+    period: string;
+    methodologyHref: string;
+    disclaimer: string;
+  } | null;
 };
 
 export type AnalystComparableDto = PublicComparableDto & {

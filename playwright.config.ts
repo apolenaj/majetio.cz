@@ -19,9 +19,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx next start -p ${port}`,
+    // Dev server avoids SSG that requires DATABASE_URL at build time.
+    command: `npx next dev -p ${port}`,
     url: baseURL,
-    reuseExistingServer: false,
-    timeout: 120_000,
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
   },
 });

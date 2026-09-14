@@ -7,7 +7,7 @@ test.describe("homepage production surface", () => {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: /Zjistěte, zda se nemovitost skutečně vyplatí koupit/i,
+        name: /Zjistěte, zda se nemovitost vyplatí koupit/i,
       }),
     ).toBeVisible();
 
@@ -68,11 +68,26 @@ test.describe("homepage production surface", () => {
     ).toHaveAttribute("href", "/nemovitosti");
   });
 
+  test("footer and pricing surfaces resolve", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.locator("footer");
+    await expect(footer.getByRole("link", { name: /Ceník/i })).toHaveAttribute(
+      "href",
+      "/cenik",
+    );
+    await expect(
+      footer.getByRole("link", { name: /Podmínky|Obchodní|soukrom/i }).first(),
+    ).toBeVisible();
+    await page.goto("/cenik");
+    await expect(page.getByRole("heading", { name: /Ceník/i })).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Kč|měsíc|analýz/i);
+  });
+
   test("SSR HTML includes hero and disclaimer without client JS", async ({ request }) => {
     const response = await request.get("/");
     expect(response.ok()).toBeTruthy();
     const html = await response.text();
-    expect(html).toMatch(/Zjistěte, zda se nemovitost skutečně vyplatí koupit/);
+    expect(html).toMatch(/Zjistěte, zda se nemovitost vyplatí koupit/);
     expect(html).toMatch(/Orientační údaje/);
     expect(html).toMatch(/Analyzovat nemovitost/);
     expect(html).toMatch(/application\/ld\+json/);

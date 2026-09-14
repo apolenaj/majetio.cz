@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PassportSummaryCard } from "@/components/financial-passport/passport-summary";
+import { MortgageLeadsCompactList } from "@/components/account/mortgage-leads-panel";
 import { EmptyState, InlineAlert } from "@/components/feedback/states";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +88,57 @@ export function AccountDashboard({ data }: { data: DashboardSnapshot }) {
         ) : null}
       </section>
 
+      <section aria-labelledby="financing-heading" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="financing-heading" className="text-h3 text-[var(--text-primary)]">
+            Financování
+          </h2>
+          <StatusBadge tone="neutral">{data.mortgageLeadsCount}</StatusBadge>
+        </div>
+        <DashboardListCard
+          title="Požadavky na financování"
+          count={data.mortgageLeadsCount}
+          href="/ucet/financovani"
+          emptyTitle="Zatím nemáte požadavek na financování"
+          emptyDescription="Po výslovném souhlasu u kalkulačky nebo u nemovitosti se zde zobrazí stav od partnera."
+          emptyAction={
+            <ButtonLink href="/kalkulacky/financovani" variant="secondary">
+              Kalkulačka financování
+            </ButtonLink>
+          }
+        >
+          <MortgageLeadsCompactList leads={data.recentMortgageLeads} />
+        </DashboardListCard>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-3">
+        <DashboardListCard
+          title="Sledované lokality"
+          count={data.watchedLocationsCount}
+          href="/lokality"
+          emptyTitle="Zatím nesledujete žádnou lokalitu"
+          emptyDescription="Na detailu nemovitosti nebo profilu lokality zvolíte „Sledovat lokalitu“ — upozornění půjdou přes stávající notifikace."
+          emptyAction={
+            <ButtonLink href="/lokality" variant="secondary">
+              Procházet lokality
+            </ButtonLink>
+          }
+        >
+          {data.recentWatchedLocations.map((item) => (
+            <li key={item.id}>
+              <Link
+                href={item.canonicalPath}
+                className="block rounded-[var(--radius-md)] px-2 py-2 hover:bg-[var(--background-secondary)]"
+              >
+                <p className="font-medium text-[var(--text-primary)]">
+                  {item.locationLabel}
+                </p>
+                <p className="text-sm text-[var(--text-muted)]">{item.canonicalPath}</p>
+              </Link>
+            </li>
+          ))}
+        </DashboardListCard>
+
         <DashboardListCard
           title="Oblíbené nemovitosti"
           count={data.favouritesCount}
@@ -147,7 +198,9 @@ export function AccountDashboard({ data }: { data: DashboardSnapshot }) {
             </li>
           ))}
         </DashboardListCard>
+      </div>
 
+      <div className="grid gap-6 lg:grid-cols-3">
         <DashboardListCard
           title="Porovnání"
           count={data.comparisonsCount}

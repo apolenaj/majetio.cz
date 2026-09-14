@@ -11,6 +11,7 @@
 | Route | Status |
 | --- | --- |
 | `/ucet` | Dashboard (passport status, favourites/analyses/comparisons empty states) |
+| `/ucet/oblibene` | Oblíbené + shortlist (Decision Workspace) — cena, změna, status, akce |
 | `/ucet/financni-profil` | Finanční pas editor + HypotekaJasne handoff card |
 | `/ucet/souhlasy` | Consents + handoff history |
 | `/ucet/nastaveni` | Profile, password, e-mail change, export, delete |

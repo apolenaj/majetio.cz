@@ -1,10 +1,13 @@
 /**
- * Client-side compare tray (max 4) — Prompt 8 Part 3.
- * Persists in localStorage so Zpět / refresh keeps selection.
+ * Client-side compare tray — max from comparisonConfig.
  */
 
-export const COMPARE_MAX = 4;
-export const COMPARE_STORAGE_KEY = "majetio.compare.v1";
+import { comparisonConfig } from "@/config/comparison";
+
+export const COMPARE_MAX = comparisonConfig.maxProperties;
+export const COMPARE_FULL_MESSAGE = comparisonConfig.trayFullMessageCs;
+export const COMPARE_STORAGE_KEY = comparisonConfig.storage.trayKey;
+export const COMPARE_CHANGED_EVENT = "majetio:compare-changed";
 
 export type CompareTrayItem = {
   id: string;
@@ -13,6 +16,7 @@ export type CompareTrayItem = {
   href: string;
   priceCzk?: number;
   location?: string;
+  imageUrl?: string;
 };
 
 function canUseStorage(): boolean {
@@ -34,8 +38,11 @@ export function readCompareTray(): CompareTrayItem[] {
 
 export function writeCompareTray(items: CompareTrayItem[]): void {
   if (!canUseStorage()) return;
-  localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(items.slice(0, COMPARE_MAX)));
-  window.dispatchEvent(new CustomEvent("majetio:compare-changed"));
+  localStorage.setItem(
+    COMPARE_STORAGE_KEY,
+    JSON.stringify(items.slice(0, COMPARE_MAX)),
+  );
+  window.dispatchEvent(new CustomEvent(COMPARE_CHANGED_EVENT));
 }
 
 export type CompareToggleResult =
@@ -56,6 +63,50 @@ export function toggleCompareItem(item: CompareTrayItem): CompareToggleResult {
   const items = [...current, item];
   writeCompareTray(items);
   return { ok: true, items, added: true };
+}
+
+export function removeCompareItem(idOrSlug: string): CompareTrayItem[] {
+  const items = readCompareTray().filter(
+    (c) => c.id !== idOrSlug && c.slug !== idOrSlug,
+  );
+  writeCompareTray(items);
+  return items;
+}
+
+export function clearCompareTray(): void {
+  writeCompareTray([]);
+}
+
+/** Bulk-add until tray is full. Returns how many were added. */
+export function addCompareItems(items: CompareTrayItem[]): {
+  added: number;
+  skipped: number;
+  full: boolean;
+  items: CompareTrayItem[];
+} {
+  let current = readCompareTray();
+  let added = 0;
+  let skipped = 0;
+  for (const item of items) {
+    const exists = current.some((c) => c.id === item.id || c.slug === item.slug);
+    if (exists) {
+      skipped += 1;
+      continue;
+    }
+    if (current.length >= COMPARE_MAX) {
+      writeCompareTray(current);
+      return { added, skipped, full: true, items: current };
+    }
+    current = [...current, item];
+    added += 1;
+  }
+  writeCompareTray(current);
+  return {
+    added,
+    skipped,
+    full: current.length >= COMPARE_MAX,
+    items: current,
+  };
 }
 
 export function isInCompareTray(idOrSlug: string): boolean {

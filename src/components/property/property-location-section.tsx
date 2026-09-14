@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 
-import type { PublicPropertyLocation } from "@/domains/properties/service/dto";
+import { DataSource } from "@/components/overlays/tooltip";
+import { WatchLocationButton } from "@/components/locations/watch-location-button";
 import type { LocationBenchmarkDemo } from "@/content/demo-property-context";
+import type { PropertySegmentBenchmark } from "@/domains/locations/integration/types";
+import type { PublicPropertyLocation } from "@/domains/properties/service/dto";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCzkPerSqm, formatPercentPoints } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -129,35 +133,90 @@ function LocationMapVisual({
 export function PropertyLocationSection({
   location,
   benchmark,
+  segmentBenchmark,
+  locationPageHref,
+  opportunityInsight,
+  marketContext,
+  strRegulatory,
+  watchSlug,
 }: {
   location: PublicPropertyLocation;
-  benchmark: LocationBenchmarkDemo | null;
+  /** @deprecated Prefer segmentBenchmark from Location Engine */
+  benchmark?: LocationBenchmarkDemo | null;
+  segmentBenchmark?: PropertySegmentBenchmark | null;
+  locationPageHref?: string | null;
+  opportunityInsight?: import("@/domains/locations/integration/market-opportunity-insight").MarketOpportunityInsight | null;
+  marketContext?: import("@/domains/locations/integration/market-context").LocationMarketContextBlock | null;
+  strRegulatory?: import("@/domains/locations/integration/str-regulatory-context").LocationStrRegulatoryBundle | null;
+  watchSlug?: string | null;
 }) {
-  const propPps = benchmark?.propertyPricePerSqmCzk ?? null;
-  const avgPps = benchmark?.localAvgPricePerSqmCzk ?? null;
-  const diffPct = benchmark?.diffPct ?? null;
+  const seg = segmentBenchmark;
+  const useSegment = seg?.available ?? false;
+
+  const propPps = useSegment
+    ? seg!.propertyPricePerSqm
+    : (benchmark?.propertyPricePerSqmCzk ?? null);
+  const avgPps = useSegment
+    ? seg!.localMedianPricePerSqm
+    : (benchmark?.localAvgPricePerSqmCzk ?? null);
+  const diffPct = useSegment ? seg!.diffPct : (benchmark?.diffPct ?? null);
+  const medianLabel = useSegment ? "Lokální medián" : "Lokální průměr";
+
+  const showPurchasePct =
+    useSegment &&
+    seg!.percentilesStatisticallyValid &&
+    seg!.purchasePricePercentile != null;
+  const showRentPct =
+    useSegment &&
+    seg!.percentilesStatisticallyValid &&
+    seg!.rentPercentile != null;
 
   return (
     <section aria-labelledby="location-heading">
-      <h2
-        id="location-heading"
-        className="font-display text-xl text-[var(--text-primary)] sm:text-2xl"
-      >
-        Lokalita a mapa
-      </h2>
-      <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-        Porovnání ceny za m² s lokálním průměrem. Mapa respektuje
-        addressPrecision — při HIDDEN se nezobrazí.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2
+            id="location-heading"
+            className="font-display text-xl text-[var(--text-primary)] sm:text-2xl"
+          >
+            Lokalita
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
+            Srovnání ceny za m² se segmentovým mediánem lokality (stejný typ nemovitosti
+            a dispozice). Percentily jen při statisticky validním vzorku.
+          </p>
+        </div>
+        {watchSlug ? <WatchLocationButton locationSlug={watchSlug} /> : null}
+      </div>
+      {useSegment && seg!.segmentLabel ? (
+        <p className="mt-2 text-xs text-[var(--text-muted)]">
+          Segment: {seg!.segmentLabel} · {seg!.period}
+          {seg!.sampleCount != null ? ` · vzorek ${seg!.sampleCount}` : null}
+        </p>
+      ) : null}
+
+      {opportunityInsight?.available && opportunityInsight.text ? (
+        <p
+          className="mt-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]"
+          role="status"
+        >
+          <strong className="font-medium text-[var(--text-primary)]">
+            Market insight:{" "}
+          </strong>
+          {opportunityInsight.text}
+        </p>
+      ) : null}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <Card padding="lg">
           <CardHeader>
-            <CardTitle as="h3">Cena vs. lokální průměr</CardTitle>
+            <CardTitle as="h3">Cena vs. {medianLabel.toLowerCase()} lokality</CardTitle>
             <CardDescription>
-              {benchmark?.districtLabel
-                ? `Lokalita: ${benchmark.districtLabel}`
-                : location.label || location.city || NEU}
+              {useSegment
+                ? `${seg!.locationLabel} · ${seg!.priceKind === "ASKING" ? "nabídkové" : "transakční"} ceny`
+                : benchmark?.districtLabel
+                  ? `Lokalita: ${benchmark.districtLabel}`
+                  : location.label || location.city || NEU}
             </CardDescription>
           </CardHeader>
 
@@ -169,7 +228,7 @@ export function PropertyLocationSection({
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-[var(--text-muted)]">Lokální průměr</dt>
+              <dt className="text-xs text-[var(--text-muted)]">{medianLabel}</dt>
               <dd className="font-metric text-base font-semibold text-[var(--text-primary)]">
                 {avgPps != null ? formatCzkPerSqm(avgPps) : NEU}
               </dd>
@@ -196,33 +255,146 @@ export function PropertyLocationSection({
             </div>
           </dl>
 
+          {(showPurchasePct || showRentPct) && (
+            <dl className="mt-4 grid gap-3 border-t border-[var(--border-default)] pt-4 sm:grid-cols-2">
+              {showPurchasePct ? (
+                <div>
+                  <dt className="text-xs text-[var(--text-muted)]">
+                    Purchase price percentile
+                  </dt>
+                  <dd className="font-metric text-lg font-semibold text-[var(--text-primary)]">
+                    {Math.round(seg!.purchasePricePercentile!)}. percentil
+                  </dd>
+                </div>
+              ) : null}
+              {showRentPct ? (
+                <div>
+                  <dt className="text-xs text-[var(--text-muted)]">Rent percentile</dt>
+                  <dd className="font-metric text-lg font-semibold text-[var(--text-primary)]">
+                    {Math.round(seg!.rentPercentile!)}. percentil
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          )}
+
           <div className="mt-4 grid gap-2 border-t border-[var(--border-default)] pt-4 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
             <p>
-              Nájemní index:{" "}
+              Nájemní benchmark:{" "}
               <strong className="font-metric text-[var(--text-primary)]">
-                {benchmark?.rentIndexPct != null
-                  ? formatPercentPoints(benchmark.rentIndexPct)
-                  : NEU}
+                {useSegment && seg!.rentBenchmarkPerSqm != null
+                  ? `${Math.round(seg!.rentBenchmarkPerSqm)} Kč/m²/měs.`
+                  : benchmark?.rentIndexPct != null
+                    ? formatPercentPoints(benchmark.rentIndexPct)
+                    : NEU}
               </strong>
             </p>
             <p>
-              Tempo ceny:{" "}
+              Trend cen (YoY):{" "}
               <strong className="font-metric text-[var(--text-primary)]">
-                {benchmark?.priceTrendPct != null
-                  ? formatPercentPoints(benchmark.priceTrendPct)
-                  : NEU}
+                {useSegment && seg!.priceTrendYoYPct != null
+                  ? formatPercentPoints(seg!.priceTrendYoYPct, { signed: true })
+                  : benchmark?.priceTrendPct != null
+                    ? formatPercentPoints(benchmark.priceTrendPct)
+                    : NEU}
               </strong>
             </p>
-            <p>
-              Dojezd:{" "}
-              <strong className="text-[var(--text-primary)]">
-                {benchmark?.commuteMinutes != null
-                  ? `${benchmark.commuteMinutes} min`
-                  : NEU}
-              </strong>
-            </p>
-            <p>{benchmark?.vacancyNote ?? `Neobsazenost: ${NEU}`}</p>
+            {!useSegment ? (
+              <>
+                <p>
+                  Dojezd:{" "}
+                  <strong className="text-[var(--text-primary)]">
+                    {benchmark?.commuteMinutes != null
+                      ? `${benchmark.commuteMinutes} min`
+                      : NEU}
+                  </strong>
+                </p>
+                <p>{benchmark?.vacancyNote ?? `Neobsazenost: ${NEU}`}</p>
+              </>
+            ) : null}
           </div>
+
+          {marketContext?.development.available ? (
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+              Development:{" "}
+              <strong className="text-[var(--text-primary)]">
+                {marketContext.development.unitsUnderConstruction?.toLocaleString("cs-CZ")}{" "}
+                jednotek ve výstavbě
+              </strong>
+              {marketContext.development.pipelineNote
+                ? ` — ${marketContext.development.pipelineNote}`
+                : null}
+            </p>
+          ) : null}
+
+          {marketContext?.priceVolatility.available &&
+          marketContext.priceVolatility.cv != null ? (
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Historická volatilita cen (CV):{" "}
+              <strong className="font-metric text-[var(--text-primary)]">
+                {(marketContext.priceVolatility.cv * 100).toFixed(1)} %
+              </strong>
+            </p>
+          ) : null}
+
+          {marketContext?.seasonality.available ? (
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Sezónnost: {marketContext.seasonality.drivers.join(", ")}
+              {marketContext.seasonality.note
+                ? ` — ${marketContext.seasonality.note}`
+                : null}
+            </p>
+          ) : null}
+
+          {strRegulatory?.shortTermRental.available ? (
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Short-term rental: poptávka turismu index{" "}
+              <strong className="font-metric text-[var(--text-primary)]">
+                {strRegulatory.shortTermRental.tourismDemandIndex ?? NEU}
+              </strong>
+              {strRegulatory.shortTermRental.estimatedOccupancyPct != null
+                ? ` · obsazenost ~${strRegulatory.shortTermRental.estimatedOccupancyPct} %`
+                : null}
+              {strRegulatory.shortTermRental.source
+                ? ` (${strRegulatory.shortTermRental.source})`
+                : null}
+            </p>
+          ) : null}
+
+          {strRegulatory?.regulatory.available ? (
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Regulace STR:{" "}
+              <strong className="text-[var(--text-primary)]">
+                {strRegulatory.regulatory.shortTermRentalLevel}
+              </strong>
+              {strRegulatory.regulatory.summary
+                ? ` — ${strRegulatory.regulatory.summary}`
+                : null}
+            </p>
+          ) : null}
+
+          {useSegment && seg!.suppressReason == null ? (
+            <DataSource
+              className="mt-4"
+              source={seg!.source}
+              updatedAt={seg!.period}
+            />
+          ) : null}
+
+          {useSegment && seg!.suppressReason ? (
+            <p className="mt-4 text-sm text-[var(--text-muted)]">{seg!.suppressReason}</p>
+          ) : null}
+
+          {locationPageHref ? (
+            <p className="mt-4">
+              <Link
+                href={locationPageHref}
+                className="text-sm text-[var(--text-link)] underline-offset-2 hover:underline"
+              >
+                Celý tržní profil lokality →
+              </Link>
+            </p>
+          ) : null}
         </Card>
 
         <LocationMapVisual location={location} />
@@ -230,3 +402,4 @@ export function PropertyLocationSection({
     </section>
   );
 }
+

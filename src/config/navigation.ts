@@ -74,7 +74,8 @@ export const FOOTER_GROUPS = [
   {
     title: "Společnost",
     links: [
-      { href: "/o-majetio", label: "O Majetio" },
+      { href: "/o-nas", label: "O nás" },
+      { href: "/duvera-a-bezpecnost", label: "Důvěra a bezpečnost" },
       { href: "/kontakt", label: "Kontakt" },
       { href: "/partneri", label: "Partneři" },
     ],
@@ -83,19 +84,29 @@ export const FOOTER_GROUPS = [
     title: "Důvěra a právo",
     links: [
       { href: "/zdroje-dat", label: "Zdroje dat" },
-      { href: "/jak-pocitame-vynos", label: "Jak počítáme výnos" },
-      { href: "/jak-odhadujeme-hodnotu", label: "Jak odhadujeme hodnotu" },
-      { href: "/ochrana-osobnich-udaju", label: "Ochrana osobních údajů" },
+      { href: "/metodika", label: "Metodika" },
+      { href: "/slovnik", label: "Slovník" },
+      { href: "/ochrana-soukromi", label: "Ochrana soukromí" },
       { href: "/cookies", label: "Cookies" },
-      { href: "/obchodni-podminky", label: "Obchodní podmínky" },
+      { href: "/podminky", label: "Obchodní podmínky" },
       { href: "/pravni-upozorneni", label: "Právní upozornění" },
     ],
   },
 ] as const;
 
+export const BROKER_NAV = [
+  { href: "/profi", label: "Dashboard" },
+  { href: "/profi/onboarding", label: "Onboarding" },
+  { href: "/profi/profil", label: "Profil" },
+  { href: "/profi/analytics", label: "Analytics" },
+  { href: "/profi/leady", label: "Kvalifikovaní zájemci" },
+  { href: "/profi/pipeline", label: "CRM pipeline" },
+] as const;
+
 export const ACCOUNT_NAV = [
-  { href: "/ucet", label: "Přehled" },
+  { href: "/ucet", label: "Rozhodování" },
   { href: "/ucet/financni-profil", label: "Finanční pas" },
+  { href: "/ucet/financovani", label: "Financování" },
   { href: "/ucet/oblibene", label: "Oblíbené" },
   { href: "/ucet/porovnani", label: "Porovnání" },
   { href: "/ucet/analyzy", label: "Analýzy" },
@@ -103,11 +114,13 @@ export const ACCOUNT_NAV = [
   { href: "/ucet/ulozena-hledani", label: "Uložená hledání" },
   { href: "/ucet/upozorneni", label: "Upozornění" },
   { href: "/ucet/nastaveni", label: "Nastavení" },
-  { href: "/ucet/souhlasy", label: "Souhlasy" },
+  { href: "/ucet/soukromi", label: "Privacy Center" },
 ] as const;
 
 export const ADMIN_NAV = [
   { href: "/admin", label: "Přehled" },
+  { href: "/admin/monetizace", label: "Monetizace" },
+  { href: "/admin/trhy", label: "Trhy" },
   { href: "/admin/nemovitosti", label: "Nemovitosti" },
   { href: "/admin/analyzy", label: "Analýzy" },
   { href: "/admin/leady", label: "Leady" },
@@ -121,8 +134,215 @@ export const ADMIN_NAV = [
   { href: "/admin/audit-log", label: "Audit log" },
 ] as const;
 
+/**
+ * Operations Control Center IA — sectioned nav with required permission keys.
+ * Layout filters by hasPermission(role, item.permission).
+ */
+export const ADMIN_NAV_SECTIONS = [
+  {
+    id: "overview",
+    label: "Přehled",
+    items: [
+      {
+        href: "/admin",
+        label: "Operations dashboard",
+        permission: "ops.dashboard.read" as const,
+      },
+    ],
+  },
+  {
+    id: "properties",
+    label: "Nemovitosti",
+    items: [
+      {
+        href: "/admin/nemovitosti",
+        label: "Nemovitosti",
+        permission: "property.read" as const,
+      },
+      {
+        href: "/admin/nemovitosti/moderace",
+        label: "Moderace",
+        permission: "property.moderate" as const,
+      },
+      {
+        href: "/admin/nemovitosti/duplikaty",
+        label: "Duplikáty",
+        permission: "property.merge" as const,
+      },
+    ],
+  },
+  {
+    id: "imports",
+    label: "Importy",
+    items: [
+      {
+        href: "/admin/importy",
+        label: "Import jobs",
+        permission: "import.read" as const,
+      },
+      {
+        href: "/admin/zdroje",
+        label: "Zdroje",
+        permission: "import.read" as const,
+      },
+      {
+        href: "/admin/freshness",
+        label: "Freshness",
+        permission: "dataQuality.read" as const,
+      },
+    ],
+  },
+  {
+    id: "data-quality",
+    label: "Data Quality",
+    items: [
+      {
+        href: "/admin/data-quality",
+        label: "DQ Center",
+        permission: "dataQuality.read" as const,
+      },
+    ],
+  },
+  {
+    id: "analytics",
+    label: "Analytika modelů",
+    items: [
+      {
+        href: "/admin/analyzy",
+        label: "Analytics hub",
+        permission: "analytics.models.read" as const,
+      },
+      {
+        href: "/admin/analyzy/valuation",
+        label: "Valuation",
+        permission: "analytics.models.read" as const,
+      },
+      {
+        href: "/admin/analyzy/assumptions",
+        label: "Assumptions",
+        permission: "analytics.models.read" as const,
+      },
+      {
+        href: "/admin/analyzy/renovation",
+        label: "Renovation catalog",
+        permission: "analytics.models.read" as const,
+      },
+      {
+        href: "/admin/analyzy/hypoteka",
+        label: "HypotekaJasne",
+        permission: "analytics.models.read" as const,
+      },
+      {
+        href: "/admin/lokality",
+        label: "Lokality",
+        permission: "analytics.models.read" as const,
+      },
+    ],
+  },
+  {
+    id: "users",
+    label: "Uživatelé",
+    items: [
+      {
+        href: "/admin/uzivatele",
+        label: "Uživatelé",
+        permission: "users.read" as const,
+      },
+    ],
+  },
+  {
+    id: "orgs",
+    label: "Organizace",
+    items: [
+      {
+        href: "/admin/organizace",
+        label: "B2B organizace",
+        permission: "orgs.read" as const,
+      },
+    ],
+  },
+  {
+    id: "leads",
+    label: "Leady",
+    items: [
+      {
+        href: "/admin/leady",
+        label: "Lead Operations",
+        permission: "leads.read" as const,
+      },
+    ],
+  },
+  {
+    id: "commerce",
+    label: "Commerce",
+    items: [
+      {
+        href: "/admin/objednavky",
+        label: "Objednávky",
+        permission: "payments.read" as const,
+      },
+      {
+        href: "/admin/cenik",
+        label: "Ceník / Pricing",
+        permission: "pricing.read" as const,
+      },
+      {
+        href: "/admin/monetizace",
+        label: "Monetizace",
+        permission: "payments.read" as const,
+      },
+      {
+        href: "/admin/audit-log",
+        label: "Audit log",
+        permission: "platform.audit.read" as const,
+      },
+    ],
+  },
+  {
+    id: "platform",
+    label: "Platform",
+    items: [
+      {
+        href: "/admin/trhy",
+        label: "Trhy / kill switches",
+        permission: "platform.markets.write" as const,
+      },
+      {
+        href: "/admin/nastaveni",
+        label: "Flags & nastavení",
+        permission: "platform.flags.read" as const,
+      },
+      {
+        href: "/admin/monitoring",
+        label: "Health & Jobs",
+        permission: "ops.health.read" as const,
+      },
+      {
+        href: "/admin/obsah",
+        label: "Obsah & regulace",
+        permission: "platform.content.read" as const,
+      },
+      {
+        href: "/admin/incidenty",
+        label: "Incidenty",
+        permission: "platform.incidents.read" as const,
+      },
+      {
+        href: "/admin/lokality",
+        label: "Lokality",
+        permission: "ops.dashboard.read" as const,
+      },
+      {
+        href: "/admin/partneri",
+        label: "Partneři",
+        permission: "ops.dashboard.read" as const,
+      },
+    ],
+  },
+] as const;
+
 export const MOBILE_APP_NAV = [
-  { href: "/ucet", label: "Přehled" },
+  { href: "/ucet", label: "Rozhodování" },
   { href: "/nemovitosti", label: "Nemovitosti" },
   { href: "/porovnani", label: "Porovnání" },
   { href: "/ucet/oblibene", label: "Oblíbené" },

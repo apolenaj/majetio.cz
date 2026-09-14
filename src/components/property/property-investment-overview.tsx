@@ -1,5 +1,6 @@
 import { formatCzk, formatPercentPoints } from "@/lib/format";
 import type { InvestmentOverviewDemo } from "@/content/demo-property-financial";
+import type { InvestmentLocationBenchmark } from "@/domains/locations/integration/types";
 import { LazyCashFlowWaterfall } from "@/components/property/property-detail-lazy";
 import { MobileDisclosure } from "@/components/property/mobile-disclosure";
 import { Card } from "@/components/ui/card";
@@ -40,10 +41,12 @@ export function PropertyInvestmentOverview({
   investment,
   fallbackGrossYieldPct,
   fallbackCashFlowMonthlyCzk,
+  locationBenchmark,
 }: {
   investment: InvestmentOverviewDemo | null;
   fallbackGrossYieldPct?: number | null;
   fallbackCashFlowMonthlyCzk?: number | null;
+  locationBenchmark?: InvestmentLocationBenchmark | null;
 }) {
   const rent = investment?.estimatedRentMonthlyCzk ?? null;
   const gross =
@@ -64,6 +67,39 @@ export function PropertyInvestmentOverview({
         Základní ekonomika nabídky. Chybějící výpočty ukazujeme jako „Neuvedeno“,
         nikoli jako nulu.
       </p>
+
+      {locationBenchmark ? (
+        <Card padding="md" elevation="flat" className="mt-4 border-dashed">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+            Benchmark lokality (návrh — nepřepisuje vaše vstupy)
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
+            {locationBenchmark.suggestedMonthlyRentCzk != null ? (
+              <li>
+                Nájem z lokality:{" "}
+                <strong>{formatCzk(locationBenchmark.suggestedMonthlyRentCzk)}/měs.</strong>
+              </li>
+            ) : null}
+            {locationBenchmark.locationGrossYieldPct != null ? (
+              <li>
+                Hrubý výnos v lokalitě:{" "}
+                <strong>
+                  {formatPercentPoints(locationBenchmark.locationGrossYieldPct)}
+                </strong>
+              </li>
+            ) : null}
+            {locationBenchmark.suggestedVacancyRatePp != null ? (
+              <li>
+                Proxy neobsazenosti:{" "}
+                <strong>{formatPercentPoints(locationBenchmark.suggestedVacancyRatePp)}</strong>
+              </li>
+            ) : null}
+          </ul>
+          <p className="mt-2 text-xs text-[var(--text-muted)]">
+            {locationBenchmark.period} · {locationBenchmark.disclaimer}
+          </p>
+        </Card>
+      ) : null}
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCell

@@ -2,12 +2,15 @@
  * Load property detail for /nemovitosti/[slug] (Prompt 9 Part 1).
  * Always goes through canViewProperty + PublicPropertyDto — never raw records.
  * React cache() dedupes metadata + page loads in one request (no N+1 / double fetch).
+ *
+ * L-06: production fail-closed — demo repository only when ALLOW_DEMO_PROPERTY_CONTENT.
  */
 
 import { cache } from "react";
 
 import { DEMO_PROPERTY_RECORDS } from "@/content/demo-canonical-properties";
 import { auth } from "@/lib/auth";
+import { isDemoPropertyContentAllowed } from "@/lib/demo-content-gate";
 import { isStaff, type Role } from "@/lib/auth/roles";
 import {
   createPropertyService,
@@ -22,6 +25,18 @@ export {
   propertyListingStatusTone,
 } from "./detail-presentation";
 
+const emptyRepository: PropertyRepository = {
+  async findBySlug() {
+    return null;
+  },
+  async findById() {
+    return null;
+  },
+  async search() {
+    return { items: [], hasMore: false };
+  },
+};
+
 const demoRepository: PropertyRepository = {
   async findBySlug(slug) {
     return DEMO_PROPERTY_RECORDS.find((p) => p.slug === slug) ?? null;
@@ -34,7 +49,11 @@ const demoRepository: PropertyRepository = {
   },
 };
 
-const propertyService = createPropertyService({ repository: demoRepository });
+function getPropertyService() {
+  return createPropertyService({
+    repository: isDemoPropertyContentAllowed() ? demoRepository : emptyRepository,
+  });
+}
 
 export const resolvePropertyViewer = cache(async (): Promise<PropertyViewer> => {
   const session = await auth();
@@ -67,7 +86,12 @@ export const loadPropertyDetailBySlug = cache(
       return null;
     }
 
+    if (!isDemoPropertyContentAllowed()) {
+      // Production without Prisma public repo yet — fail closed (no demo-as-real).
+      return null;
+    }
+
     const viewer = await resolvePropertyViewer();
-    return propertyService.getPublicBySlug(slug, { viewer });
+    return getPropertyService().getPublicBySlug(slug, { viewer });
   },
 );

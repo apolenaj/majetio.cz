@@ -54,3 +54,11 @@ ValuationService → PublicValuationDto | AnalystValuationDto
 - [VALUATION_CONFIDENCE.md](./VALUATION_CONFIDENCE.md)
 - [VALUATION_MODEL_CARD.md](./VALUATION_MODEL_CARD.md)
 - Domain README: `src/domains/valuation/README.md`
+
+## Admin governance (Prompt 4)
+
+- Control Center: `/admin/analyzy/valuation`
+- Model lifecycle: `DRAFT` → `TESTING` → `APPROVED` → `ACTIVE` (`ValuationModelLifecycleStatus`)
+- Production may use only **ACTIVE** models (approve + audit required)
+- MAE/MAPE snapshots: `ValuationModelPerformanceSnapshot` + regression alerts
+- Analyst overrides: `ValuationAdjustmentAudit` (mandatory reason)

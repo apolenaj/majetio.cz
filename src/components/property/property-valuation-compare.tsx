@@ -1,37 +1,21 @@
 import { formatCzk } from "@/lib/format";
 import type { PublicValuationDto, AnalystValuationDto } from "@/domains/valuation";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MetricValue } from "@/components/data-display/metric-card";
 import { cn } from "@/lib/utils";
+import {
+  ConfidenceIndicator,
+  ContextualDisclaimer,
+  DataSourceBadge,
+  LastUpdated,
+  MethodologyLink,
+  toConfidenceLevel,
+} from "@/components/trust";
 
 const NEU = "Neuvedeno";
 
 function clamp01(n: number) {
   return Math.min(1, Math.max(0, n));
-}
-
-function confidenceTone(
-  level: PublicValuationDto["confidenceLevel"],
-): "success" | "warning" | "neutral" {
-  if (level === "HIGH") return "success";
-  if (level === "LOW" || level === "INSUFFICIENT") return "warning";
-  return "neutral";
-}
-
-function confidenceLabelCz(level: PublicValuationDto["confidenceLevel"]): string {
-  switch (level) {
-    case "HIGH":
-      return "Vysoká";
-    case "MEDIUM":
-      return "Střední";
-    case "LOW":
-      return "Nízká";
-    case "INSUFFICIENT":
-      return "Nedostatečná";
-    default:
-      return "Neznámá";
-  }
 }
 
 /**
@@ -77,31 +61,46 @@ export function PropertyValuationCompare({
 
   return (
     <section aria-labelledby="valuation-compare-heading">
-      <h2
-        id="valuation-compare-heading"
-        className="font-display text-xl text-[var(--text-primary)] sm:text-2xl"
-      >
-        Cena vs. odhad hodnoty
-      </h2>
-      <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-        Porovnání nabídkové ceny se středním odhadem Majetio. Chybějící hodnoty
-        nejsou nahrazovány nulou.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 max-w-2xl">
+          <h2
+            id="valuation-compare-heading"
+            className="font-display text-xl text-[var(--text-primary)] sm:text-2xl"
+          >
+            Nabídková cena vs. modelovaný odhad
+          </h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Porovnání inzerované nabídkové ceny s orientačním rozpětím modelu
+            Majetio. Chybějící hodnoty nejsou nahrazovány nulou.
+          </p>
+        </div>
+        <MethodologyLink topic="valuation" />
+      </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Card padding="lg" elevation="raised">
-          <p className="text-caption uppercase tracking-wide text-[var(--text-muted)]">
-            Nabídková cena
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-caption uppercase tracking-wide text-[var(--text-muted)]">
+              Nabídková cena
+            </p>
+            <DataSourceBadge kind="source_record" size="sm" />
+          </div>
           <MetricValue
             size="xl"
             value={askingPrice != null ? formatCzk(askingPrice) : NEU}
           />
         </Card>
         <Card padding="lg" elevation="raised">
-          <p className="text-caption uppercase tracking-wide text-[var(--text-muted)]">
-            Střední odhad
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-caption uppercase tracking-wide text-[var(--text-muted)]">
+              Střed modelu (orientační)
+            </p>
+            <DataSourceBadge
+              kind="majetio_estimate"
+              size="sm"
+              detail={valuation?.engineVersion ?? null}
+            />
+          </div>
           <MetricValue
             size="xl"
             value={mid != null ? formatCzk(mid) : NEU}
@@ -118,10 +117,10 @@ export function PropertyValuationCompare({
               )}
             >
               {deltaCzk === 0
-                ? "Na úrovni středu odhadu"
+                ? "Na úrovni středu modelovaného odhadu"
                 : deltaCzk > 0
-                  ? `Nabídka je o ${formatCzk(deltaCzk)} (+${deltaPct} %) nad středem`
-                  : `Nabídka je o ${formatCzk(Math.abs(deltaCzk))} (${deltaPct} %) pod středem`}
+                  ? `Nabídka je o ${formatCzk(deltaCzk)} (+${deltaPct} %) nad středem modelu`
+                  : `Nabídka je o ${formatCzk(Math.abs(deltaCzk))} (${deltaPct} %) pod středem modelu`}
             </p>
           ) : null}
         </Card>
@@ -130,7 +129,7 @@ export function PropertyValuationCompare({
       {hasRange && valuation ? (
         <Card className="mt-4" padding="lg">
           <CardHeader>
-            <CardTitle as="h3">Interval odhadu</CardTitle>
+            <CardTitle as="h3">Orientační rozpětí modelu</CardTitle>
             <CardDescription>
               Dolní — střed — horní pásmo oproti aktuální nabídkové ceně
             </CardDescription>
@@ -140,13 +139,14 @@ export function PropertyValuationCompare({
             id="valuation-range-summary"
             className="mb-3 text-sm text-[var(--text-secondary)]"
           >
-            Orientační interval odhadu Majetio: dolní {formatCzk(valuation.lowerBoundCzk!)},
-            střed {formatCzk(valuation.estimateMidCzk!)}, horní{" "}
+            Orientační rozpětí modelovaného odhadu: dolní{" "}
+            {formatCzk(valuation.lowerBoundCzk!)}, střed{" "}
+            {formatCzk(valuation.estimateMidCzk!)}, horní{" "}
             {formatCzk(valuation.upperBoundCzk!)}
             {askingPrice != null
               ? `; nabídková cena ${formatCzk(askingPrice)}`
               : ""}
-            . Nejde o oficiální cenu nabídky.
+            . Nejde o oficiální ocenění ani o „skutečnou hodnotu“.
           </p>
 
           <div
@@ -202,19 +202,26 @@ export function PropertyValuationCompare({
             ) : null}
           </div>
 
-          <div className="mt-16 flex flex-wrap items-start gap-3 border-t border-[var(--border-default)] pt-4">
-            <Badge tone={confidenceTone(valuation.confidenceLevel)}>
-              Spolehlivost: {confidenceLabelCz(valuation.confidenceLevel)}
-            </Badge>
-            <div className="min-w-0 flex-1 space-y-1 text-sm text-[var(--text-secondary)]">
-              {valuation.confidenceExplanations.length > 0 ? (
-                valuation.confidenceExplanations.map((line) => (
-                  <p key={line}>{line}</p>
-                ))
-              ) : (
-                <p>{NEU}</p>
-              )}
+          <div className="mt-16 space-y-3 border-t border-[var(--border-default)] pt-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <ConfidenceIndicator
+                level={toConfidenceLevel(valuation.confidenceLevel)}
+                reason={valuation.confidenceExplanations[0] ?? null}
+                details={valuation.confidenceExplanations.slice(1)}
+              />
+              <LastUpdated
+                at={valuation.calculatedAt}
+                staleAfterDays={45}
+                label="Výpočet modelu"
+              />
             </div>
+            {valuation.confidenceExplanations.length > 1 ? (
+              <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--text-secondary)]">
+                {valuation.confidenceExplanations.slice(1).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </Card>
       ) : (
@@ -222,13 +229,64 @@ export function PropertyValuationCompare({
           <p className="text-sm text-[var(--text-secondary)]">
             {valuation?.statusReason ?? (
               <>
-                Interval odhadu hodnoty: <strong>{NEU}</strong>. Pro tuto
-                nemovitost zatím není k dispozici vypočtený odhad.
+                Orientační rozpětí modelu: <strong>{NEU}</strong>. Pro tuto
+                nemovitost zatím není k dispozici vypočtený modelovaný odhad.
               </>
             )}
           </p>
         </Card>
       )}
+
+      {valuation?.locationMarketContext ? (
+        <Card className="mt-4" padding="md" elevation="flat">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+              Lokální cenová hladina (kontext — ne náhrada comparables)
+            </p>
+            <DataSourceBadge kind="majetio_estimate" size="sm" detail="agregace" />
+          </div>
+          <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-[var(--text-muted)]">Medián nabídky</dt>
+              <dd className="font-metric font-medium">
+                {valuation.locationMarketContext.medianAskingPriceSqm != null
+                  ? `${Math.round(valuation.locationMarketContext.medianAskingPriceSqm).toLocaleString("cs-CZ")} Kč/m²`
+                  : NEU}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-muted)]">Medián transakcí</dt>
+              <dd className="font-metric font-medium">
+                {valuation.locationMarketContext.medianTransactionPriceSqm != null
+                  ? `${Math.round(valuation.locationMarketContext.medianTransactionPriceSqm).toLocaleString("cs-CZ")} Kč/m²`
+                  : NEU}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-muted)]">Trend YoY</dt>
+              <dd className="font-metric font-medium">
+                {valuation.locationMarketContext.priceTrendYoYPct != null
+                  ? `${valuation.locationMarketContext.priceTrendYoYPct.toFixed(1)} %`
+                  : NEU}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-[var(--text-muted)]">
+            {valuation.locationMarketContext.period} ·{" "}
+            {valuation.locationMarketContext.disclaimer}
+          </p>
+        </Card>
+      ) : null}
+
+      <ContextualDisclaimer context="valuation" className="mt-4" compact>
+        <p>
+          {valuation?.disclaimer ??
+            "Zobrazené hodnoty jsou modelovaný odhad a orientační rozpětí, nikoli oficiální ocenění."}
+        </p>
+        <p className="mt-1">
+          <MethodologyLink topic="valuation" className="text-[var(--text-caption)]" />
+        </p>
+      </ContextualDisclaimer>
     </section>
   );
 }

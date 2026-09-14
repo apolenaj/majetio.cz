@@ -56,6 +56,19 @@ export async function recordAuthFailure(parts: string[]): Promise<void> {
     where: { key },
     data: { failCount, lockedUntil },
   });
+
+  // Privacy-by-Default audit: repeated auth failures → lockout signal
+  if (failCount >= MAX_FAILURES) {
+    const { auditAuthFailureBurst } = await import(
+      "@/lib/security/security-audit"
+    );
+    // Hash-ish key hint only — never store raw email/password in audit.
+    const keyHint = key.length > 12 ? `${key.slice(0, 8)}…` : "auth";
+    await auditAuthFailureBurst({
+      keyHint,
+      reason: `failCount=${failCount}`,
+    });
+  }
 }
 
 export async function clearAuthFailures(parts: string[]): Promise<void> {

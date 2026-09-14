@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { listDemoPublicProperties } from "@/content/demo-canonical-properties";
+import { isDemoPropertyContentAllowed } from "@/lib/demo-content-gate";
 import { mapPublicDtoToPropertyCard } from "@/domains/properties/service/card-mapper";
 import {
   applyUrlFiltersToListings,
@@ -32,8 +33,16 @@ import {
 } from "@/domains/properties/service/match-profile";
 import { auth } from "@/lib/auth";
 import { loadFinancialPassport } from "@/lib/financial-passport/actions";
+import {
+  excludeRejectedFromRecommendations,
+  listRejectedPropertyIdsForUser,
+} from "@/domains/favourites/service/recommendation-exclusion";
+import { SPONSORED_FIREWALL_DISCLAIMER_CS } from "@/components/property/sponsored-listing-badge";
 
 export function demoListings(): SearchableListing[] {
+  if (!isDemoPropertyContentAllowed()) {
+    return [];
+  }
   return listDemoPublicProperties().map((dto) => {
     const extra: SearchableListing = { ...dto };
     if (dto.slug.includes("vinohrady")) {
@@ -70,21 +79,37 @@ export async function resolveMatchProfile(): Promise<{
   isAuthenticated: boolean;
   matchProfile: MatchProfile | null;
   profileComplete: boolean;
+  rejectedPropertyIds: ReadonlySet<string>;
 }> {
+  const emptyRejected = new Set<string>();
   const session = await auth();
   const isAuthenticated = Boolean(session?.user?.id);
-  if (!isAuthenticated) {
-    return { isAuthenticated: false, matchProfile: null, profileComplete: false };
+  if (!isAuthenticated || !session?.user?.id) {
+    return {
+      isAuthenticated: false,
+      matchProfile: null,
+      profileComplete: false,
+      rejectedPropertyIds: emptyRejected,
+    };
   }
-  const passport = await loadFinancialPassport();
+  const [passport, rejectedPropertyIds] = await Promise.all([
+    loadFinancialPassport(),
+    listRejectedPropertyIdsForUser(session.user.id),
+  ]);
   if (!passport.ok) {
-    return { isAuthenticated: true, matchProfile: null, profileComplete: false };
+    return {
+      isAuthenticated: true,
+      matchProfile: null,
+      profileComplete: false,
+      rejectedPropertyIds,
+    };
   }
   const matchProfile = passportToMatchProfile(passport.state);
   return {
     isAuthenticated: true,
     matchProfile,
     profileComplete: isMatchProfileComplete(matchProfile),
+    rejectedPropertyIds,
   };
 }
 
@@ -92,6 +117,7 @@ export function buildDiscoveryCards(
   state: PropertyUrlFilterState,
   matchProfile: MatchProfile | null,
   profileComplete: boolean,
+  options?: { rejectedPropertyIds?: ReadonlySet<string> },
 ): {
   cards: PropertyCardData[];
   sortLabel: string;
@@ -101,6 +127,15 @@ export function buildDiscoveryCards(
   const all = demoListings();
   let filtered = applyUrlFiltersToListings(all, state);
   const wantsRecommended = state.razeni === "recommended";
+
+  // BOD 85–89: never re-recommend explicitly rejected favourites
+  if (options?.rejectedPropertyIds?.size) {
+    filtered = excludeRejectedFromRecommendations(
+      filtered,
+      options.rejectedPropertyIds,
+    );
+  }
+
   const scoreMap = new Map<
     string,
     ReturnType<typeof computePropertyMatchScore>
@@ -160,6 +195,7 @@ export function DiscoveryListingShell({
   relaxedCount,
   isAuthenticated,
   showPassportCta,
+  sponsoredCards = [],
 }: {
   title: string;
   description: string;
@@ -170,6 +206,8 @@ export function DiscoveryListingShell({
   relaxedCount: number | null;
   isAuthenticated: boolean;
   showPassportCta: boolean;
+  /** Paid slots — rendered separately; never merged into organic sort. */
+  sponsoredCards?: PropertyCardData[];
 }) {
   return (
     <Container className="overflow-x-hidden py-10 sm:py-14 pb-28">
@@ -187,10 +225,39 @@ export function DiscoveryListingShell({
 
       <InlineAlert tone="warning" title="Demonstrační nabídky" className="mb-8">
         Zobrazené nemovitosti slouží k ověření filtrů, karet a UX stavů. Nejsou aktuální
-        inzeráty z trhu.
+        inzeráty z trhu. Sponzorované umístění (pokud je) neovlivňuje Majetio Score ani
+        organické řazení.
       </InlineAlert>
 
       <PropertySearchFilters state={state} resultCount={cards.length} />
+
+      {sponsoredCards.length > 0 ? (
+        <section
+          aria-labelledby="sponsored-heading"
+          className="mb-10 space-y-4"
+          data-testid="sponsored-placements"
+        >
+          <div>
+            <h2
+              id="sponsored-heading"
+              className="font-display text-xl text-[var(--text-primary)]"
+            >
+              Sponzorované nabídky
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              {SPONSORED_FIREWALL_DISCLAIMER_CS}
+            </p>
+          </div>
+          <PropertySearchResults
+            properties={sponsoredCards}
+            state={state}
+            sortLabel="Sponzorováno"
+            relaxedCount={null}
+            isAuthenticated={isAuthenticated}
+            showPassportCta={false}
+          />
+        </section>
+      ) : null}
 
       <PropertySearchResults
         properties={cards}

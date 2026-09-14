@@ -22,25 +22,38 @@ export const CONSENT_LABELS: Record<
       "Tipy a novinky, které nejsou nutné k poskytnutí služby. Nikdy předvyplněno — musíte aktivně souhlasit.",
   },
   HYPOTEKAJASNE_HANDOFF: {
-    title: "Předání HypotekaJasne.cz",
+    title: "Předání HypotekaJasne.cz (starší verze)",
     description:
-      "Jednorázové předání vybraných údajů partnerovi za účelem nabídky financování. Bez výslovného potvrzení se nic neodesílá.",
+      "Historický souhlas s předáním dat partnerovi. Nové handoffy používají typ „Předání dat pro hypoteční lead“.",
+  },
+  MORTGAGE_LEAD_DATA_TRANSFER: {
+    title: "Předání dat pro hypoteční lead",
+    description:
+      "Jednorázové, granulární předání vybraných údajů HypotekaJasne.cz za účelem posouzení možností financování. Bez výslovného potvrzení se nic neodesílá.",
   },
   PARTNER_SHARE: {
-    title: "Sdílení s dalšími partnery",
-    description: "Obecný souhlas — konkrétní předání vždy s náhledem dat.",
+    title: "Sdílení s jmenovaným příjemcem",
+    description:
+      "Každé předání dat vyžaduje výslovný souhlas s konkrétním subjektem (např. HypotekaJasne) — nikdy obecné „naši partneři“.",
+  },
+  AGENT_BUYER_PROFILE_SHARE: {
+    title: "Sdílení finančního profilu s makléřem",
+    description:
+      "Po přijetí kvalifikovaného leadu makléřem můžete povolit zobrazení detailů finančního profilu. Před přijetím vidí makléř jen anonymizované pásmo rozpočtu a časovou osu — nikdy celý profil bez tohoto souhlasu.",
   },
 };
 
 export const HYPOTEKAJASNE_RECIPIENT = {
-  name: "HypotekaJasne.cz",
+  name: "HypotekaJasne",
   legalName: "HypotekaJasne",
   url: "https://hypotekajasne.cz",
-  purpose:
-    "Orientační posouzení možností hypotečního / úvěrového financování a případný kontakt ze strany poradce.",
+  purpose: "Posouzení možností hypotečního / úvěrového financování a případný kontakt ze strany poradce.",
 } as const;
 
-/** Fields that may be offered in DataSharingPreview — never more than listed. */
+/**
+ * @deprecated Use MORTGAGE_LEAD_SHAREABLE_FIELDS from mortgage-lead-transfer.ts.
+ * Kept for legacy tests and backward-compatible references.
+ */
 export const HYPOTEKAJASNE_SHAREABLE_FIELDS = [
   { key: "email", label: "E-mail", always: true },
   { key: "phone", label: "Telefon (pokud je v profilu)", always: false },

@@ -20,3 +20,5 @@ export type {
 
 export type { PropertySearchHitDto, PropertySearchPageDto } from "./search-dto";
 export { toSearchHitDto } from "./search-dto";
+
+export { searchDiscovery } from "./discovery-search";

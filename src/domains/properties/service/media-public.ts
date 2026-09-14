@@ -1,6 +1,6 @@
 /**
  * Safe media projection for public/detail DTO (Prompt 9 Part 1).
- * Never expose prohibited URLs or license internals beyond displayability.
+ * Never expose prohibited URLs, private buckets, or license internals.
  */
 
 export type MediaLicenseStatus =
@@ -34,6 +34,28 @@ export type PublicMediaItem = {
   restricted: boolean;
 };
 
+/** Private / signed storage must never leak onto public cards or CDN OG tags. */
+const PRIVATE_URL_HINTS = [
+  /[?&](X-Amz-|Signature=|sig=|token=)/i,
+  /localhost|127\.0\.0\.1|10\.\d+\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\./i,
+  /\/(private|internal|secure)\//i,
+  /\.s3[.-].*amazonaws\.com\/.*(private|internal)/i,
+  /storage\.googleapis\.com\/.*(private|internal)/i,
+];
+
+export function isPubliclySafeMediaUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+  if (parsed.username || parsed.password) return false;
+  return !PRIVATE_URL_HINTS.some((re) => re.test(url));
+}
+
 export function canDisplayMediaUrl(
   licenseStatus: MediaLicenseStatus | null | undefined,
 ): boolean {
@@ -42,8 +64,9 @@ export function canDisplayMediaUrl(
 }
 
 export function toPublicMediaItem(item: InternalMediaItem): PublicMediaItem {
-  const allowed = canDisplayMediaUrl(item.licenseStatus);
-  if (!allowed) {
+  const licenseOk = canDisplayMediaUrl(item.licenseStatus);
+  const urlSafe = isPubliclySafeMediaUrl(item.url);
+  if (!licenseOk || !urlSafe) {
     return {
       url: null,
       type: item.type,

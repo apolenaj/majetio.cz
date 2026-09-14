@@ -1,75 +1,133 @@
 /**
  * SEO + structured data for property detail (Prompt 9 Part 5 / Prompt 10 Part 5).
  * No Product schema, no fake AggregateRating.
- * Offer.price = asking price only — NEVER Majetio automated estimate (search penalty risk).
+ * Offer.price = asking price only — NEVER Majetio automated estimate.
+ * Titles use real listing facts — no keyword stuffing.
  */
 
 import type { Metadata } from "next";
-import type { PublicPropertyDto } from "@/domains/properties/service/dto";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://majetio.cz";
+import type { PublicPropertyDto } from "@/domains/properties/service/dto";
+import { buildPageMetadata } from "@/domains/seo/metadata";
+import { getSiteOrigin } from "@/domains/seo/site-origin";
+import { formatCzk } from "@/lib/format";
 
 /**
- * Indexable only for real public ACTIVE listings (not demo, not private).
+ * Indexable only when eligible for the properties sitemap:
+ * PUBLIC + ACTIVE + !demo (+ CLEAR moderation / WITHIN_LIMIT when fields present).
  */
-export function isPropertyDetailIndexable(property: PublicPropertyDto): boolean {
-  return (
-    property.visibility === "PUBLIC" &&
-    property.status === "ACTIVE" &&
-    !property.isDemo
-  );
+export function isPropertyDetailIndexable(
+  property: PublicPropertyDto & {
+    listingQuotaState?: string | null;
+    listingModerationStatus?: string | null;
+  },
+): boolean {
+  if (
+    property.visibility !== "PUBLIC" ||
+    property.status !== "ACTIVE" ||
+    property.isDemo
+  ) {
+    return false;
+  }
+  if (
+    property.listingQuotaState != null &&
+    property.listingQuotaState !== "WITHIN_LIMIT"
+  ) {
+    return false;
+  }
+  if (
+    property.listingModerationStatus != null &&
+    property.listingModerationStatus !== "CLEAR"
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function propertyTypeLabel(property: PublicPropertyDto): string {
+  const raw = (property.propertyType || "").toUpperCase();
+  const map: Record<string, string> = {
+    APARTMENT: "Byt",
+    HOUSE: "Dům",
+    LAND: "Pozemek",
+    COMMERCIAL: "Komerční nemovitost",
+    OTHER: "Nemovitost",
+  };
+  return map[raw] ?? "Nemovitost";
+}
+
+/**
+ * Factual title/description from type, location, asking price — no stuffing.
+ */
+export function buildPropertySeoCopy(property: PublicPropertyDto): {
+  title: string;
+  description: string;
+} {
+  const place =
+    property.location.district ||
+    property.location.city ||
+    property.location.label ||
+    null;
+  const typeLabel = propertyTypeLabel(property);
+  const layout = property.layout || null;
+  const area = property.usableArea ?? null;
+
+  const titleParts = [
+    property.title?.trim() ||
+      [typeLabel, layout, place].filter(Boolean).join(" · "),
+  ];
+  const title = titleParts[0]!.slice(0, 70);
+
+  const facts: string[] = [];
+  if (typeLabel) facts.push(typeLabel);
+  if (layout) facts.push(layout);
+  if (area != null) facts.push(`${Math.round(area)} m²`);
+  if (place) facts.push(place);
+  if (property.askingPrice != null) {
+    facts.push(formatCzk(property.askingPrice));
+  }
+
+  const fromDescription = property.description?.replace(/\s+/g, " ").trim();
+  const description = (
+    fromDescription ||
+    `${facts.join(" · ")} — nabídka na Majetio. Modelovaný odhad není součástí této ceny.`
+  ).slice(0, 155);
+
+  return { title, description };
 }
 
 export function buildPropertyDetailMetadata(
   property: PublicPropertyDto,
 ): Metadata {
   const path = `/nemovitosti/${property.slug}`;
-  const place =
-    property.location.label ??
-    property.location.city ??
-    "Nemovitost";
-  const title = property.title;
-  const description =
-    property.description?.slice(0, 155) ||
-    `${place} — detail nabídky na Majetio. Transparentní ekonomika bez falešných ratingů.`;
-
+  const { title, description } = buildPropertySeoCopy(property);
   const indexable = isPropertyDetailIndexable(property);
+  const primary = property.media.find((m) => m.url && !m.restricted);
 
-  return {
+  return buildPageMetadata({
     title,
     description,
-    alternates: { canonical: path },
-    robots: indexable
-      ? { index: true, follow: true }
-      : { index: false, follow: true },
-    openGraph: {
-      type: "website",
-      title: `${title} · Majetio`,
-      description,
-      url: path,
-      images: property.media.find((m) => m.url && !m.restricted)?.url
-        ? [
-            {
-              url: property.media.find((m) => m.url && !m.restricted)!.url!,
-              alt: property.title,
-            },
-          ]
-        : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${title} · Majetio`,
-      description,
-    },
-  };
+    path,
+    noIndex: !indexable,
+    ogImage: primary?.url
+      ? {
+          url: primary.url,
+          alt:
+            primary.alt ||
+            `${propertyTypeLabel(property)}${property.location.city ? ` v ${property.location.city}` : ""}`,
+          width: 1200,
+          height: 630,
+        }
+      : null,
+  });
 }
 
 /**
  * RealEstateListing + Offer — never Product, never AggregateRating.
- * `offers.price` MUST be the listing asking price only. Do not inject valuation mid.
  */
 export function buildPropertyDetailJsonLd(property: PublicPropertyDto): object {
-  const url = `${SITE}/nemovitosti/${property.slug}`;
+  const origin = getSiteOrigin();
+  const url = `${origin}/nemovitosti/${property.slug}`;
   const placeName =
     property.location.district ||
     property.location.city ||
@@ -90,6 +148,11 @@ export function buildPropertyDetailJsonLd(property: PublicPropertyDto): object {
         }
       : undefined;
 
+  const images = property.media
+    .filter((m) => m.url && !m.restricted)
+    .map((m) => m.url!)
+    .slice(0, 8);
+
   return {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
@@ -97,6 +160,7 @@ export function buildPropertyDetailJsonLd(property: PublicPropertyDto): object {
     description: property.description || undefined,
     url,
     datePosted: property.publishedAt || undefined,
+    ...(images.length ? { image: images } : {}),
     ...(offer ? { offers: offer } : {}),
     ...(placeName
       ? {

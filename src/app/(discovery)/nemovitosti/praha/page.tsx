@@ -11,6 +11,7 @@ import {
   type PropertyUrlFilterState,
 } from "@/domains/properties/search/url-state";
 import { getSeoLanding } from "@/domains/properties/search/seo-landings";
+import { loadSponsoredPropertyCards } from "@/domains/listing-promotions";
 
 const SLUG = "praha" as const;
 
@@ -29,13 +30,18 @@ export default async function PrahaLandingPage() {
     ...EMPTY_PROPERTY_URL_STATE,
     lokalita: landing.lokalita,
   };
-  const { isAuthenticated, matchProfile, profileComplete } =
+  const { isAuthenticated, matchProfile, profileComplete, rejectedPropertyIds } =
     await resolveMatchProfile();
   const { cards, sortLabel, relaxedCount, showPassportCta } = buildDiscoveryCards(
     state,
     matchProfile,
     profileComplete,
+    { rejectedPropertyIds },
   );
+  const sponsoredCards = await loadSponsoredPropertyCards({
+    city: landing.lokalita,
+    limit: 4,
+  });
 
   return (
     <DiscoveryListingShell
@@ -52,6 +58,7 @@ export default async function PrahaLandingPage() {
       relaxedCount={relaxedCount}
       isAuthenticated={isAuthenticated}
       showPassportCta={showPassportCta}
+      sponsoredCards={sponsoredCards}
     />
   );
 }

@@ -27,7 +27,7 @@ export default async function PrihlaseniPage({ searchParams }: Props) {
       <p className="mt-6 text-xs text-[var(--text-muted)]">
         Po přihlášení: <code className="text-[0.7rem]">{safeReturn}</code>
         {" · "}
-        <Link href="/ochrana-osobnich-udaju" className="underline underline-offset-2">
+        <Link href="/ochrana-soukromi" className="underline underline-offset-2">
           Ochrana údajů
         </Link>
       </p>

@@ -12,7 +12,7 @@ export const homepageContent = {
   },
   hero: {
     overline: "Než koupíte, mějte jasno.",
-    headline: "Zjistěte, zda se nemovitost skutečně vyplatí koupit.",
+    headline: "Zjistěte, zda se nemovitost vyplatí koupit — podle dat a předpokladů.",
     subheadline:
       "Majetio není běžný inzertní portál. Propojuje cenu, výnos, financování, rekonstrukci a rizika — aby rozhodnutí o koupi stálo na datech, ne na dojmu.",
     primaryCta: {
@@ -131,7 +131,7 @@ export const homepageContent = {
       },
       {
         title: "Udělejte další krok",
-        text: "Rozhodněte se s větší jistotou, nebo pokračujte k financování.",
+        text: "Porovnejte scénáře a rozhodněte se s přehledem — nebo pokračujte k financování.",
       },
     ],
     ctaLabel: "Podrobný popis procesu",

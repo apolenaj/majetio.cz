@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { JsonLd, buildOrganizationJsonLd } from "@/components/seo/json-ld";
 import { AnnouncementBar } from "@/components/homepage/announcement-bar";
 import { HomepageBody } from "@/components/homepage/homepage-body";
 import { HomepageHero } from "@/components/homepage/homepage-hero";
@@ -14,8 +15,7 @@ import {
   resolveHomepageSectionOrder,
 } from "@/config/homepage";
 import { homepageContent } from "@/content/homepage";
-
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://majetio.cz";
+import { getSiteOrigin } from "@/domains/seo/site-origin";
 
 export const metadata: Metadata = {
   title: { absolute: homepageSeo.title },
@@ -52,31 +52,25 @@ export default function HomePage() {
     h1: experiments.homepage_h1,
     cta: experiments.homepage_primary_cta,
   });
-  const sectionOrder = resolveHomepageSectionOrder(experiments.homepage_section_order);
-
-  const organizationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: brand.name,
-    url: appUrl,
-    description: brand.claims.primary,
-    logo: `${appUrl}/brand/logo/majetio-logo-primary.svg`,
-  };
+  const sectionOrder = resolveHomepageSectionOrder(
+    experiments.homepage_section_order,
+  );
+  const origin = getSiteOrigin();
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: brand.name,
-    url: appUrl,
+    url: origin,
     description: homepageSeo.description,
     inLanguage: "cs-CZ",
+    // Browse entry — avoid ?q= SearchAction that lands on noindex filtered SERP
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${appUrl}/nemovitosti?q={search_term_string}`,
+        urlTemplate: `${origin}/nemovitosti`,
       },
-      "query-input": "required name=search_term_string",
     },
   };
 
@@ -95,18 +89,9 @@ export default function HomePage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      <JsonLd id="ld-organization" data={buildOrganizationJsonLd(origin)} />
+      <JsonLd id="ld-website" data={websiteJsonLd} />
+      <JsonLd id="ld-faq" data={faqJsonLd} />
 
       <HomepageViewTracker
         experimentH1={experiments.homepage_h1}
@@ -118,7 +103,10 @@ export default function HomePage() {
       <HomepageHero hero={hero} experimentVariant={experiments.homepage_h1} />
 
       <Container className="overflow-x-clip pt-6 sm:pt-8">
-        <InlineAlert tone="info" title={homepageContent.financialDisclaimer.title}>
+        <InlineAlert
+          tone="info"
+          title={homepageContent.financialDisclaimer.title}
+        >
           {homepageContent.financialDisclaimer.text}
         </InlineAlert>
       </Container>

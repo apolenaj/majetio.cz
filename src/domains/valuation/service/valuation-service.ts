@@ -8,6 +8,7 @@ import {
   listDemoValuationCandidates,
 } from "@/content/demo-valuation-comparables";
 import { getDemoPropertyRecord } from "@/content/demo-canonical-properties";
+import { isDemoPropertyContentAllowed } from "@/lib/demo-content-gate";
 import type { PublicPropertyDto } from "@/domains/properties/service/dto";
 import type { PropertyRecord } from "@/domains/properties/service/dto";
 import {
@@ -68,9 +69,13 @@ export function toValuationSubject(
   > & { hasBalcony?: boolean | null },
   extras?: { hasBalcony?: boolean | null },
 ): ValuationSubject {
-  const record = getDemoPropertyRecord(
-    "slug" in property ? String((property as { slug?: string }).slug ?? "") : "",
-  );
+  const record = isDemoPropertyContentAllowed()
+    ? getDemoPropertyRecord(
+        "slug" in property
+          ? String((property as { slug?: string }).slug ?? "")
+          : "",
+      )
+    : null;
   const hasBalcony =
     extras?.hasBalcony ??
     property.hasBalcony ??
@@ -299,7 +304,9 @@ function mapEstimateToAnalyst(
 
 export function createValuationService(deps: ValuationServiceDeps = {}) {
   const getCandidates =
-    deps.getCandidates ?? (() => listDemoValuationCandidates());
+    deps.getCandidates ??
+    (() =>
+      isDemoPropertyContentAllowed() ? listDemoValuationCandidates() : []);
 
   function estimateForSubject(
     subject: ValuationSubject,

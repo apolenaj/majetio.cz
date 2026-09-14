@@ -15,12 +15,15 @@ describe("IDOR hardening (source contracts)", () => {
     "src/lib/account/settings-actions.ts",
     "src/lib/account/export.ts",
     "src/lib/account/notifications-actions.ts",
+    "src/domains/investment/server/save-scenario.ts",
+    "src/domains/investment/server/scenario-actions.ts",
+    "src/domains/favourites/server/actions.ts",
   ];
 
   it("server actions resolve user from session, not request body userId", () => {
     for (const relative of roots) {
       const source = readFileSync(join(process.cwd(), relative), "utf8");
-      expect(source).toMatch(/auth\(\)/);
+      expect(source).toMatch(/auth\(\)|requireUser\(/);
       // Must not accept arbitrary foreign user ids from clients
       expect(source).not.toMatch(/z\.object\(\{[^}]*userId:\s*z\.string/);
       expect(source).not.toMatch(/params\.userId|searchParams\.userId|body\.userId/);

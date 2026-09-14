@@ -87,6 +87,24 @@ export function welcomeEmail(accountUrl: string): EmailTemplate {
   );
 }
 
+export function mortgageLeadStatusUpdatedEmail(input: {
+  statusLabel: string;
+  previousStatusLabel?: string;
+  detailUrl: string;
+}): EmailTemplate {
+  const changeLine = input.previousStatusLabel
+    ? `Stav financování se změnil z „${input.previousStatusLabel}“ na „${input.statusLabel}“.`
+    : `Aktuální stav financování: „${input.statusLabel}“.`;
+
+  return layout(
+    "Stav financování byl aktualizován",
+    `<p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${escapeHtml(changeLine)}</p>
+     <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">Podrobnosti a další krok najdete ve svém účtu. V tomto e-mailu neuvádíme finanční částky ani jiné citlivé údaje.</p>
+     ${cta(input.detailUrl, "Zobrazit stav financování")}`,
+    `${changeLine}\n\nPodrobnosti najdete ve svém účtu:\n${input.detailUrl}\n\nV tomto e-mailu neuvádíme finanční částky ani jiné citlivé údaje.`,
+  );
+}
+
 /** Dev/helper: log template without sending (no provider wired yet). */
 export function logEmailInDev(template: EmailTemplate, toHint = "user"): void {
   if (process.env.NODE_ENV === "production") return;

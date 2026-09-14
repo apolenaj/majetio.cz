@@ -1,11 +1,14 @@
 "use server";
 
-import { PropertyType } from "@prisma/client";
+import { LeadType, PropertyType } from "@prisma/client";
 import { z } from "zod";
 
 import { writeAuditLog } from "@/lib/auth/audit";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { mortgageLeadService } from "@/domains/leads";
+import type { MortgageLeadListItemDto } from "@/domains/leads/schemas/mortgage-lead";
+import { listWatchedLocations } from "@/domains/locations/watch/watched-location-service";
 import { percentBucket, track } from "@/lib/analytics/events";
 import { computePassportProgress } from "@/lib/financial-passport/progress";
 import { buildPassportRecommendations } from "@/lib/financial-passport/recommendations";
@@ -326,6 +329,13 @@ export type DashboardSnapshot = {
   favouritesCount: number;
   analysesCount: number;
   comparisonsCount: number;
+  watchedLocationsCount: number;
+  recentWatchedLocations: {
+    id: string;
+    locationSlug: string;
+    locationLabel: string;
+    canonicalPath: string;
+  }[];
   recentFavourites: {
     id: string;
     title: string;
@@ -346,6 +356,8 @@ export type DashboardSnapshot = {
     itemCount: number;
     updatedAt: string;
   }[];
+  mortgageLeadsCount: number;
+  recentMortgageLeads: MortgageLeadListItemDto[];
 };
 
 export async function loadAccountDashboard(): Promise<
@@ -357,7 +369,7 @@ export async function loadAccountDashboard(): Promise<
   }
   const userId = session.user.id;
 
-  const [user, rows, favouritesCount, analysesCount, comparisonsCount, favourites, analyses, comparisons] =
+  const [user, rows, favouritesCount, analysesCount, comparisonsCount, favourites, analyses, comparisons, mortgageLeads, mortgageLeadsCount, watchedLocations] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -373,7 +385,14 @@ export async function loadAccountDashboard(): Promise<
         take: 3,
         include: {
           property: {
-            select: { id: true, title: true, slug: true, city: true, priceCzk: true },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              city: true,
+              askingPrice: true,
+              priceCzk: true,
+            },
           },
         },
       }),
@@ -389,8 +408,18 @@ export async function loadAccountDashboard(): Promise<
         where: { userId },
         orderBy: { updatedAt: "desc" },
         take: 3,
-        include: { _count: { select: { items: true } } },
+        include: { _count: { select: { properties: true } } },
       }),
+      mortgageLeadService.listMortgageLeadsForUser({ userId, limit: 3 }),
+      prisma.lead.count({
+        where: {
+          userId,
+          type: LeadType.FINANCING,
+          partner: "hypotekajasne",
+          mortgageProfile: { isNot: null },
+        },
+      }),
+      listWatchedLocations(userId).catch(() => []),
     ]);
 
   const passport = mapState(rows);
@@ -411,12 +440,19 @@ export async function loadAccountDashboard(): Promise<
       favouritesCount,
       analysesCount,
       comparisonsCount,
+      watchedLocationsCount: watchedLocations.length,
+      recentWatchedLocations: watchedLocations.slice(0, 3).map((w) => ({
+        id: w.id,
+        locationSlug: w.locationSlug,
+        locationLabel: w.locationLabel,
+        canonicalPath: w.canonicalPath,
+      })),
       recentFavourites: favourites.map((f) => ({
         id: f.property.id,
         title: f.property.title,
         slug: f.property.slug,
         city: f.property.city,
-        priceCzk: f.property.priceCzk,
+        priceCzk: f.property.askingPrice ?? f.property.priceCzk,
       })),
       recentAnalyses: analyses.map((a) => ({
         id: a.id,
@@ -428,9 +464,11 @@ export async function loadAccountDashboard(): Promise<
       recentComparisons: comparisons.map((c) => ({
         id: c.id,
         name: c.name,
-        itemCount: c._count.items,
+        itemCount: c._count.properties,
         updatedAt: c.updatedAt.toISOString(),
       })),
+      mortgageLeadsCount,
+      recentMortgageLeads: mortgageLeads,
     },
   };
 }

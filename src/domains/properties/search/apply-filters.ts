@@ -58,7 +58,9 @@ export function applyUrlFiltersToListings(
   }
 
   if (state.cenaOd != null) {
-    items = items.filter((p) => (p.askingPrice ?? 0) >= state.cenaOd!);
+    items = items.filter(
+      (p) => p.askingPrice != null && p.askingPrice >= state.cenaOd!,
+    );
   }
   if (state.cenaDo != null) {
     items = items.filter(
@@ -84,7 +86,9 @@ export function applyUrlFiltersToListings(
   }
 
   if (state.plochaOd != null) {
-    items = items.filter((p) => (p.usableArea ?? 0) >= state.plochaOd!);
+    items = items.filter(
+      (p) => p.usableArea != null && p.usableArea >= state.plochaOd!,
+    );
   }
   if (state.plochaDo != null) {
     items = items.filter(

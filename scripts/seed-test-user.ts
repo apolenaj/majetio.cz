@@ -3,6 +3,7 @@
  *
  * Usage: npx tsx scripts/seed-test-user.ts
  * Requires DATABASE_URL.
+ * REFUSED in production — never seed weak TestUser1! credentials to prod.
  */
 import { ConsentType, PropertyType, Role } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -13,7 +14,19 @@ import { prisma } from "../src/lib/db";
 const TEST_EMAIL = "test.user@majetio.local";
 const TEST_PASSWORD = "TestUser1!";
 
+function assertSeedAllowed(): void {
+  const prodLike =
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production";
+  if (prodLike) {
+    throw new Error(
+      "Refused: seed-test-user must never run in production (weak demo password).",
+    );
+  }
+}
+
 async function main() {
+  assertSeedAllowed();
   const passwordHash = await hash(TEST_PASSWORD, 12);
 
   const existing = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });

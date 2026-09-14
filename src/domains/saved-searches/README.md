@@ -4,7 +4,7 @@ Uložená hledání (Prompt 8 Part 4).
 
 ## Model
 
-- `SavedSearch`: `name`, `filters` (JSON, versioned), `sort`, `filtersVersion`, `alertFrequency` (`OFF` | `INSTANT` | `WEEKLY`)
+- `SavedSearch`: `name`, `filters` (JSON, versioned), `sort`, `filtersVersion`, `alertFrequency` (`OFF` | `INSTANT` | `DAILY` | `WEEKLY`)
 - Filters payload: `{ version: 1, state: PropertyUrlFilterState }` via `filters-version.ts`
 
 ## Server actions

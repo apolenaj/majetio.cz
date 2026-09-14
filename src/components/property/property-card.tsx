@@ -14,9 +14,11 @@ import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
 import { AspectRatio } from "@/components/ui/layout-primitives";
 import { MetricValue } from "@/components/data-display/metric-card";
+import { PropertyListingImage } from "@/components/property/property-listing-image";
 import { formatCzk, formatCzkPerSqm, formatPercentPoints } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { saveSearchScrollPosition } from "@/domains/properties/search/scroll-restore";
+import { SponsoredListingBadge } from "@/components/property/sponsored-listing-badge";
 
 export type PropertyListingStatus = "active" | "stale" | "unavailable";
 
@@ -41,6 +43,8 @@ export type PropertyCardData = {
   /** Orientační tagy (strategie, stav, …). */
   tags?: string[];
   isDemo?: boolean;
+  /** Paid placement disclosure — never affects score rendering. */
+  sponsored?: boolean;
   listingStatus?: PropertyListingStatus;
   /** Rule-based match vs Finanční pas (Prompt 8 Part 4). */
   matchScore?: number | null;
@@ -53,6 +57,7 @@ export function PropertyCard({
   onCompare,
   isFavourite,
   isCompared,
+  priority = false,
   className,
 }: {
   property: PropertyCardData;
@@ -60,11 +65,17 @@ export function PropertyCard({
   onCompare?: () => void;
   isFavourite?: boolean;
   isCompared?: boolean;
+  /** LCP hint for above-the-fold cards. */
+  priority?: boolean;
   className?: string;
 }) {
   const status = property.listingStatus ?? "active";
   const unavailable = status === "unavailable";
   const stale = status === "stale";
+  const imageAlt =
+    [property.title, property.location, property.disposition]
+      .filter(Boolean)
+      .join(" — ") || "Fotografie nemovitosti";
 
   return (
     <Card
@@ -90,14 +101,11 @@ export function PropertyCard({
           )}
         >
           {property.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <PropertyListingImage
               src={property.imageUrl}
-              alt=""
-              className={cn(
-                "property-photo h-full w-full rounded-none object-cover",
-                unavailable && "opacity-60",
-              )}
+              alt={imageAlt}
+              priority={priority}
+              unavailable={unavailable}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
@@ -106,6 +114,7 @@ export function PropertyCard({
             </div>
           )}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+            {property.sponsored ? <SponsoredListingBadge /> : null}
             {property.isDemo ? (
               <span className="rounded border border-[var(--action-premium)] bg-[color-mix(in_srgb,var(--action-premium)_20%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">
                 Demo

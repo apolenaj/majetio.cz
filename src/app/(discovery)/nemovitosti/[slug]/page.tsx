@@ -11,9 +11,11 @@ import { PropertyValuationCompare } from "@/components/property/property-valuati
 import { PropertyValuationComparables } from "@/components/property/property-valuation-comparables";
 import { PropertyValuationAdjustments } from "@/components/property/property-valuation-adjustments";
 import { PropertyValuationDisclaimer } from "@/components/property/property-valuation-disclaimer";
+import { MarketCapabilityNotice } from "@/components/markets/market-capability-notice";
+import { isCapabilityUiAvailable } from "@/domains/markets";
 import { PropertyInvestmentOverview } from "@/components/property/property-investment-overview";
 import { ScenarioSwitcher } from "@/components/property/property-scenario-switcher";
-import { PropertyFinancingSection } from "@/components/property/property-financing-section";
+import { PropertyDetailFinancing } from "@/components/property/property-detail-financing";
 import { PropertyRenovationSection } from "@/components/property/property-renovation-section";
 import { PropertyRisksSection } from "@/components/property/property-risks-section";
 import { PropertyProvenanceSection } from "@/components/property/property-provenance-section";
@@ -21,12 +23,15 @@ import { PropertySimilarSection } from "@/components/property/property-similar-s
 import { PropertyDetailSectionNav } from "@/components/property/property-detail-section-nav";
 import { PropertyDetailAnalytics } from "@/components/property/property-detail-analytics";
 import { MobileDisclosure } from "@/components/property/mobile-disclosure";
+import { PropertyNotesPanel } from "@/components/decision-workspace/property-notes-panel";
+import { DecisionChecklistPanel } from "@/components/decision-workspace/decision-checklist-panel";
 import {
   LazyPropertyLocationSection,
   LazyPropertyMarketHistorySection,
 } from "@/components/property/property-detail-lazy";
 import { InlineAlert } from "@/components/feedback/states";
 import { PageHeader } from "@/components/layout/page-layouts";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { loadPropertyValuationBySlug } from "@/domains/valuation/service/valuation-loader";
@@ -50,13 +55,11 @@ import { getPropertyFinancialDemo } from "@/content/demo-property-financial";
 import { getPropertyContextDemo } from "@/content/demo-property-context";
 import { getDemoPublicProperty } from "@/content/demo-canonical-properties";
 import { resolveDaysOnMarket, daysBetweenIso } from "@/domains/properties/service/market-timing";
+import { getCachedMortgageOffers } from "@/domains/financing/service/mortgage-rates";
+import { mortgageLeadService } from "@/domains/leads";
 import { loadFinancialPassport } from "@/lib/financial-passport/actions";
-import {
-  loadHypotekaHandoffPreview,
-  type HandoffPreviewData,
-} from "@/lib/financing/handoff-actions";
-import { createHypotekaJasneClient } from "@/integrations/hypotekajasne";
-import type { FinancingPreviewResponse } from "@/integrations/hypotekajasne";
+import { auth } from "@/lib/auth";
+import { resolveLocationIntelligenceForProperty } from "@/domains/locations/integration";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -73,6 +76,16 @@ export default async function PropertyDetailPage({ params }: Props) {
   const { slug } = await params;
   const property = await loadPropertyDetailBySlug(slug);
   if (!property) notFound();
+
+  // Listing analytics (136) — impressions only, no visitor PII
+  void import("@/domains/listing-analytics/service")
+    .then(({ recordListingMetric }) =>
+      recordListingMetric({
+        propertyId: property.id,
+        metric: "impressions",
+      }),
+    )
+    .catch(() => undefined);
 
   const statusTone = propertyListingStatusTone(property.status);
   const locationLine = [
@@ -104,7 +117,19 @@ export default async function PropertyDetailPage({ params }: Props) {
   const financial = getPropertyFinancialDemo(property.slug);
   const context = getPropertyContextDemo(property.slug);
   const valuation = await loadPropertyValuationBySlug(property.slug);
-  if (!valuation) notFound();
+  // Incomplete / non-valuable listings must still render identity + lifecycle —
+  // never hard-404 solely because the estimate engine has nothing to say.
+
+  const locationIntel = await resolveLocationIntelligenceForProperty({
+    propertyType: property.propertyType,
+    condition: property.condition,
+    layout: property.layout,
+    pricePerSqm: property.pricePerSqm,
+    askingPrice: property.askingPrice,
+    usableArea: property.usableArea,
+    locationCity: property.location.city,
+    locationDistrict: property.location.district,
+  });
 
   const daysOnMarket = resolveDaysOnMarket({
     publishedAt: property.publishedAt,
@@ -124,63 +149,63 @@ export default async function PropertyDetailPage({ params }: Props) {
     .filter((x): x is NonNullable<typeof x> => x != null)
     .slice(0, 6);
 
-  let equityUsedCzk: number | null = null;
-  let equitySource: "passport" | "demo" | "none" = "none";
-  let financingPreview: FinancingPreviewResponse | null = null;
-  let handoffPreview: HandoffPreviewData | null = null;
+  let passportState = null;
+  let activeFinancingLead = null;
+  const [{ offers, freshness }] = await Promise.all([
+    getCachedMortgageOffers(),
+  ]);
 
-  if (isAuthenticated) {
+  const session = await auth();
+  if (session?.user?.id) {
     const passport = await loadFinancialPassport();
-    if (passport.ok && passport.state.availableEquityCzk != null) {
-      equityUsedCzk = passport.state.availableEquityCzk;
-      equitySource = "passport";
-    }
-    const handoff = await loadHypotekaHandoffPreview();
-    if (handoff.ok) handoffPreview = handoff.data;
-  }
-
-  if (equityUsedCzk == null) {
-    const demoEquity =
-      financial?.scenarios.find((s) => s.assumptionDefaults?.equityCzk != null)
-        ?.assumptionDefaults?.equityCzk ?? null;
-    if (demoEquity != null) {
-      equityUsedCzk = demoEquity;
-      equitySource = "demo";
-    }
-  }
-
-  if (property.askingPrice != null && equityUsedCzk != null) {
-    const client = createHypotekaJasneClient();
-    financingPreview = await client.getFinancingPreview({
-      propertyPriceCzk: property.askingPrice,
-      availableEquityCzk: equityUsedCzk,
-      termYears: 30,
+    if (passport.ok) passportState = passport.state;
+    activeFinancingLead = await mortgageLeadService.findActiveMortgageLeadForContext({
+      userId: session.user.id,
+      propertyId: property.id,
     });
   }
 
   const returnPath = `/nemovitosti/${property.slug}`;
   const jsonLd = buildPropertyDetailJsonLd(property);
 
+  const valuationWithLocation =
+    valuation &&
+    valuation.kind === "public" &&
+    locationIntel.valuationContext
+      ? {
+          ...valuation,
+          locationMarketContext: {
+            medianAskingPriceSqm:
+              locationIntel.valuationContext.medianAskingPriceSqm,
+            medianTransactionPriceSqm:
+              locationIntel.valuationContext.medianTransactionPriceSqm,
+            priceTrendYoYPct: locationIntel.valuationContext.priceTrendYoYPct,
+            segmentLabel: locationIntel.valuationContext.segmentKey,
+            period: locationIntel.valuationContext.period,
+            methodologyHref: locationIntel.valuationContext.methodologyHref,
+            disclaimer: locationIntel.valuationContext.disclaimer,
+          },
+        }
+      : valuation;
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd id="property-detail" data={jsonLd} />
       <PropertyDetailAnalytics
         slug={property.slug}
         isDemo={property.isDemo}
         hasAskingPrice={property.askingPrice != null}
         visibility={property.visibility}
       />
-      <PropertyValuationAnalytics
-        slug={property.slug}
-        status={valuation.status}
-        confidenceLevel={valuation.confidenceLevel}
-        isDemo={valuation.isDemo}
-        hasEstimate={valuation.estimateMidCzk != null}
-      />
-
+      {valuation ? (
+        <PropertyValuationAnalytics
+          slug={property.slug}
+          status={valuation.status}
+          confidenceLevel={valuation.confidenceLevel}
+          isDemo={valuation.isDemo}
+          hasEstimate={valuation.estimateMidCzk != null}
+        />
+      ) : null}
       <Container className="overflow-x-hidden py-10 sm:py-14 pb-28 lg:pb-14">
         <PageHeader
           title={property.title}
@@ -207,8 +232,15 @@ export default async function PropertyDetailPage({ params }: Props) {
 
           {statusTone === "unavailable" ? (
             <InlineAlert tone="error" title="Nabídka nemusí být dostupná">
-              Stav nabídky je „nedostupná“. Údaje zůstávají pro kontext, ale
-              nemovitost už nemusí být na trhu.
+              Stav nabídky je „nedostupná“, „prodáno“ nebo obdobný. Údaje zůstávají
+              pro kontext, ale nemovitost už nemusí být na trhu.
+            </InlineAlert>
+          ) : null}
+
+          {statusTone === "reserved" ? (
+            <InlineAlert tone="warning" title="Rezervováno">
+              Nabídka je ve stavu rezervace. Podmínky a dostupnost ověřte před
+              rozhodnutím — nejde o potvrzený prodej.
             </InlineAlert>
           ) : null}
 
@@ -219,7 +251,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           ) : null}
         </div>
 
-        <PropertyDetailSectionNav />
+        <PropertyDetailSectionNav marketCode="CZ" locale="cs-CZ" />
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0 space-y-10">
@@ -236,7 +268,7 @@ export default async function PropertyDetailPage({ params }: Props) {
 
               <PropertyQuickSummary
                 property={property}
-                estimatedValueMidCzk={valuation.estimateMidCzk}
+                estimatedValueMidCzk={valuation?.estimateMidCzk ?? null}
               />
 
               <PropertyScorePanel
@@ -247,21 +279,34 @@ export default async function PropertyDetailPage({ params }: Props) {
             </section>
 
             <section id="ekonomika" className="scroll-mt-28 space-y-10">
-              <PropertyValuationCompare valuation={valuation} />
-              <PropertyValuationComparables
-                slug={property.slug}
-                valuation={valuation}
+              <MarketCapabilityNotice
+                marketCode={property.marketCode}
+                capability="VALUATION"
               />
-              <PropertyValuationAdjustments valuation={valuation} />
-              <PropertyValuationDisclaimer
-                slug={property.slug}
-                valuation={valuation}
-              />
+              {valuation &&
+              isCapabilityUiAvailable({
+                marketCode: property.marketCode,
+                capability: "VALUATION",
+              }) ? (
+                <>
+                  <PropertyValuationCompare valuation={valuationWithLocation} />
+                  <PropertyValuationComparables
+                    slug={property.slug}
+                    valuation={valuation}
+                  />
+                  <PropertyValuationAdjustments valuation={valuation} />
+                  <PropertyValuationDisclaimer
+                    slug={property.slug}
+                    valuation={valuation}
+                  />
+                </>
+              ) : null}
 
               <PropertyInvestmentOverview
                 investment={financial?.investment ?? null}
                 fallbackGrossYieldPct={property.grossYieldPct}
                 fallbackCashFlowMonthlyCzk={property.cashFlowMonthlyCzk}
+                locationBenchmark={locationIntel.investmentBenchmark}
               />
             </section>
 
@@ -274,14 +319,16 @@ export default async function PropertyDetailPage({ params }: Props) {
             </section>
 
             <section id="financovani" className="scroll-mt-28 space-y-10">
-              <PropertyFinancingSection
-                askingPrice={property.askingPrice}
-                equityUsedCzk={equityUsedCzk}
-                equitySource={equitySource}
-                preview={financingPreview}
-                handoffPreview={handoffPreview}
+              <PropertyDetailFinancing
+                propertyId={property.id}
+                propertySlug={property.slug}
+                askingPriceCzk={property.askingPrice}
+                valuationCzk={valuation?.estimateMidCzk ?? null}
+                offers={offers}
+                freshness={freshness}
                 isAuthenticated={isAuthenticated}
-                returnPath={returnPath}
+                passportState={passportState}
+                activeFinancingLead={activeFinancingLead}
               />
 
               <PropertyRenovationSection
@@ -291,7 +338,10 @@ export default async function PropertyDetailPage({ params }: Props) {
 
             <section id="rizika" className="scroll-mt-28">
               <PropertyRisksSection
-                risks={context?.risks ?? []}
+                risks={[
+                  ...(context?.risks ?? []),
+                  ...locationIntel.locationRisks.propertyRiskItems,
+                ]}
                 checklist={context?.checklist ?? []}
                 dueDiligenceStatus={context?.dueDiligenceStatus ?? null}
                 dueDiligenceNote={context?.dueDiligenceNote ?? null}
@@ -303,6 +353,12 @@ export default async function PropertyDetailPage({ params }: Props) {
                 <LazyPropertyLocationSection
                   location={property.location}
                   benchmark={context?.location ?? null}
+                  segmentBenchmark={locationIntel.segmentBenchmark}
+                  locationPageHref={locationIntel.locationPageHref}
+                  opportunityInsight={locationIntel.opportunityInsight}
+                  marketContext={locationIntel.marketContext}
+                  strRegulatory={locationIntel.strRegulatory}
+                  watchSlug={locationIntel.segmentBenchmark.locationSlug}
                 />
               </MobileDisclosure>
             </section>
@@ -326,6 +382,28 @@ export default async function PropertyDetailPage({ params }: Props) {
                 freshness={property.freshness}
                 fieldConflicts={property.fieldConflicts}
                 daysSinceVerified={daysSinceVerified}
+              />
+            </section>
+
+            <section id="rozhodnuti" className="scroll-mt-28 space-y-6">
+              <PropertyNotesPanel
+                propertyId={property.id}
+                slug={property.slug}
+                isAuthenticated={isAuthenticated}
+                returnPath={returnPath}
+              />
+              <DecisionChecklistPanel
+                propertyId={property.id}
+                slug={property.slug}
+                isAuthenticated={isAuthenticated}
+                returnPath={returnPath}
+                context={{
+                  propertyType: property.propertyType,
+                  condition: property.condition,
+                  risk: property.risk ?? null,
+                  tags: property.tags ?? [],
+                  hasRenovationEstimate: Boolean(financial?.renovation?.costCzk),
+                }}
               />
             </section>
 
@@ -365,6 +443,7 @@ export default async function PropertyDetailPage({ params }: Props) {
                   "Lokalita neuvedena",
                 isDemo: property.isDemo,
               }}
+              activeFinancingLead={activeFinancingLead}
             />
           </aside>
         </div>

@@ -6,10 +6,14 @@ import { EmptyState, InlineAlert } from "@/components/feedback/states";
 import { Switch } from "@/components/forms/controls";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  markAllInboxRead,
   markNotificationRead,
+  markPropertyAlertRead,
   saveNotificationPrefs,
+  type InboxItem,
   type NotificationsPageData,
 } from "@/lib/account/notifications-actions";
 import { formatDateTime } from "@/lib/format";
@@ -20,6 +24,8 @@ export function NotificationsPanel({ initial }: { initial: NotificationsPageData
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+
+  const unreadCount = items.filter((i) => i.unread).length;
 
   async function persist(next: typeof prefs) {
     setSaving(true);
@@ -35,14 +41,57 @@ export function NotificationsPanel({ initial }: { initial: NotificationsPageData
     setMessage("Preference upozornění uloženy.");
   }
 
+  function markLocalRead(id: string) {
+    setItems((prev) =>
+      prev.map((n) =>
+        n.id === id ? { ...n, unread: false, readAt: new Date().toISOString() } : n,
+      ),
+    );
+  }
+
+  async function onMarkRead(item: InboxItem) {
+    if (item.kind === "property_alert") {
+      await markPropertyAlertRead(item.id);
+    } else {
+      await markNotificationRead(item.id);
+    }
+    markLocalRead(item.id);
+  }
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-h2 text-[var(--text-primary)]">Upozornění</h1>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Transakční zprávy (bezpečnost, objednávky) a marketing odděleně. Marketing není
-          předvyplněný.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h2 text-[var(--text-primary)]">Upozornění</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
+            Inbox změn u oblíbených nemovitostí a uložených hledání. Transakční
+            zprávy jsou oddělené od marketingu.
+          </p>
+        </div>
+        {unreadCount > 0 ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              void markAllInboxRead().then((r) => {
+                if (!r.ok) {
+                  setError(r.error);
+                  return;
+                }
+                setItems((prev) =>
+                  prev.map((n) => ({
+                    ...n,
+                    unread: false,
+                    readAt: n.readAt ?? new Date().toISOString(),
+                  })),
+                );
+              });
+            }}
+          >
+            Označit vše přečtené ({unreadCount})
+          </Button>
+        ) : null}
       </div>
 
       {message ? (
@@ -61,8 +110,8 @@ export function NotificationsPanel({ initial }: { initial: NotificationsPageData
           <CardHeader>
             <CardTitle>Transakční</CardTitle>
             <CardDescription>
-              Potřebné provozní zprávy. Reset hesla a kritická bezpečnostní upozornění mohou přijít
-              i při vypnutí e-mailu.
+              Ceny, stavy nabídek, shody s hledáním, bezpečnost a objednávky.
+              Nikdy nevyžadují marketingový souhlas.
             </CardDescription>
           </CardHeader>
           <div className="space-y-4">
@@ -89,7 +138,8 @@ export function NotificationsPanel({ initial }: { initial: NotificationsPageData
           <CardHeader>
             <CardTitle>Marketingové</CardTitle>
             <CardDescription>
-              Tipové a tipovací zprávy. Výchozí stav je vypnuto — musíte je zapnout sami.
+              Tipové a tipovací zprávy. Výchozí stav je vypnuto — musíte je zapnout
+              sami. Property alerty sem nepatří.
             </CardDescription>
           </CardHeader>
           <div className="space-y-4">
@@ -120,40 +170,56 @@ export function NotificationsPanel({ initial }: { initial: NotificationsPageData
         {items.length === 0 ? (
           <EmptyState
             title="Zatím žádná upozornění"
-            description="Až vám přijde transakční nebo marketingová zpráva, uvidíte ji tady."
+            description="Až se změní cena nebo stav oblíbené nemovitosti, uvidíte to tady."
           />
         ) : (
           <ul className="space-y-3">
             {items.map((item) => (
-              <li key={item.id}>
-                <Card padding="md" variant={item.readAt ? "muted" : "static"}>
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-[var(--text-primary)]">{item.title}</p>
+              <li key={`${item.kind}:${item.id}`}>
+                <Card padding="md" variant={item.unread ? "static" : "muted"}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.kind === "property_alert" ? (
+                          <StatusBadge tone="neutral">{item.typeLabel}</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="neutral">{item.category}</StatusBadge>
+                        )}
+                        {item.unread ? (
+                          <StatusBadge tone="info">Nepřečtené</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="neutral">Přečtené</StatusBadge>
+                        )}
+                      </div>
+                      <p className="mt-2 font-medium text-[var(--text-primary)]">
+                        {item.title}
+                      </p>
                       {item.body ? (
-                        <p className="mt-1 text-sm text-[var(--text-secondary)]">{item.body}</p>
+                        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                          {item.body}
+                        </p>
                       ) : null}
                       <p className="mt-2 text-xs text-[var(--text-muted)]">
-                        {formatDateTime(item.createdAt)} · {item.channel} · {item.category}
+                        {formatDateTime(item.createdAt)}
+                        {item.kind === "property_alert" && item.propertyTitle
+                          ? ` · ${item.propertyTitle}`
+                          : null}
+                        {` · ${item.channel}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {!item.readAt ? <StatusBadge tone="info">Nové</StatusBadge> : null}
-                      {!item.readAt ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {item.href ? (
+                        <ButtonLink href={item.href} size="sm" variant="secondary">
+                          {item.ctaLabel}
+                        </ButtonLink>
+                      ) : null}
+                      {item.unread ? (
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            void markNotificationRead(item.id).then(() => {
-                              setItems((prev) =>
-                                prev.map((n) =>
-                                  n.id === item.id
-                                    ? { ...n, readAt: new Date().toISOString() }
-                                    : n,
-                                ),
-                              );
-                            });
+                            void onMarkRead(item);
                           }}
                         >
                           Označit přečtené

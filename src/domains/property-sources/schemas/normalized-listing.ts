@@ -3,6 +3,8 @@
  * Not a public DTO — may contain precise address / raw source fields.
  */
 
+import type { LocalizedPropertyText } from "@/domains/properties/extensions/text/localized-text";
+
 export type NormalizedAreaUnit = "m2" | "sqft" | "unknown";
 export type NormalizedCurrency = string; // ISO 4217, e.g. CZK
 
@@ -20,6 +22,9 @@ export type NormalizedListing = {
   sourceType: string;
   externalPropertyId: string;
   sourceUrl?: string;
+  /** Explicit market — never inferred from currency alone. */
+  marketCode?: string;
+  countryCode?: string;
   title: string;
   description?: string;
   propertyType?: string;
@@ -30,6 +35,8 @@ export type NormalizedListing = {
   floorAreaM2?: number | null;
   landAreaM2?: number | null;
   layout?: string;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   publicCity?: string;
   publicDistrict?: string;
   publicRegion?: string;
@@ -40,7 +47,14 @@ export type NormalizedListing = {
   latitude?: number | null;
   longitude?: number | null;
   media: NormalizedMediaItem[];
-  /** Opaque extras for provenance / attributes. */
+  /**
+   * Typed market extension bag (validated later via parseMarketExtensions).
+   * Prefer enums — never dump free-text local attributes here.
+   */
+  marketExtensions?: Record<string, unknown> | null;
+  /** Original + translated strings with machine_generated provenance. */
+  localizedTexts?: LocalizedPropertyText[];
+  /** Opaque extras for provenance only — not market typed fields. */
   attributes?: Record<string, unknown>;
 };
 

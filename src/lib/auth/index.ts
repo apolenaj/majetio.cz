@@ -24,6 +24,15 @@ function emailFingerprint(email: string): string {
   return createHash("sha256").update(email.toLowerCase()).digest("hex").slice(0, 16);
 }
 
+/**
+ * Bound into JWT so password change / reset invalidates existing sessions
+ * without a schema migration (hash changes → fingerprint mismatch → revoke).
+ */
+function credentialsFingerprint(passwordHash: string | null | undefined): string {
+  if (!passwordHash) return "nopw";
+  return createHash("sha256").update(passwordHash).digest("hex").slice(0, 16);
+}
+
 function credentialsEnabled(): boolean {
   return process.env.AUTH_CREDENTIALS_ENABLED !== "false";
 }
@@ -80,6 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   image: true,
                   passwordHash: true,
                   role: true,
+                  accountStatus: true,
                 },
               });
 
@@ -108,6 +118,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 return null;
               }
 
+              const status = user.accountStatus ?? "ACTIVE";
+              if (status === "SUSPENDED" || status === "DELETION_REQUESTED") {
+                await writeAuditLog({
+                  action: "auth.login.failure",
+                  entity: "User",
+                  entityId: user.id,
+                  actorId: user.id,
+                  meta: { reason: "account_status", accountStatus: status },
+                });
+                track({
+                  name: "login_failed",
+                  props: { reason: "account_status" },
+                });
+                return null;
+              }
+
               await clearAuthFailures(rateKey);
               await writeAuditLog({
                 action: "auth.login.success",
@@ -124,6 +150,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 name: user.name,
                 image: user.image,
                 role: user.role,
+                // Stashed for jwt callback on first issue (Auth.js copies onto user)
+                credentialsFp: credentialsFingerprint(user.passwordHash),
               };
             },
           }),
@@ -132,15 +160,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     jwt: async ({ token, user }) => {
-      if (user) {
-        token.sub = user.id;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
-        // Role always from DB — never from client payload
-        token.role = dbUser?.role ?? "USER";
+      const userId = user?.id ?? token.sub;
+      if (!userId) return token;
+
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true, accountStatus: true, passwordHash: true },
+      });
+      // Role always from DB — never from client payload
+      if (
+        !dbUser ||
+        dbUser.accountStatus === "SUSPENDED" ||
+        dbUser.accountStatus === "DELETION_REQUESTED"
+      ) {
+        return { ...token, sub: undefined, role: undefined, cfp: undefined };
       }
+
+      const liveFp = credentialsFingerprint(dbUser.passwordHash);
+      if (user) {
+        // Fresh sign-in — bind credentials fingerprint into JWT
+        const fromUser =
+          typeof (user as { credentialsFp?: string }).credentialsFp === "string"
+            ? (user as { credentialsFp: string }).credentialsFp
+            : liveFp;
+        token.cfp = fromUser;
+      } else if (token.cfp && token.cfp !== liveFp) {
+        // Password changed/reset elsewhere — revoke this JWT session
+        return { ...token, sub: undefined, role: undefined, cfp: undefined };
+      } else if (!token.cfp) {
+        // Legacy JWT without fingerprint — bind once (next password change revokes)
+        token.cfp = liveFp;
+      }
+
+      token.sub = userId;
+      token.role = dbUser.role ?? "USER";
       return token;
     },
     session: async ({ session, token }) => {

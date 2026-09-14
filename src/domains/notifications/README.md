@@ -1,16 +1,27 @@
 ﻿# Domain: notifications
 
-Property alert foundation (Prompt 8 Part 4) — data layer only.
+Property alerts for favourites & saved searches — transactional, event-driven.
 
 ## Models
 
-- `PropertyAlertSubscription` — user + optional saved search + `PRICE_DROP` | `NEW_PROPERTY` | `SAVED_SEARCH_MATCH`
-- `PropertyAlertEvent` — undelivered events (`deliveredAt` null) for a future worker
+- `PropertyAlert` — user-facing inbox row (dedupe, batch, channels IN_APP/EMAIL)
+- `PropertyAlertSubscription` — saved-search alert prefs
+- `PropertyAlertEvent` — delivery event log
+- `Notification` — legacy mirror for IN_APP (created once; never on e-mail retry)
 
-## Service
+## Services
 
-- `enqueuePropertyAlertEvent` — record an event
-- `syncAlertSubscriptionsForSavedSearch` — enable/disable subscriptions from saved-search frequency
-- `listUndeliveredAlertEvents` — pending queue peek
+| API | Role |
+| --- | --- |
+| `recordPropertyPriceObservation` | Write history → `PropertyPriceChanged` |
+| `recordPropertyStatusChange` | Write history → `PropertyStatusChanged` |
+| `recordPropertyPublished` | → `PropertyCreated` reverse match |
+| `emitPropertyDomainEvent` | Favourite alerts + reverse saved-search match |
+| `deliverPropertyAlert` | Dedupe, fatigue, safe href, telemetry |
+| `routeSavedSearchMatchAlert` | INSTANT / DAILY / WEEKLY / OFF |
+| `runDigestJob` / `processPendingAlertEmails` | Digest + e-mail retry (no spam by default) |
+| `notifySavedSearchMatch` | Batched IN_APP (+ optional EMAIL) |
 
-No email jobs or cron workers in this phase.
+## Docs
+
+See `docs/SEARCH_NOTIFICATIONS.md` and `docs/SAVED_SEARCHES.md`.

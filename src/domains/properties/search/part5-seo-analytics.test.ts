@@ -49,5 +49,12 @@ describe("SEO landings", () => {
     expect(shouldNoIndexPropertySearch({ filterCount: 0, page: 1 })).toBe(false);
     expect(shouldNoIndexPropertySearch({ filterCount: 2, page: 1 })).toBe(true);
     expect(shouldNoIndexPropertySearch({ filterCount: 0, page: 2 })).toBe(true);
+    expect(
+      shouldNoIndexPropertySearch({
+        filterCount: 0,
+        page: 1,
+        hasNonDefaultSort: true,
+      }),
+    ).toBe(true);
   });
 });

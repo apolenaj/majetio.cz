@@ -19,13 +19,246 @@ enum Role {
   SALES
   EDITOR
   PARTNER
+  /** Ops Control Center — broad operational read/resolve (least privilege vs SUPER_ADMIN). */
+  OPERATIONS_ADMIN
+  /** Imports + data quality ownership. */
+  DATA_ADMIN
+  /** Property review / merge / overrides. */
+  PROPERTY_REVIEWER
+  /** Orders, payments, entitlements. */
+  COMMERCE_ADMIN
   ADMIN
   SUPER_ADMIN
 }
 
-enum PropertyStatus {
+/** B2B tenant type for real-estate professionals. */
+enum OrganizationType {
+  REAL_ESTATE_AGENT
+  AGENCY
+  DEVELOPER
+  PARTNER
+}
+
+enum OrganizationMemberRole {
+  OWNER
+  ADMIN
+  AGENT
+}
+
+/**
+ * Org / listing trust ladder.
+ * unverified → identity_verified (person) → organization_verified (company KYC).
+ */
+enum ListingVerificationStatus {
+  UNVERIFIED
+  IDENTITY_VERIFIED
+  ORGANIZATION_VERIFIED
+}
+
+/** Commercial quota gate — never auto-delete listings on downgrade. */
+enum ListingQuotaState {
+  WITHIN_LIMIT
+  OVER_LIMIT
+}
+
+/** Moderation — BANNED/RESTRICTED listings cannot be boosted. */
+enum ListingModerationStatus {
+  CLEAR
+  RESTRICTED
+  BANNED
+}
+
+/** Who claims the listing as commercial owner. */
+enum ListingOwnerKind {
+  AGENT
+  AGENCY
+  DEVELOPER
+  PARTNER
+}
+
+enum OrganizationPlanStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum OrganizationPlanChangeType {
+  INITIAL
+  UPGRADE
+  DOWNGRADE
+  RENEWAL
+  CANCEL
+}
+
+/**
+ * B2B lead monetization mode (org setting).
+ * MODE A = flat fee per qualified lead; MODE B = share of broker's actual commission.
+ */
+enum OrganizationLeadBillingMode {
+  /** MODE A — charge when qualified lead is accepted / delivered. */
+  PAY_PER_LEAD
+  /** MODE B — success fee from verified broker commission. */
+  SUCCESS_FEE
+}
+
+enum SuccessFeeStatus {
+  POTENTIAL
+  PENDING_VERIFICATION
+  VERIFIED
+  INVOICED
+  PAID
+  DISPUTED
+  CANCELLED
+  WRITTEN_OFF
+}
+
+/**
+ * Canonical revenue ledger — one recognized row per economic event.
+ * Unique (sourceType, sourceEntityId) prevents double-counting.
+ */
+enum RevenueEventSourceType {
+  SUBSCRIPTION
+  ANALYSIS
+  LISTING_BOOST
+  PAY_PER_LEAD
+  SUCCESS_FEE
+  MORTGAGE_PARTNER
+  OTHER
+}
+
+enum RevenueEventStatus {
+  PENDING
+  RECOGNIZED
+  REVERSED
+  DISPUTED
+  /** Explicitly excluded after double-count / attribution conflict detection. */
+  EXCLUDED_DOUBLE_COUNT
+}
+
+enum LeadAttributionStatus {
+  ATTRIBUTED
+  /** Multiple competing sources inside attribution window → manual review. */
+  MULTI_SOURCE_REVIEW
+  UNATTRIBUTED
+  REJECTED
+}
+
+enum LeadDisputeStatus {
+  OPEN
+  EVIDENCE_REQUIRED
+  UNDER_REVIEW
+  /** Agent claim upheld — lead not billable. */
+  UPHELD
+  /** Agent claim rejected — lead remains billable. */
+  REJECTED
+  WITHDRAWN
+}
+
+enum LeadDisputeReason {
+  DUPLICATE
+  ALREADY_CLIENT
+  OUT_OF_AREA
+  FAKE_CONTACT
+  NOT_INTERESTED
+  OTHER
+}
+
+/**
+ * Human-in-the-loop professional services (not automated engines).
+ * Expert Review / Investment Audit require analyst assignment.
+ */
+enum ProfessionalServiceKind {
+  EXPERT_REVIEW
+  INVESTMENT_AUDIT
+}
+
+enum ProfessionalServiceStatus {
+  DRAFT
+  WAITING_FOR_INPUTS
+  SUBMITTED
+  ASSIGNED
+  IN_REVIEW
+  NEEDS_CLARIFICATION
+  DELIVERED
+  CLOSED
+  CANCELLED
+}
+
+enum PartnerServiceCategory {
+  INSPECTION
+  LEGAL
+  CERTIFICATE
+  VALUATION
+  OTHER
+}
+
+enum PartnerCompensationModel {
+  FIXED
+  REVENUE_SHARE
+  HYBRID
+}
+
+enum PartnerAgreementStatus {
   DRAFT
   ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+/**
+ * Deal pipeline — agreed price is PROTECTED (never public / never in logs).
+ * Purchase Concierge / success-fee agency is gated by TRANSACTION_SUCCESS_FEE_ENABLED.
+ */
+enum PropertyTransactionStatus {
+  EXPLORING
+  OFFER_DRAFT
+  OFFER_SUBMITTED
+  UNDER_NEGOTIATION
+  AGREEMENT_REACHED
+  DUE_DILIGENCE
+  CLOSING
+  CLOSED
+  FALLEN_THROUGH
+  CANCELLED
+}
+
+/** Data classification for privileged records. */
+enum DataSensitivityClass {
+  PUBLIC
+  AUTHENTICATED
+  SENSITIVE
+  /** Highest — PropertyTransaction financials; access audited. */
+  PROTECTED
+}
+
+/**
+ * Paid listing promotion product (Boost).
+ * FIREWALL: never feeds Majetio Score, valuation, risk, or organic search ORDER BY.
+ */
+enum ListingBoostProduct {
+  BOOST_7_DAYS
+  BOOST_30_DAYS
+}
+
+enum ListingBoostStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  REVOKED
+}
+
+enum PropertyStatus {
+  DRAFT
+  /** Submitted for ops / agent listing review before public ACTIVE. */
+  PENDING_REVIEW
+  ACTIVE
+  /** Review rejected — not public; see moderationReason. */
+  REJECTED
+  /** Temporarily taken down by ops (abuse / legal / data). */
+  SUSPENDED
   RESERVED
   SOLD
   RENTED
@@ -38,9 +271,26 @@ enum PropertyStatus {
 enum PropertyType {
   APARTMENT
   HOUSE
+  VILLA
+  TOWNHOUSE
   LAND
   COMMERCIAL
   OTHER
+}
+
+/** Primary (developer / new-build) vs secondary (resale) market channel. */
+enum ListingMarketChannel {
+  PRIMARY_NEW_BUILD
+  SECONDARY_RESALE
+}
+
+/** Off-plan / development construction lifecycle. */
+enum OffPlanConstructionStatus {
+  ANNOUNCED
+  UNDER_CONSTRUCTION
+  COMPLETED
+  HANDED_OVER
+  UNKNOWN
 }
 
 enum PropertyVisibility {
@@ -53,6 +303,103 @@ enum AddressPrecision {
   EXACT
   APPROXIMATE
   HIDDEN
+}
+
+/** Canonical geographic admin level (CZ-aware; not all levels exist everywhere). */
+enum LocationType {
+  COUNTRY
+  REGION
+  DISTRICT
+  MUNICIPALITY
+  CITY
+  CITY_DISTRICT
+  NEIGHBORHOOD
+  MICRO_LOCATION
+}
+
+/** Confidence of property ↔ location assignment. */
+enum LocationResolutionConfidence {
+  EXACT
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+/** Metric data provenance. */
+enum LocationMetricSourceType {
+  OFFICIAL
+  LICENSED_API
+  PARTNER_FEED
+  INTERNAL_AGGREGATION
+  ESTIMATE
+  OTHER
+}
+
+/** Never merge asking and transaction prices without explicit kind. */
+enum LocationMetricPriceKind {
+  ASKING
+  TRANSACTION
+  NONE
+}
+
+enum LocationMetricCategory {
+  PROPERTY_MARKET
+  RENTAL_MARKET
+  INVESTMENT
+  INFRASTRUCTURE
+  DEVELOPMENT
+}
+
+/** Provenance category for LocationDataSource. */
+enum LocationDataSourceCategory {
+  OFFICIAL_PUBLIC
+  LICENSED
+  PARTNER
+  INTERNAL_DERIVED
+  USER_GENERATED
+}
+
+enum LocationDataUpdateFrequency {
+  REALTIME
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  AD_HOC
+}
+
+enum LocationMetricFreshness {
+  FRESH
+  STALE
+  UNKNOWN
+}
+
+enum LocationSourceQuality {
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+enum LocationIngestionJobStatus {
+  PENDING
+  FETCHING
+  VALIDATING
+  NORMALIZING
+  AGGREGATING
+  QUALITY_CHECK
+  STORING
+  PUBLISHED
+  FAILED
+  REVIEW_REQUIRED
+}
+
+/** Boundary storage format — GeoJSON now; PostGIS when extension enabled. */
+enum LocationBoundaryFormat {
+  GEOJSON
+  POSTGIS
 }
 
 enum TransactionType {
@@ -87,6 +434,55 @@ enum OwnershipType {
   COMPANY
   OTHER
   UNKNOWN
+}
+
+/**
+ * Canonical legal tenure (Prompt 17.4) — freehold/leasehold across markets.
+ * Complements CZ-centric OwnershipType (personal vs cooperative title form).
+ */
+enum CanonicalTenureType {
+  FREEHOLD
+  LEASEHOLD
+  USUFRUCT
+  COOPERATIVE_RIGHT
+  COMPANY_OWNED
+  OTHER
+  UNKNOWN
+}
+
+enum RegulatoryRuleKind {
+  FOREIGN_OWNERSHIP
+  LTV_LIMIT
+  SHORT_TERM_RENTAL
+  TRANSACTION_COST
+  TAX
+  TENURE
+  DISCLAIMER
+  OTHER
+}
+
+enum RegulatoryRuleStatus {
+  DRAFT
+  REVIEWED
+  ACTIVE
+  SUPERSEDED
+  RETIRED
+}
+
+enum PaymentPlanPhaseKind {
+  BOOKING
+  DOWN_PAYMENT
+  CONSTRUCTION
+  HANDOVER
+  POST_HANDOVER
+  OTHER
+}
+
+enum FinancingProviderKind {
+  DIRECT_INTEGRATION
+  PARTNER_HANDOFF
+  MANUAL_ONLY
+  UNAVAILABLE
 }
 
 enum EnergyRating {
@@ -151,6 +547,8 @@ enum DuplicateCandidateStatus {
   PENDING
   MERGED
   NOT_DUPLICATE
+  /** Merge was undone — secondary restored to prior status. */
+  REVERTED
 }
 
 enum DataQualitySeverity {
@@ -161,18 +559,65 @@ enum DataQualitySeverity {
 
 enum DataQualityIssueStatus {
   OPEN
+  /** @deprecated Prefer IN_REVIEW — kept for existing rows. */
   ACKNOWLEDGED
+  /** Ops actively investigating. */
+  IN_REVIEW
   RESOLVED
+  /** @deprecated Prefer FALSE_POSITIVE — kept for existing rows. */
   IGNORED
+  /** Marked wrong for ML / rule tuning — not a real defect. */
+  FALSE_POSITIVE
+}
+
+/** Ops taxonomy for Data Quality Center filters. */
+enum DataQualityIssueCategory {
+  MISSING
+  CONFLICT
+  ANOMALY
+  STALE
+  DUPLICATE
+  /** User-submitted listing / data dispute (Report incorrect listing). */
+  USER_REPORT
+}
+
+/** User report: incorrect listing or data on a property detail. */
+enum ListingReportIssueType {
+  INCORRECT_DATA
+  DUPLICATE
+  UNAVAILABLE
+  MISLEADING
+  PROHIBITED_CONTENT
+}
+
+enum ListingReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+  DUPLICATE_REPORT
 }
 
 enum ImportJobStatus {
+  /** @deprecated Prefer QUEUED — kept for existing rows / workers. */
   PENDING
+  QUEUED
   RUNNING
   SUCCEEDED
+  /** Finished with partial errors — ops label COMPLETED_WITH_WARNINGS. */
+  COMPLETED_WITH_WARNINGS
   FAILED
   CANCELLED
+  /** @deprecated Prefer COMPLETED_WITH_WARNINGS. */
   PARTIAL
+}
+
+/** Provider / source operational health (Source Management). */
+enum SourceHealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  DISABLED
 }
 
 enum ImportJobItemStatus {
@@ -195,23 +640,161 @@ enum AnalysisStatus {
   ARCHIVED
 }
 
+/** Investment engine scenario kinds (orchestration / AnalysisScenario). */
+enum AnalysisScenarioType {
+  LONG_TERM_RENTAL
+  CASH_PURCHASE
+  SHORT_TERM_RENTAL
+  FLIP
+  RENOVATION_RENT
+  /** Year-1 metrics only — no full holding-period scenario runner. */
+  BASE_METRICS
+}
+
+enum AnalysisScenarioStatus {
+  DRAFT
+  /** All core metrics calculated. */
+  CALCULATED
+  /** Some metrics unavailable (missing inputs) — never fake zeros. */
+  PARTIAL
+  STALE
+  FAILED
+  ARCHIVED
+}
+
+enum AnalysisScenarioProfile {
+  USER
+  ANALYST
+  SYSTEM_NEUTRAL
+}
+
+enum AnalysisScenarioVariant {
+  CONSERVATIVE
+  REALISTIC
+  OPTIMISTIC
+  CUSTOM
+}
+
+enum AnalystReviewStatus {
+  DRAFT
+  IN_REVIEW
+  REVIEWED
+  APPROVED
+  REJECTED
+}
+
+/** Renovation Engine — how RenovationAnalysis was produced (Prompt 12 / 1 of 5). */
+enum RenovationAnalysisType {
+  AUTOMATIC
+  USER_DEFINED
+  ANALYST_ADJUSTED
+  PROFESSIONAL
+}
+
+enum RenovationAnalysisStatus {
+  DRAFT
+  CALCULATED
+  PARTIAL
+  FAILED
+  STALE
+  ARCHIVED
+}
+
 enum OrderStatus {
   PENDING
+  AWAITING_PAYMENT
   PAID
   CANCELLED
   REFUNDED
+  PARTIALLY_REFUNDED
+  CHARGEBACK
 }
 
 enum PaymentStatus {
   PENDING
+  REQUIRES_ACTION
   SUCCEEDED
   FAILED
+  CANCELLED
   REFUNDED
+  PARTIALLY_REFUNDED
+  CHARGEBACK
+}
+
+enum EntitlementStatus {
+  /** Access granted and usable. */
+  ACTIVE
+  /** Investor Pro trial window. */
+  TRIAL
+  /** Payment failed — still in grace period. */
+  PAST_DUE
+  /** User cancelled; may remain usable until period end. */
+  CANCELLED
+  /** Revoked after refund / chargeback / admin. */
+  REVOKED
+  /** Paid but grant failed — retry queue. */
+  PENDING_GRANT
+  /** Natural end of validity (Deep Analysis / Buyer Pass / Pro). */
+  EXPIRED
+}
+
+/** B2C entitlement product shape (Commerce → access). */
+enum EntitlementKind {
+  /** Implicit Majetio Free — usually no DB row. */
+  FREE_TIER
+  /** One-time deep analysis for a property + content version. */
+  DEEP_ANALYSIS
+  /** Time-boxed buyer toolkit (not auto-subscription). */
+  BUYER_PASS
+  /** Investor Pro membership with lifecycle. */
+  INVESTOR_PRO
+  /** Legacy checkout productKey grants (full_analysis, …). */
+  LEGACY_PRODUCT
+}
+
+enum EntitlementBillingInterval {
+  NONE
+  MONTHLY
+  ANNUAL
+}
+
+/**
+ * How the entitlement was granted — paid data vs admin override must stay distinct (208/209).
+ */
+enum EntitlementSource {
+  /** Granted after payment.succeeded webhook (or free checkout amount = 0). */
+  PAID_ORDER
+  /** Zero-price checkout product (no PSP webhook). */
+  FREE_CHECKOUT
+  /** Admin manual grant — never mixed with paid commerce rows in reporting. */
+  MANUAL_ADMIN
+}
+
+enum PromoDiscountType {
+  PERCENT
+  FIXED_CZK
+}
+
+/** Commerce billing cadence for PricingPlan. */
+enum PricingBillingType {
+  ONE_TIME
+  SUBSCRIPTION
+  USAGE
+}
+
+enum PricingPlanStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
 }
 
 enum LeadType {
   ANALYSIS_INTEREST
+  /** Property valuation / audit request → internal analysts. */
+  PROPERTY_AUDIT
   FINANCING
+  /** Marketplace inquiry / viewing interest → listing agent. */
+  PROPERTY_INQUIRY
   TRANSACTION
   PARTNER_SERVICE
   OTHER
@@ -220,18 +803,132 @@ enum LeadType {
 enum LeadStatus {
   NEW
   CONTACTED
+  /** Active working state between contact and qualification. */
+  IN_PROGRESS
   QUALIFIED
   WON
   LOST
   HANDED_OFF
 }
 
+/** Pipeline next-action (internal CRM) — owner + due date on Lead. */
+enum LeadNextActionType {
+  NONE
+  CONTACT_CLIENT
+  AWAIT_PARTNER_RESPONSE
+  REQUEST_DOCUMENTS
+  FOLLOW_UP
+  SCHEDULE_VIEWING
+  INTERNAL_REVIEW
+  HAND_OFF
+}
+
+/**
+ * Lead routing target — mortgages → HypotekaJasne, inquiries → listing agent,
+ * audits → internal analysts.
+ */
+enum LeadRoutingTarget {
+  /** Hypoteční leady → HypotekaJasne (viz domains/leads routing). */
+  MORTGAGE_PARTNER
+  /** Poptávky / prohlídky → makléř inzerátu. */
+  LISTING_AGENT
+  /** Audity / ANALYSIS_INTEREST → interní analytici. */
+  INTERNAL_ANALYST
+  UNASSIGNED
+}
+
+enum LeadAssignmentRole {
+  OWNER
+  ASSIGNEE
+  WATCHER
+}
+
+/** LeadActivity visibility — INTERNAL never reaches end-user account UI. */
+enum LeadActivityVisibility {
+  SYSTEM
+  INTERNAL
+}
+
+/** Detailed mortgage lead workflow — `APPROVED` only for bank credit approval. */
+enum MortgageLeadWorkflowStatus {
+  CREATED
+  /** Partner API unavailable — queued for retry; lead is never dropped. */
+  SUBMISSION_PENDING
+  SUBMITTED
+  RECEIVED
+  CONTACTED
+  QUALIFICATION_IN_PROGRESS
+  DOCUMENTS_NEEDED
+  SOLUTION_PROPOSED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  CLOSED
+}
+
+enum MortgageLeadSubmissionAttemptStatus {
+  PENDING
+  SUCCESS
+  FAILED_TRANSIENT
+  FAILED_PERMANENT
+  DEAD_LETTER
+}
+
 enum ConsentType {
   TERMS
   PRIVACY
   MARKETING
+  /** @deprecated Use MORTGAGE_LEAD_DATA_TRANSFER for new handoffs. Kept for history. */
   HYPOTEKAJASNE_HANDOFF
+  /** Granular consent for HypotekaJasne mortgage lead — versioned, field-scoped. */
+  MORTGAGE_LEAD_DATA_TRANSFER
   PARTNER_SHARE
+  /**
+   * Buyer grants agent access to fuller financial profile AFTER agent accepts the lead.
+   * Pre-accept agents only see anonymizedQualifiedProfile (budget band + timeline).
+   */
+  AGENT_BUYER_PROFILE_SHARE
+}
+
+/**
+ * Marketplace property inquiry — casual interest message.
+ * MUST NOT carry budget / financing / FinancialProfile (those belong on QualifiedBuyerLead).
+ */
+enum InquiryStatus {
+  NEW
+  OPEN
+  CLOSED
+  SPAM
+  /** Promoted into QualifiedBuyerLead. */
+  CONVERTED
+}
+
+enum QualifiedBuyerLeadStatus {
+  /** Agent sees anonymized profile only. */
+  PENDING_AGENT_REVIEW
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  WITHDRAWN
+}
+
+/**
+ * Financing stance for qualification — product facts only.
+ * Never encode protected / discriminatory attributes.
+ */
+enum BuyerFinancingStance {
+  UNKNOWN
+  CASH
+  MORTGAGE_PREAPPROVED
+  MORTGAGE_EXPLORING
+  MIXED
+}
+
+enum ContactVerificationLevel {
+  UNVERIFIED
+  EMAIL_VERIFIED
+  PHONE_VERIFIED
+  EMAIL_AND_PHONE_VERIFIED
 }
 
 enum NotificationChannel {
@@ -239,16 +936,92 @@ enum NotificationChannel {
   EMAIL
 }
 
+/**
+ * Property Decision Workspace — favourite / shortlist lifecycle.
+ * UI must show Czech labels from FAVOURITE_STATUS_LABELS_CS — never raw enum.
+ * BOD 83: Zvažuji · Prohlídka · Favorit · Vyřazeno
+ */
+enum FavouriteStatus {
+  /** Zvažuji — výchozí uložení do shortlistu. */
+  CONSIDERING
+  /** Prohlídka naplánovaná / proběhlá. */
+  VIEWING
+  /** Favorit — vážnější výběr. */
+  FAVORITE
+  /** Vyřazeno — explicitní negativní signal pro recommendations. */
+  REJECTED
+}
+
+/** Optional reject reasons (BOD 84, 87) — never required in UI. */
+enum FavouriteRejectionReason {
+  TOO_EXPENSIVE
+  LOCATION
+  CONDITION
+  FINANCING
+  LAYOUT
+  COMPETITION
+  TIMING
+  OTHER
+}
+
+enum PropertyDecisionTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum PropertyDecisionTaskType {
+  VIEWING
+  LEGAL_CHECK
+  SVJ
+  TECHNICAL_INSPECTION
+  FINANCING
+  RENOVATION_QUOTE
+  DOCUMENTATION
+  NEIGHBORS
+  CUSTOM
+}
+
+enum DecisionPriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 enum SavedSearchAlertFrequency {
   OFF
+  /** Immediately — synonym used in product copy as „Okamžitě“. */
   INSTANT
+  /** Daily digest grouped by user + saved search + date. */
+  DAILY
   WEEKLY
 }
 
 enum PropertyAlertType {
+  /** @deprecated Prefer PRICE_DECREASE — kept for saved-search subscriptions. */
   PRICE_DROP
-  NEW_PROPERTY
+  PRICE_DECREASE
+  PRICE_INCREASE
+  STATUS_CHANGED
+  RELISTED
+  NEW_ANALYSIS_AVAILABLE
+  FINANCING_CHANGED
   SAVED_SEARCH_MATCH
+  NEW_PROPERTY
+  /** User started watching a location market profile. */
+  LOCATION_WATCH_CREATED
+  /** Location metric crossed a subscribed threshold (future worker). */
+  LOCATION_METRIC_CHANGE
+}
+
+enum PropertyAlertDeliveryStatus {
+  PENDING
+  SENT
+  READ
+  FAILED
+  /** Suppressed by dedupe / fatigue rules. */
+  SUPPRESSED
 }
 
 // ─── Valuation engine (Prompt 10) ────────────────────────────────────────────
@@ -279,6 +1052,39 @@ enum ValuationConfidenceLevel {
   UNKNOWN
 }
 
+/** Valuation model registry lifecycle — must be APPROVED before ACTIVE. */
+enum ValuationModelLifecycleStatus {
+  DRAFT
+  /** @deprecated Prefer REVIEW_REQUESTED — kept for existing rows. */
+  TESTING
+  REVIEW_REQUESTED
+  APPROVED
+  ACTIVE
+}
+
+/** Assumption / catalog / config approval workflow. */
+enum AnalyticsConfigApprovalStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  REJECTED
+}
+
+/** Account lifecycle — ops suspend / GDPR deletion request. */
+enum UserAccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETION_REQUESTED
+}
+
+/** Org KYC workflow — distinct from Property listingVerificationStatus. */
+enum OrganizationKycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 // ─── Auth.js / User ──────────────────────────────────────────────────────────
 
 model User {
@@ -291,6 +1097,11 @@ model User {
   /** Pending e-mail change — applied only after verification. */
   pendingEmail  String?
   role          Role      @default(USER)
+  accountStatus UserAccountStatus @default(ACTIVE)
+  suspendedAt   DateTime?
+  suspendedReason String? @db.Text
+  suspendedByUserId String?
+  deletionRequestedAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -298,16 +1109,33 @@ model User {
   sessions              Session[]
   profile               UserProfile?
   financialProfile      FinancialProfile?
+  marketProfiles        UserMarketProfile[]
   propertyPreference    PropertyPreference?
   investmentPreference  InvestmentPreference?
   consents              Consent[]
+  consentRecords        ConsentRecord[]
+  privacyExportTokens   PrivacyExportToken[]
   favourites            Favourite[]
+  favouriteCollections  FavouriteCollection[]
+  watchedLocations      WatchedLocation[]
   comparisons           Comparison[]
+  comparisonSharesCreated ComparisonShare[] @relation("ComparisonShareCreator")
+  comparisonShareInvites  ComparisonShareInvite[]
   savedSearches         SavedSearch[]
   alertSubscriptions    PropertyAlertSubscription[]
+  propertyAlerts        PropertyAlert[]
   analyses              PropertyAnalysis[]
   leads                 Lead[]
+  inquiries             Inquiry[]                    @relation("InquiryBuyer")
+  inquiriesAsAgent      Inquiry[]                    @relation("InquiryAgent")
+  qualifiedBuyerLeads   QualifiedBuyerLead[]         @relation("QualifiedBuyer")
+  qualifiedBuyerLeadsAsAgent QualifiedBuyerLead[]    @relation("QualifiedBuyerAgent")
   orders                Order[]
+  entitlements          Entitlement[]
+  manualEntitlementsGranted Entitlement[] @relation("ManualEntitlementActor")
+  usageRecords          UsageRecord[]
+  promoRedemptions      PromoRedemption[]
+  promotionRedemptions  PromotionRedemption[]
   notifications         Notification[]
   auditLogs               AuditLog[]                   @relation("AuditActor")
   configUpdates           AppConfiguration[]           @relation("ConfigUpdater")
@@ -315,8 +1143,35 @@ model User {
   fieldOverridesCreated   PropertyFieldOverride[]      @relation("FieldOverrideCreator")
   fieldOverridesUpdated   PropertyFieldOverride[]      @relation("FieldOverrideUpdater")
   ownedProperties         Property[]                   @relation("PropertyOwner")
+  listedProperties        Property[]                   @relation("PropertyListedBy")
+  organizationMemberships OrganizationMember[]
+  organizationPlanChanges OrganizationPlanChange[]     @relation("OrgPlanChangeActor")
+  listingBoostsPurchased  ListingBoost[]               @relation("ListingBoostPurchaser")
+  successFeesVerified     SuccessFeeRecord[]           @relation("SuccessFeeVerifier")
+  leadDisputesOpened      LeadDispute[]                @relation("LeadDisputeOpener")
+  leadDisputesResolved    LeadDispute[]                @relation("LeadDisputeResolver")
+  professionalServiceRequests ProfessionalServiceRequest[] @relation("ProfessionalServiceRequester")
+  professionalServicesAssigned ProfessionalServiceRequest[] @relation("ProfessionalServiceAssignee")
+  propertyTransactionsAsBuyer PropertyTransaction[]    @relation("PropertyTransactionBuyer")
+  propertyTransactionsAsAgent PropertyTransaction[]    @relation("PropertyTransactionAgent")
   valuationsCreated       Valuation[]                  @relation("ValuationCreator")
   valuationAdjustments    ValuationAdjustmentAudit[]   @relation("ValuationAdjustmentActor")
+  ownedAnalysisScenarios  AnalysisScenario[]           @relation("AnalysisScenarioOwner")
+  reviewedAnalysisScenarios AnalysisScenario[]         @relation("AnalysisScenarioReviewer")
+  approvedAnalysisScenarios AnalysisScenario[]         @relation("AnalysisScenarioApprover")
+  ownedMortgageLeadCrm      MortgageLeadCrm[]          @relation("MortgageLeadCrmOwner")
+  assignedMortgageLeadCrm   MortgageLeadCrm[]          @relation("MortgageLeadCrmAssignee")
+  leadAssignments           LeadAssignment[]           @relation("LeadAssignmentUser")
+  leadAssignmentsCreated    LeadAssignment[]           @relation("LeadAssignmentCreator")
+  leadActivitiesAuthored    LeadActivity[]             @relation("LeadActivityActor")
+  leadsAssigned             Lead[]                     @relation("LeadAssignee")
+  leadsOwned                Lead[]                     @relation("LeadOwner")
+  leadNextActionsOwned      Lead[]                     @relation("LeadNextActionOwner")
+  propertyUserNotes         PropertyUserNote[]
+  propertyDecisionTasks     PropertyDecisionTask[]
+  decisionPreference        DecisionPreference?
+  listingReports            ListingReport[]            @relation("ListingReportReporter")
+  listingReportsReviewed    ListingReport[]            @relation("ListingReportReviewer")
 }
 
 model Account {
@@ -378,6 +1233,24 @@ model UserProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/**
+ * Extremely protected admin impersonation — banner + no payment actions + full audit.
+ */
+model AdminImpersonationSession {
+  id                 String    @id @default(cuid())
+  actorUserId        String
+  targetUserId       String
+  reason             String    @db.Text
+  startedAt          DateTime  @default(now())
+  endedAt            DateTime?
+  /** Opaque cookie token hash. */
+  tokenHash          String    @unique
+  createdAt          DateTime  @default(now())
+
+  @@index([actorUserId, endedAt])
+  @@index([targetUserId, endedAt])
+}
+
 model FinancialProfile {
   id                    String   @id @default(cuid())
   userId                String   @unique
@@ -394,6 +1267,31 @@ model FinancialProfile {
   updatedAt             DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * Per-market user preferences (Prompt 17.5).
+ * Complements global UserProfile / CZK FinancialProfile — money is currency-tagged.
+ */
+model UserMarketProfile {
+  id                      String   @id @default(cuid())
+  userId                  String
+  marketCode              String
+  preferredLocale         String
+  preferredCurrency       String
+  goal                    String?
+  preferredLocationSlugs  String[] @default([])
+  maxBudgetMinor          BigInt?
+  availableEquityMinor    BigInt?
+  monthlyIncomeMinor      BigInt?
+  monthlyLiabilitiesMinor BigInt?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, marketCode])
+  @@index([marketCode])
 }
 
 model Consent {
@@ -422,10 +1320,148 @@ model ConsentVersion {
   documentUrl   String?
   effectiveFrom DateTime    @default(now())
   isCurrent     Boolean     @default(false)
+  /** Market scope — CZ vs AE privacy packs (Prompt 17.5). */
+  marketCode    String      @default("CZ")
+  locale        String      @default("cs-CZ")
   createdAt     DateTime    @default(now())
 
-  @@unique([type, version])
+  @@unique([type, version, marketCode])
   @@index([type, isCurrent])
+  @@index([marketCode, type, isCurrent])
+}
+
+/**
+ * Versioned legal document bodies (terms / privacy / cookies).
+ * Production source of truth for published legal text; UI falls back to content modules if empty.
+ */
+enum LegalDocumentType {
+  TERMS
+  PRIVACY
+  COOKIES
+  LEGAL_NOTICE
+}
+
+enum LegalDocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model LegalDocument {
+  id            String              @id @default(cuid())
+  type          LegalDocumentType
+  version       String
+  status        LegalDocumentStatus @default(DRAFT)
+  title         String
+  /** Markdown / structured plain text — counsel-owned content. */
+  content       String              @db.Text
+  summary       String?             @db.Text
+  locale        String              @default("cs-CZ")
+  marketCode    String              @default("CZ")
+  effectiveFrom DateTime?
+  publishedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([type, version, marketCode, locale])
+  @@index([type, status, marketCode])
+  @@index([status, publishedAt])
+}
+
+/**
+ * Purpose-scoped consent ledger (cookies, partner share, legal).
+ * Complements legacy `Consent` rows — new flows should prefer ConsentRecord.
+ * Never use generic “souhlasím s partnery”: recipient + purpose required for PARTNER_DATA_SHARE.
+ */
+enum ConsentPurpose {
+  COOKIE_NECESSARY
+  COOKIE_PREFERENCES
+  COOKIE_ANALYTICS
+  COOKIE_MARKETING
+  MARKETING_COMMUNICATION
+  PARTNER_DATA_SHARE
+  LEGAL_TERMS
+  LEGAL_PRIVACY
+}
+
+model ConsentRecord {
+  id              String         @id @default(cuid())
+  userId          String?
+  /** Anonymous CMP visitor — hashed / opaque; never an email. */
+  visitorId       String?
+  purpose         ConsentPurpose
+  /** Exact recipient legal name for PARTNER_DATA_SHARE; null = Majetio first-party. */
+  recipient       String?
+  /** Field-level / category scope, e.g. ["monthlyIncomeCzk","phone"]. */
+  sharedScope     Json?
+  version         String
+  granted         Boolean
+  grantedAt       DateTime?
+  revokedAt       DateTime?
+  /** Links to LegalDocument.version or cookie policy version. */
+  legalDocVersion String?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([visitorId, purpose, createdAt])
+  @@index([purpose, granted, createdAt])
+  @@index([recipient, createdAt])
+}
+
+/**
+ * One-time authenticated data export — no public CDN URL with payload.
+ * Download requires session userId match + unused unexpired token.
+ */
+enum PrivacyExportStatus {
+  PENDING
+  READY
+  CONSUMED
+  EXPIRED
+  FAILED
+}
+
+model PrivacyExportToken {
+  id           String              @id @default(cuid())
+  userId       String
+  /** SHA-256 of one-time download token (plaintext shown once). */
+  tokenHash    String              @unique
+  format       String              @default("json")
+  status       PrivacyExportStatus @default(READY)
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  createdAt    DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([expiresAt])
+}
+
+/**
+ * Programmatic / legal SEO documents with review expiry (Prompt 17.5).
+ */
+model ProgrammaticSeoDocument {
+  id                String    @id @default(cuid())
+  kind              String
+  marketCode        String
+  path              String
+  hasRealData       Boolean   @default(false)
+  sampleCount       Int?
+  publishedAt       DateTime?
+  reviewRequiredAt  DateTime?
+  lastReviewedAt    DateTime?
+  isDemo            Boolean   @default(false)
+  title             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([marketCode, path])
+  @@index([marketCode, kind])
+  @@index([reviewRequiredAt])
 }
 
 /** Property search / listing preferences (onboarding Part 2+). */
@@ -478,35 +1514,223 @@ model AuthRateLimit {
 // ─── Properties & locations ──────────────────────────────────────────────────
 
 model Location {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  name      String
+  id             String                  @id @default(cuid())
+  type           LocationType            @default(MUNICIPALITY)
+  parentId       String?
+  countryCode    String                  @default("CZ")
+  name           String
+  slug           String                  @unique
   /** Public-facing label, e.g. "Praha 2 – Vinohrady". */
-  publicName String?
-  region    String?
-  district  String?
-  city      String?
-  country   String   @default("CZ")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  publicLabel    String?
+  /** Primary official identifier (RÚIAN / LAU / NUTS when unambiguous). */
+  officialCode   String?
+  ruianCode      String?
+  lauCode        String?
+  nutsCode       String?
+  latitude       Float?
+  longitude      Float?
+  centroidLat    Float?
+  centroidLon    Float?
+  /** GeoJSON Polygon/MultiPolygon — use until PostGIS extension is enabled. */
+  boundary       Json?
+  boundaryFormat LocationBoundaryFormat  @default(GEOJSON)
+  population     Int?
+  areaSqKm       Float?
+  /** @deprecated Prefer publicLabel. */
+  publicName     String?
+  /** @deprecated Denormalized — prefer parent hierarchy. Kept for legacy queries. */
+  region         String?
+  /** @deprecated Denormalized — prefer parent hierarchy. */
+  district       String?
+  /** @deprecated Denormalized — prefer parent hierarchy. */
+  city           String?
+  /** @deprecated Prefer countryCode. */
+  country        String                  @default("CZ")
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  parent     Location?        @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Location[]       @relation("LocationHierarchy")
+  metrics         LocationMetric[]
+  metricHistory   LocationMetricHistory[]
+  marketSnapshots LocationMarketSnapshot[]
+  qualityIssues   DataQualityIssue[]
+  fallbackMetrics LocationMetric[] @relation("MetricFallbackSource")
+  properties Property[]
+
+  @@index([type, countryCode])
+  @@index([parentId])
+  @@index([officialCode])
+  @@index([ruianCode])
+  @@index([lauCode])
+  @@index([nutsCode])
+  @@index([countryCode, name])
+  @@index([centroidLat, centroidLon])
+  @@unique([type, countryCode, slug])
+}
+
+/**
+ * Registered external / internal feed for Location Intelligence ingestion.
+ */
+model LocationDataSource {
+  id              String                      @id @default(cuid())
+  name            String
+  /** Stable key, e.g. cz_ruian_boundaries, partner_listings_feed */
+  key             String                      @unique
+  category        LocationDataSourceCategory
+  /** URL or internal reference identifier. */
+  urlOrReference  String?
+  license         String?
+  updateFrequency LocationDataUpdateFrequency @default(MONTHLY)
+  lastUpdated     DateTime?
+  /** 0–1 reliability prior used in confidence blending. */
+  reliability     Float                       @default(0.7)
+  /** JSON policy: { display: true, commercial: false, derivative: true } */
+  allowedUsage    Json?
+  active          Boolean                     @default(true)
+  notes           String?
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
 
   metrics    LocationMetric[]
-  properties Property[]
+  ingestionJobs LocationIngestionJob[]
+
+  @@index([category, active])
+}
+
+model LocationIngestionJob {
+  id              String                    @id @default(cuid())
+  dataSourceId    String
+  status          LocationIngestionJobStatus @default(PENDING)
+  period          String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  recordsFetched  Int                       @default(0)
+  recordsStored   Int                       @default(0)
+  errorMessage    String?
+  stageLog        Json?
+  methodologyVersion String
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  dataSource LocationDataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+
+  @@index([dataSourceId, status])
+  @@index([createdAt])
 }
 
 model LocationMetric {
-  id         String   @id @default(cuid())
-  locationId String
-  type       String
-  value      Float
-  unit       String?
-  period     String?
-  source     String?
-  recordedAt DateTime @default(now())
+  id                   String                    @id @default(cuid())
+  locationId           String
+  /** Registry key, e.g. property_market.median_price_sqm */
+  metricKey            String
+  category             LocationMetricCategory
+  /** Primary value — for price metrics this is the MEDIAN. */
+  value                Float
+  unit                 String?
+  /** Period label: 2026-07, 2026-Q2, trailing_12m, … */
+  period               String
+  source               String?
+  sourceType           LocationMetricSourceType  @default(INTERNAL_AGGREGATION)
+  priceKind            LocationMetricPriceKind   @default(NONE)
+  /** Encoded segment dimensions — never mix segments in one row. */
+  segmentKey           String                    @default("_all")
+  segment              Json?
+  sampleCount          Int?
+  meanValue            Float?
+  lowerQuartile        Float?
+  upperQuartile        Float?
+  confidence           Float?
+  /** Source feed quality band. */
+  sourceQuality        LocationSourceQuality     @default(UNKNOWN)
+  freshness            LocationMetricFreshness   @default(UNKNOWN)
+  /** Anomaly pipeline flagged for analyst review. */
+  reviewRequired       Boolean                   @default(false)
+  /** When metric was inherited from coarser geography (fallback hierarchy). */
+  fallbackFromLocationId String?
+  dataSourceId         String?
+  methodologyVersion   String
+  calculatedAt         DateTime
+  validFrom            DateTime
+  validTo              DateTime?
+  publishedAt          DateTime?
+  /** @deprecated Use calculatedAt. Kept for legacy readers. */
+  recordedAt           DateTime                  @default(now())
+
+  location           Location            @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  fallbackFromLocation Location?         @relation("MetricFallbackSource", fields: [fallbackFromLocationId], references: [id], onDelete: SetNull)
+  dataSource         LocationDataSource? @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+  history            LocationMetricHistory[]
+
+  @@unique([locationId, metricKey, period, segmentKey, priceKind, validFrom])
+  @@index([locationId, category, metricKey])
+  @@index([locationId, period])
+  @@index([metricKey, period])
+  @@index([validFrom, validTo])
+  @@index([freshness, reviewRequired])
+  @@index([dataSourceId])
+  @@index([locationId, metricKey, period])
+  @@index([calculatedAt])
+  @@index([segmentKey, period])
+  @@index([publishedAt])
+}
+
+/**
+ * Point-in-time market snapshot for historical analysis / audits.
+ * Stores selected metric values + methodology versions — never invents missing series.
+ */
+model LocationMarketSnapshot {
+  id                   String   @id @default(cuid())
+  locationId           String
+  period               String
+  /** Selected metrics map: { metricKey: { value, sampleCount, confidence, ... } } */
+  selectedMetrics      Json
+  /** methodologyVersion per metricKey */
+  methodologyVersions  Json
+  segmentKey           String   @default("_all")
+  /** Explicit UI signal when any metric used parent geography. */
+  usedFallback         Boolean  @default(false)
+  fallbackNotes        String?
+  calculatedAt         DateTime
+  publishedAt          DateTime?
+  createdAt            DateTime @default(now())
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
-  @@index([locationId, type])
+  @@unique([locationId, period, segmentKey, calculatedAt])
+  @@index([locationId, period])
+  @@index([locationId, segmentKey, period])
+  @@index([calculatedAt])
+}
+
+/** Historical points for trend charts — append-only series. */
+model LocationMetricHistory {
+  id                 String                    @id @default(cuid())
+  locationId         String
+  locationMetricId   String?
+  metricKey          String
+  category           LocationMetricCategory
+  priceKind          LocationMetricPriceKind   @default(NONE)
+  segmentKey         String                    @default("_all")
+  period             String
+  value              Float
+  unit               String?
+  sampleCount        Int?
+  meanValue          Float?
+  lowerQuartile      Float?
+  upperQuartile      Float?
+  confidence         Float?
+  methodologyVersion String
+  calculatedAt       DateTime
+  validFrom          DateTime
+  validTo            DateTime?
+
+  location       Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationMetric LocationMetric? @relation(fields: [locationMetricId], references: [id], onDelete: SetNull)
+
+  @@index([locationId, metricKey, segmentKey, priceKind, calculatedAt])
+  @@index([locationId, period])
+  @@index([metricKey, calculatedAt])
 }
 
 /**
@@ -532,6 +1756,33 @@ model Property {
   isDemo        Boolean            @default(false)
   /** Owner for PRIVATE / ACCOUNT_ONLY access checks (IDOR guard). */
   ownerUserId   String?
+  /**
+   * B2B listing owner — agency / developer / agent org that publishes the offer.
+   * Consumer favourites still use ownerUserId for private workspace.
+   */
+  organizationId String?
+  /** Agent user who created / manages the listing inside the org. */
+  listedByUserId String?
+  listingOwnerKind ListingOwnerKind?
+  listingVerificationStatus ListingVerificationStatus @default(UNVERIFIED)
+  /**
+   * Downgrade safety: listings above plan quota become OVER_LIMIT (not deleted).
+   * Public discovery should exclude OVER_LIMIT until upgraded or archived by user.
+   */
+  listingQuotaState ListingQuotaState @default(WITHIN_LIMIT)
+  overLimitAt       DateTime?
+  overLimitReason   String?
+  /** Moderation — BANNED cannot appear in discovery or paid boost. */
+  listingModerationStatus ListingModerationStatus @default(CLEAR)
+  /**
+   * Ops / agent review notes (REJECT / SUSPEND / REQUEST_CHANGES).
+   * Internal — not always equal to userFacingModerationMessage.
+   */
+  moderationReason String? @db.Text
+  /** Safe explanation shown to listing owner / agent. */
+  userFacingModerationMessage String? @db.Text
+  moderatedAt      DateTime?
+  moderatedByUserId String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -542,6 +1793,26 @@ model Property {
   condition        PropertyCondition  @default(UNKNOWN)
   constructionType ConstructionType  @default(UNKNOWN)
   ownershipType    OwnershipType      @default(UNKNOWN)
+  /** Cross-market legal tenure (FREEHOLD / LEASEHOLD / …). */
+  tenureType       CanonicalTenureType @default(UNKNOWN)
+  /** Market registry code (CZ, AE, …) — multi-market Core. Explicit — never from currency. */
+  marketCode       String             @default("CZ")
+  /** ISO 3166-1 alpha-2 — usually equals marketCode; kept explicit for multi-country markets. */
+  countryCode      String             @default("CZ")
+  /**
+   * Primary new-build vs secondary resale (Prompt 17.3).
+   * Prefer explicit channel over inferring from condition alone.
+   */
+  listingMarketChannel ListingMarketChannel @default(SECONDARY_RESALE)
+  /** True when unit is sold before / during construction (off-plan). */
+  isOffPlan        Boolean            @default(false)
+  constructionStatus OffPlanConstructionStatus @default(UNKNOWN)
+  /** Expected handover / completion (date or end-of-month). */
+  expectedCompletion DateTime?
+  developerName    String?
+  projectName      String?
+  /** 0–100 when known. */
+  constructionProgressPct Int?
 
   // ── Price ────────────────────────────────────────────────────────────────
   askingPrice         Int?
@@ -592,11 +1863,24 @@ model Property {
   latitude           Float?
   longitude          Float?
   locationId         String?
+  /** How precisely property was matched to `locationId` — never inflate beyond input. */
+  locationResolutionConfidence LocationResolutionConfidence?
+  /** Resolution audit: matched levels, warnings, resolver version. */
+  locationResolutionMeta     Json?
 
   location        Location?               @relation(fields: [locationId], references: [id])
   owner           User?                   @relation("PropertyOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  organization    Organization?           @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  listedBy        User?                   @relation("PropertyListedBy", fields: [listedByUserId], references: [id], onDelete: SetNull)
   features        PropertyFeatures?
   attributes      PropertyAttribute[]
+  /**
+   * Validated market-specific bag (Zod Typed Extensions).
+   * Shape depends on marketCode — never dump foreign-market keys.
+   * See docs/INTERNATIONAL_PROPERTY_MODEL.md.
+   */
+  marketExtensions Json?
+  localizedTexts  PropertyLocalizedText[]
   fieldProvenance PropertyFieldProvenance[]
   sources         PropertySource[]
   media           PropertyMedia[]
@@ -611,11 +1895,29 @@ model Property {
   completeness    DataCompletenessScore?
   fieldOverrides  PropertyFieldOverride[]
   analyses        PropertyAnalysis[]
+  analysisScenarios AnalysisScenario[]
+  investmentCalculations InvestmentCalculation[]
+  renovationAnalyses RenovationAnalysis[]
   favourites      Favourite[]
-  comparisonItems ComparisonItem[]
+  comparisonProperties ComparisonProperty[]
+  userNotes       PropertyUserNote[]
+  decisionTasks   PropertyDecisionTask[]
+  orders          Order[]
+  entitlements    Entitlement[]
+  usageRecords    UsageRecord[]
+  propertyAlerts  PropertyAlert[]
+  savedSearchMatches SavedSearchMatch[]
   leads           Lead[]
+  inquiries       Inquiry[]
+  qualifiedBuyerLeads QualifiedBuyerLead[]
   valuations      Valuation[]
   valuationComparablesAsComp ValuationComparable[] @relation("ValuationComparableProperty")
+  listingBoosts   ListingBoost[]
+  listingAnalyticsDaily ListingAnalyticsDaily[]
+  professionalServiceRequests ProfessionalServiceRequest[]
+  propertyTransactions PropertyTransaction[]
+  paymentPlans    PropertyPaymentPlan[]
+  listingReports  ListingReport[]
 
   @@index([status, visibility])
   @@index([propertyType, transactionType])
@@ -632,6 +1934,16 @@ model Property {
   @@index([transactionType, status, askingPrice])
   @@index([isDemo])
   @@index([ownerUserId])
+  @@index([organizationId, listingQuotaState])
+  @@index([marketCode, status])
+  @@index([listingMarketChannel, isOffPlan])
+  @@index([marketCode, propertyType, listingMarketChannel])
+  @@index([marketCode, countryCode])
+  @@index([organizationId, status])
+  @@index([listedByUserId])
+  @@index([listingVerificationStatus])
+  @@index([listingQuotaState, status])
+  @@index([listingModerationStatus, status])
   /** Prompt 8 discovery / filter indexes */
   @@index([status, propertyType, askingPrice])
   @@index([status, publicCity, propertyType])
@@ -691,6 +2003,31 @@ model PropertyAttribute {
 }
 
 /**
+ * Localized property strings with translation provenance.
+ * Keep original language; AI translations require machineGenerated=true.
+ */
+model PropertyLocalizedText {
+  id                 String   @id @default(cuid())
+  propertyId         String
+  /** title | description | address_label | project_name | … */
+  field              String
+  originalLocale     String
+  originalText       String   @db.Text
+  translatedLocale   String?
+  translatedText     String?  @db.Text
+  translationSource  String   @default("ORIGINAL")
+  machineGenerated   Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, field])
+  @@index([originalLocale])
+  @@index([machineGenerated])
+}
+
+/**
  * Which source last confirmed a canonical field (field-level provenance).
  * Separates multi-source truth from raw payloads.
  */
@@ -716,7 +2053,7 @@ model PropertyFieldProvenance {
 }
 
 model PropertySource {
-  id                  String            @id @default(cuid())
+  id                  String             @id @default(cuid())
   propertyId          String
   sourceType          PropertySourceType @default(OTHER)
   /** Vendor / portal name, e.g. "sreality", "partner:acme". */
@@ -725,13 +2062,21 @@ model PropertySource {
   /** @deprecated Prefer externalPropertyId. */
   externalId          String?
   url                 String?
-  licenseStatus       LicenseStatus     @default(UNKNOWN)
-  isPrimary           Boolean           @default(false)
-  firstSeenAt         DateTime          @default(now())
-  lastSeenAt          DateTime          @default(now())
+  licenseStatus       LicenseStatus      @default(UNKNOWN)
+  /** Per-row health; DISABLED stops feed apply for this source row. */
+  healthStatus        SourceHealthStatus @default(HEALTHY)
+  /** When set and past, treat license as expired until renewed. */
+  licenseExpiresAt    DateTime?
+  /** When false, import workers must skip this source row. */
+  importEnabled       Boolean            @default(true)
+  /** When false, public UI must not attribute / deep-link this source. */
+  frontendVisible     Boolean            @default(true)
+  isPrimary           Boolean            @default(false)
+  firstSeenAt         DateTime           @default(now())
+  lastSeenAt          DateTime           @default(now())
   lastFetchedAt       DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   property        Property                 @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   payloads        PropertySourcePayload[]
@@ -743,12 +2088,33 @@ model PropertySource {
   @@unique([provider, externalPropertyId])
   @@index([propertyId, sourceType])
   @@index([lastSeenAt])
+  @@index([provider, healthStatus])
+  @@index([licenseExpiresAt])
+  @@index([importEnabled])
 }
 
 /**
- * Raw / minimized source payload — isolated from production DTOs.
- * Store only what licensing allows; prefer piiRedacted = true.
+ * Provider-level license / import governance (Source Management).
+ * One row per provider key — stops import or hides frontend attribution en masse.
  */
+model DataSourceProviderConfig {
+  provider            String             @id
+  displayName         String?
+  healthStatus        SourceHealthStatus @default(HEALTHY)
+  licenseStatus       LicenseStatus      @default(UNKNOWN)
+  licenseExpiresAt    DateTime?
+  importEnabled       Boolean            @default(true)
+  frontendVisible     Boolean            @default(true)
+  notes               String?            @db.Text
+  updatedByUserId     String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([healthStatus])
+  @@index([licenseExpiresAt])
+  @@index([importEnabled])
+}
+
 model PropertySourcePayload {
   id          String   @id @default(cuid())
   sourceId    String
@@ -870,23 +2236,78 @@ model PropertyDuplicateCandidate {
 
 model DataQualityIssue {
   id         String                 @id @default(cuid())
-  propertyId String
+  /** Property-scoped issues (listing QA). Optional when location-scoped. */
+  propertyId String?
+  /** Location Intelligence issues — reuse same issue table, no parallel system. */
+  locationId String?
   ruleCode   String
+  /** Rule catalog version for explainability / ML tuning. */
+  ruleVersion String                @default("1")
+  category   DataQualityIssueCategory @default(ANOMALY)
   severity   DataQualitySeverity
   message    String
+  /**
+   * Human-readable WHY — e.g. "Cena je o 83 % nižší než medián lokality".
+   * Prefer over opaque "Suspicious".
+   */
+  explanation String?               @db.Text
   field      String?
   status     DataQualityIssueStatus @default(OPEN)
   detectedAt DateTime               @default(now())
   resolvedAt DateTime?
+  resolutionReason String?          @db.Text
+  resolvedByUserId String?
+  reviewedAt DateTime?
+  reviewedByUserId String?
   meta       Json?
   createdAt  DateTime               @default(now())
   updatedAt  DateTime               @updatedAt
 
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  listingReport ListingReport?
 
   @@index([propertyId, status])
+  @@index([locationId, status])
   @@index([ruleCode, severity])
+  @@index([category, status])
   @@index([detectedAt])
+  @@index([status, severity])
+}
+
+/**
+ * User dispute / report of incorrect listing or data.
+ * Creates a linked DataQualityIssue (USER_REPORT) for moderation ops.
+ * Rate-limited at the application layer — never silently drop without feedback.
+ */
+model ListingReport {
+  id                   String                 @id @default(cuid())
+  propertyId           String
+  reporterUserId       String?
+  /** SHA-256 of client IP (or "unknown") — spam prevention without storing raw IP. */
+  reporterIpHash       String?
+  issueType            ListingReportIssueType
+  /** Optional free-text detail (sanitized plain text). */
+  details              String?                @db.Text
+  status               ListingReportStatus    @default(OPEN)
+  dataQualityIssueId   String?                @unique
+  reviewedAt           DateTime?
+  reviewedByUserId     String?
+  resolutionNote       String?                @db.Text
+  meta                 Json?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  property         Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  reporter         User?             @relation("ListingReportReporter", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  reviewedBy       User?             @relation("ListingReportReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  dataQualityIssue DataQualityIssue? @relation(fields: [dataQualityIssueId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, status, createdAt])
+  @@index([reporterUserId, createdAt])
+  @@index([reporterIpHash, createdAt])
+  @@index([issueType, status])
+  @@index([status, createdAt])
 }
 
 /** Snapshot of how completely a listing is filled (internal QA metric). */
@@ -914,6 +2335,10 @@ model PropertyFieldOverride {
   valueType   PropertyAttributeValueType @default(STRING)
   locked      Boolean                    @default(true)
   reason      String?
+  /** Manual ops tag — UI shows "Manuálně upraveno". */
+  manualTag   Boolean                    @default(true)
+  /** Optional expiry — after this, override is ignored by resolve. */
+  expiresAt   DateTime?
   createdById String?
   updatedById String?
   createdAt   DateTime                   @default(now())
@@ -925,6 +2350,31 @@ model PropertyFieldOverride {
 
   @@unique([propertyId, fieldKey])
   @@index([locked])
+  @@index([expiresAt])
+}
+
+/**
+ * Non-destructive merge audit — foundation for undo/revert.
+ */
+model PropertyMergeEvent {
+  id                    String    @id @default(cuid())
+  candidateId           String?
+  canonicalPropertyId   String
+  secondaryPropertyId   String
+  /** MergePlan JSON (resolutions, locked fields). */
+  planJson              Json
+  /** Secondary property field snapshot before merge (for revert). */
+  secondarySnapshot     Json
+  /** Secondary status before merge. */
+  secondaryPriorStatus  String
+  reversedAt            DateTime?
+  reversedByUserId      String?
+  createdByUserId       String?
+  createdAt             DateTime  @default(now())
+
+  @@index([canonicalPropertyId, createdAt])
+  @@index([secondaryPropertyId])
+  @@index([candidateId])
 }
 
 // ─── Import jobs (Prompt 7 Part 4) ───────────────────────────────────────────
@@ -988,6 +2438,11 @@ model PropertyAnalysis {
   tier         AnalysisTier   @default(BASIC)
   majetioScore Float?
   summary      String?        @db.Text
+  /**
+   * Public methodology package version at analysis creation.
+   * Historical rows must not be rewritten when the package bumps.
+   */
+  methodologyPackageVersion String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -997,18 +2452,117 @@ model PropertyAnalysis {
   valuations              Valuation[]
   investmentCalculations  InvestmentCalculation[]
   renovationEstimates     RenovationEstimate[]
+  renovationAnalyses      RenovationAnalysis[]
   orders                  Order[]
+  leads                   Lead[]
+  entitlements            Entitlement[]
 }
 
+/**
+ * Named investment scenario with frozen inputs + engine version stamps.
+ * Formula code changes must not rewrite historical rows — only create new ones.
+ * Ownership: ownerUserId is the IDOR boundary for USER profile scenarios.
+ */
 model AnalysisScenario {
-  id           String   @id @default(cuid())
-  analysisId   String
-  name         String
-  assumptions  Json
-  results      Json?
-  createdAt    DateTime @default(now())
+  id                       String                   @id @default(cuid())
+  propertyId               String?
+  analysisId               String?
+  /** Session owner for USER scenarios — never accept from client. */
+  ownerUserId              String?
+  scenarioType             AnalysisScenarioType     @default(BASE_METRICS)
+  profile                  AnalysisScenarioProfile  @default(USER)
+  variant                  AnalysisScenarioVariant  @default(REALISTIC)
+  status                   AnalysisScenarioStatus   @default(DRAFT)
+  /** Sanitized human label (plain text, no HTML). */
+  name                     String?
+  /** Frozen property / market snapshot at calculation time. */
+  inputSnapshot            Json
+  /** User overrides applied on top of the property snapshot. */
+  assumptionSet            Json
+  /** Version key of assumption defaults used (e.g. assumptions.v2026.07). */
+  assumptionConfigVersion  String                   @default("assumptions.v1")
+  /** INVESTMENT_ENGINE_VERSION frozen at calc time. */
+  calculationEngineVersion String
+  /** FORMULA_REGISTRY_VERSION frozen at calc time. */
+  formulaRegistryVersion   String
+  /**
+   * Public methodology package (UI-facing) frozen at calc time.
+   * Never rewrite on package bump — clone preserves source stamp.
+   */
+  methodologyPackageVersion String?
+  /** Deterministic hash(propertySnapshot + assumptions + versions + scenarioType). */
+  inputHash                String
+  /** Orchestrated partial/full result envelope (JSON). */
+  results                  Json?
+  /** Base currency for the scenario (ISO). */
+  baseCurrency             String                   @default("CZK")
+  /** Optional FX snapshot when an input was converted into baseCurrency. */
+  exchangeRateSnapshot     Json?
+  /** Public share of private scenarios is disabled by default (Part 2/B). */
+  isPublicShareEnabled     Boolean                  @default(false)
+  clonedFromId             String?
+  /** Analyst workflow (only when profile = ANALYST). */
+  analystReviewStatus      AnalystReviewStatus?
+  analystReviewReason      String?                  @db.Text
+  reviewedByUserId         String?
+  reviewedAt               DateTime?
+  approvedByUserId         String?
+  approvedAt               DateTime?
+  calculatedAt             DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
 
-  analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  property               Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  analysis               PropertyAnalysis?       @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  owner                  User?                   @relation("AnalysisScenarioOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  reviewedBy             User?                   @relation("AnalysisScenarioReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  approvedBy             User?                   @relation("AnalysisScenarioApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  clonedFrom             AnalysisScenario?       @relation("ScenarioClone", fields: [clonedFromId], references: [id], onDelete: SetNull)
+  clones                 AnalysisScenario[]      @relation("ScenarioClone")
+  investmentCalculations InvestmentCalculation[]
+  renovationAnalyses     RenovationAnalysis[]
+
+  @@index([ownerUserId, status, updatedAt])
+  @@index([propertyId, scenarioType, status])
+  @@index([analysisId])
+  @@index([inputHash])
+  @@index([calculationEngineVersion])
+  @@index([profile, analystReviewStatus])
+  @@index([status, calculatedAt])
+  @@index([assumptionConfigVersion])
+  @@index([methodologyPackageVersion])
+}
+
+/**
+ * Versioned assumption defaults (vacancy, growth, spreads…).
+ * Historical analyses reference assumptionConfigVersion — never mutate past rows.
+ */
+model AssumptionConfigVersion {
+  id          String   @id @default(cuid())
+  /** Stable key, e.g. assumptions.v2026.07 */
+  versionKey  String   @unique
+  /** Human label for admins. */
+  label       String
+  /** Effective from (inclusive). */
+  effectiveFrom DateTime
+  /** Optional end — null = current. */
+  effectiveTo   DateTime?
+  isCurrent   Boolean  @default(false)
+  approvalStatus AnalyticsConfigApprovalStatus @default(DRAFT)
+  approvedAt  DateTime?
+  approvedByUserId String?
+  changeReason String? @db.Text
+  /**
+   * Full defaults JSON:
+   * { byPropertyType, byStrategy, byLocation, spreads, meta }
+   */
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isCurrent])
+  @@index([effectiveFrom])
+  @@index([approvalStatus])
 }
 
 /**
@@ -1107,33 +2661,145 @@ model ValuationAdjustmentAudit {
  * Example code: residential_apartment_v1
  */
 model ValuationModelRegistry {
-  id                     String         @id @default(cuid())
-  code                   String         @unique
+  id                     String                        @id @default(cuid())
+  code                   String                        @unique
   displayName            String
-  description            String?        @db.Text
+  description            String?                       @db.Text
   algorithmVersion       String
   supportedPropertyTypes PropertyType[]
-  isActive               Boolean        @default(true)
+  /** @deprecated Prefer lifecycleStatus === ACTIVE. Kept in sync by governance. */
+  isActive               Boolean                       @default(false)
+  lifecycleStatus        ValuationModelLifecycleStatus @default(DRAFT)
+  /**
+   * Shadow mode — run evaluations in background without publishing as ACTIVE.
+   */
+  shadowMode             Boolean                       @default(false)
+  /** Model this activation replaced (for safe rollback). */
+  previousActiveModelId  String?
+  approvedAt             DateTime?
+  approvedByUserId       String?
+  activatedAt            DateTime?
+  activatedByUserId      String?
+  rolledBackAt           DateTime?
+  /** Market scope — never apply CZ model to AE inventory (Prompt 17.4). */
+  marketCode             String                        @default("CZ")
   /** Non-secret config / notes (weights docs refs, changelog). */
   metadata               Json?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
 
-  valuations Valuation[]
+  valuations   Valuation[]
+  performance  ValuationModelPerformanceSnapshot[]
+  governanceEvents ModelGovernanceEvent[]
 
   @@index([isActive])
+  @@index([lifecycleStatus])
   @@index([algorithmVersion])
+  @@index([marketCode, lifecycleStatus])
+  @@index([shadowMode])
+}
+
+/** Append-only governance transitions for valuation models. */
+model ModelGovernanceEvent {
+  id              String   @id @default(cuid())
+  modelRegistryId String
+  fromStatus      String
+  toStatus        String
+  actorUserId     String?
+  reason          String   @db.Text
+  shadowMode      Boolean?
+  meta            Json?
+  createdAt       DateTime @default(now())
+
+  modelRegistry ValuationModelRegistry @relation(fields: [modelRegistryId], references: [id], onDelete: Cascade)
+
+  @@index([modelRegistryId, createdAt])
+  @@index([createdAt])
+}
+
+/**
+ * MAE / MAPE snapshots by market + segment for model performance dashboards.
+ */
+model ValuationModelPerformanceSnapshot {
+  id              String   @id @default(cuid())
+  modelRegistryId String
+  marketCode      String   @default("CZ")
+  segmentKey      String   @default("ALL")
+  sampleSize      Int
+  mae             Float
+  mape            Float
+  /** Prior snapshot MAE for regression alerts. */
+  previousMae     Float?
+  previousMape    Float?
+  regressionAlert Boolean  @default(false)
+  regressionNote  String?
+  computedAt      DateTime @default(now())
+  meta            Json?
+
+  modelRegistry ValuationModelRegistry @relation(fields: [modelRegistryId], references: [id], onDelete: Cascade)
+
+  @@index([modelRegistryId, computedAt])
+  @@index([marketCode, segmentKey])
+  @@index([regressionAlert])
+}
+
+/**
+ * Versioned renovation unit-rate catalog (governance).
+ * Code-backed demos remain; DB versions go through approval before ACTIVE.
+ */
+model RenovationCostCatalogVersion {
+  id               String                        @id @default(cuid())
+  versionKey       String                        @unique
+  label            String
+  marketCode       String                        @default("CZ")
+  approvalStatus   AnalyticsConfigApprovalStatus @default(DRAFT)
+  isCurrent        Boolean                       @default(false)
+  /** Full catalog document JSON (entries + meta). */
+  catalogJson      Json
+  previousVersionKey String?
+  changeReason     String?                       @db.Text
+  anomalyFlags     Json?
+  approvedAt       DateTime?
+  approvedByUserId String?
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+
+  @@index([isCurrent])
+  @@index([approvalStatus])
+  @@index([marketCode])
+}
+
+/** Mortgage / HypotekaJasne feed ops — block auto-publish on anomaly. */
+model MortgageFeedControl {
+  id                 String   @id @default("default")
+  autoPublishEnabled Boolean  @default(true)
+  blockedReason      String?  @db.Text
+  blockedAt          DateTime?
+  blockedByUserId    String?
+  updatedAt          DateTime @updatedAt
+  createdAt          DateTime @default(now())
 }
 
 model InvestmentCalculation {
-  id            String   @id @default(cuid())
-  analysisId    String
-  engineVersion String
-  inputs        Json
-  outputs       Json
-  createdAt     DateTime @default(now())
+  id                     String   @id @default(cuid())
+  analysisId             String?
+  scenarioId             String?
+  propertyId             String?
+  engineVersion          String
+  formulaRegistryVersion String
+  inputHash              String
+  inputs                 Json
+  outputs                Json
+  createdAt              DateTime @default(now())
 
-  analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  analysis PropertyAnalysis? @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  scenario AnalysisScenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  property Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([inputHash, engineVersion])
+  @@index([analysisId])
+  @@index([scenarioId])
+  @@index([propertyId, createdAt])
 }
 
 model RenovationEstimate {
@@ -1148,41 +2814,314 @@ model RenovationEstimate {
   analysis PropertyAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 }
 
+/**
+ * Renovation Engine primary entity (Prompt 12 / 1 of 5).
+ * Cost bands (C) are stored here; ARV (D) stays in arv services / future columns —
+ * do not treat estimated* as after-repair value.
+ * Legacy CapEx-only rows remain in RenovationEstimate until migrated.
+ */
+model RenovationAnalysis {
+  id                  String                    @id @default(cuid())
+  propertyId          String?
+  analysisId          String?
+  scenarioId          String?
+  type                RenovationAnalysisType    @default(AUTOMATIC)
+  status              RenovationAnalysisStatus  @default(DRAFT)
+  /** Frozen scope catalogue version (concept B). */
+  scopeVersion        String
+  /** Frozen CapEx model version (concept C). */
+  costModelVersion    String
+  /** Frozen location cost index version (concept C). */
+  locationCostVersion String
+  /** CapEx low band — CZK major; null = not calculated. */
+  estimatedLow        Int?
+  estimatedBase       Int?
+  estimatedHigh       Int?
+  /** Contingency Kč major — concept C support, not ARV. */
+  contingencyAmount   Int?
+  /** Duration in whole days. */
+  estimatedDuration   Int?
+  /** Confidence 0–100. */
+  confidence          Float?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  calculatedAt        DateTime?
+
+  property Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  analysis PropertyAnalysis? @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  scenario AnalysisScenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, status, updatedAt])
+  @@index([analysisId])
+  @@index([scenarioId])
+  @@index([status, calculatedAt])
+  @@index([scopeVersion])
+  @@index([costModelVersion, locationCostVersion])
+}
+
 // ─── User workspace ──────────────────────────────────────────────────────────
 
+/**
+ * User-owned folder/collection for organising favourites.
+ * Structure is ready; full collection management UI can come later.
+ * Distinct from Property.status ARCHIVED and Favourite.archivedAt.
+ */
+model FavouriteCollection {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  /** Stable slug within user — e.g. investice, vlastni-bydleni. */
+  slug      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favourites Favourite[]
+
+  @@unique([userId, slug])
+  @@index([userId, sortOrder])
+}
+
 model Favourite {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   userId     String
   propertyId String
-  createdAt  DateTime @default(now())
+  status     FavouriteStatus @default(CONSIDERING)
+  /** Optional reject reason — only when status = REJECTED; never mandatory. */
+  rejectionReason FavouriteRejectionReason?
+  /** Optional free-text folder label (legacy / quick tag). Prefer collectionId when set. */
+  folder     String?
+  /** Optional structured collection (folders/kolekce). */
+  collectionId String?
+  /** Lower = higher list sort; null = unsorted. Distinct from decisionPriority. */
+  priority   Int?
+  /** Personal decision priority: HIGH / MEDIUM / LOW. */
+  decisionPriority DecisionPriorityLevel?
+  /** Private user note (Decision Workspace) — plain text, XSS-stripped. */
+  note       String?         @db.Text
+  /** Asking price snapshot when saved — for price-change display. */
+  priceAtSave Int?
+  /**
+   * User archived a listing (e.g. sold) — kept for history/compare, hidden from active shortlist.
+   * Distinct from Property.status ARCHIVED. UNAVAILABLE/SOLD favourites are never auto-removed.
+   */
+  archivedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** Restrict: hard-delete of Property must not silently wipe private favourites. */
+  property   Property              @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  collection FavouriteCollection?  @relation(fields: [collectionId], references: [id], onDelete: SetNull)
 
   @@unique([userId, propertyId])
+  @@index([userId, status, createdAt])
+  @@index([userId, priority])
+  @@index([userId, decisionPriority])
+  @@index([userId, updatedAt])
+  @@index([userId, folder])
+  @@index([userId, collectionId])
+  @@index([userId, status, archivedAt])
+  @@index([userId, rejectionReason])
+}
+
+/**
+ * User watches a location market profile (dashboard + future metric alerts).
+ * Reuses PropertyAlertEvent / Notification delivery path — no email worker yet.
+ */
+model WatchedLocation {
+  id             String   @id @default(cuid())
+  userId         String
+  locationSlug   String
+  locationLabel  String?
+  /** When true, LOCATION_METRIC_CHANGE events may be enqueued. */
+  alertEnabled   Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationSlug])
+  @@index([userId, createdAt])
+  @@index([locationSlug])
 }
 
 model Comparison {
   id        String   @id @default(cuid())
   userId    String
   name      String?
+  /**
+   * Manual property id order chosen by the user.
+   * Automation must never overwrite this once set.
+   */
+  manualOrder Json?
+  /**
+   * Optimistic concurrency token (BOD 152).
+   * Clients must send expectedVersion; bump on every successful mutation.
+   */
+  version   Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items ComparisonItem[]
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  properties ComparisonProperty[]
+  snapshots  ComparisonSnapshot[]
+  shares     ComparisonShare[]
+
+  @@index([userId, updatedAt])
 }
 
-model ComparisonItem {
-  id           String @id @default(cuid())
+enum ComparisonShareMode {
+  /** Explicit invitee user ids only — no public URL. */
+  INVITED_USERS
+  /** High-entropy secret token + expiry; share-safe payload only. */
+  SECRET_LINK
+}
+
+/**
+ * Safe comparison sharing (BOD 78–81, 131).
+ * Never stores Financial Passport / incomes / personal financing / private notes.
+ */
+model ComparisonShare {
+  id           String               @id @default(cuid())
+  comparisonId String
+  createdById  String
+  mode         ComparisonShareMode
+  /**
+   * High-entropy secret for SECRET_LINK (null for INVITED_USERS).
+   * Store only a hash; raw token shown once at creation.
+   */
+  tokenHash    String?              @unique
+  /** Token prefix for support lookup — never enough to authenticate. */
+  tokenPrefix  String?
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  /**
+   * Explicit share-safe field selection (JSON).
+   * Forbidden keys must never appear: passport, income, financing private, notes.
+   */
+  includeFlags Json
+  /** Frozen share-safe view built at create/refresh time. */
+  safePayload  Json
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  lastAccessedAt DateTime?
+
+  comparison Comparison                @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  createdBy  User                      @relation("ComparisonShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  invites    ComparisonShareInvite[]
+
+  @@index([comparisonId, mode])
+  @@index([expiresAt])
+  @@index([createdById, createdAt])
+}
+
+model ComparisonShareInvite {
+  id        String   @id @default(cuid())
+  shareId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  share ComparisonShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shareId, userId])
+  @@index([userId])
+}
+
+/**
+ * Frozen comparison metrics at time T (BOD 76, 77).
+ * publicMetrics never includes personal financing / Finanční pas (BOD 146).
+ * Refresh creates a new row; isCurrent marks the active snapshot.
+ */
+model ComparisonSnapshot {
+  id            String   @id @default(cuid())
+  comparisonId  String
+  /** Public module metrics frozen at T — valuation, investment, renovation, location, risks. */
+  publicMetrics Json
+  /** Per-property fingerprints for stale detection vs live data. */
+  fingerprints  Json
+  isCurrent     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  comparison Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+
+  @@index([comparisonId, isCurrent])
+  @@index([comparisonId, createdAt])
+}
+
+/** Property slot in a comparison (max COMPARE_MAX from config). Domain alias: order → sortOrder. */
+model ComparisonProperty {
+  id           String   @id @default(cuid())
   comparisonId String
   propertyId   String
-  sortOrder    Int    @default(0)
+  /** Display order (0-based). */
+  sortOrder    Int      @default(0)
+  addedAt      DateTime @default(now())
 
   comparison Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
   property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([comparisonId, propertyId])
+  @@index([comparisonId, sortOrder])
+}
+
+/**
+ * Private per-user property notes — owner-only.
+ * Never expose via public API, analytics payloads, or SEO/JSON-LD.
+ */
+model PropertyUserNote {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  content    String   @db.Text
+  /** Quick tags (prohlídka, SVJ, …) — private metadata. */
+  tags       String[] @default([])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId, updatedAt])
+}
+
+/** Decision checklist tasks — owner-only private workspace data. */
+model PropertyDecisionTask {
+  id          String                     @id @default(cuid())
+  userId      String
+  propertyId  String
+  type        PropertyDecisionTaskType   @default(CUSTOM)
+  title       String
+  status      PropertyDecisionTaskStatus @default(PENDING)
+  dueDate     DateTime?
+  /** True when created from default suggestion engine. */
+  suggested   Boolean                    @default(false)
+  createdAt   DateTime                   @default(now())
+  completedAt DateTime?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([userId, propertyId, status])
+  @@index([userId, dueDate])
+}
+
+/**
+ * User Decision Matrix priorities (price, location, yield, …).
+ * Prefillable from Finanční pas; never public.
+ */
+model DecisionPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  /** Map criterion → DecisionPriorityLevel */
+  priorities  Json
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SavedSearch {
@@ -1198,14 +3137,39 @@ model SavedSearch {
   filtersVersion Int                       @default(1)
   alertFrequency SavedSearchAlertFrequency @default(OFF)
   lastAlertedAt  DateTime?
+  /** Last time matches were recomputed against the catalog. */
+  lastCheckedAt  DateTime?
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
 
   user              User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
   alertSubscriptions PropertyAlertSubscription[]
+  matches            SavedSearchMatch[]
 
   @@index([userId, updatedAt])
   @@index([userId, alertFrequency])
+}
+
+/**
+ * Real catalog matches for a saved search — no fake badges.
+ * New results = rows with notifiedAt IS NULL after baseline sync.
+ */
+model SavedSearchMatch {
+  id             String    @id @default(cuid())
+  savedSearchId  String
+  propertyId     String
+  firstMatchedAt DateTime  @default(now())
+  lastMatchedAt  DateTime  @default(now())
+  /** Set when user was notified or acknowledged the match (baseline or alert). */
+  notifiedAt     DateTime?
+
+  savedSearch SavedSearch @relation(fields: [savedSearchId], references: [id], onDelete: Cascade)
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([savedSearchId, propertyId])
+  @@index([savedSearchId, notifiedAt])
+  @@index([savedSearchId, firstMatchedAt])
+  @@index([propertyId])
 }
 
 /**
@@ -1242,82 +3206,1394 @@ model PropertyAlertEvent {
   deliveredAt   DateTime?
   createdAt     DateTime         @default(now())
 
+  alerts PropertyAlert[]
+
   @@index([userId, createdAt])
   @@index([alertType, deliveredAt])
   @@index([propertyId])
 }
 
-// ─── Leads, commerce, partners ───────────────────────────────────────────────
-
-model Lead {
-  id         String     @id @default(cuid())
-  type       LeadType
-  status     LeadStatus @default(NEW)
-  userId     String?
+/**
+ * User-facing property alert (inbox).
+ * Transactional by default — never mixed with marketing without consent.
+ */
+model PropertyAlert {
+  id         String                     @id @default(cuid())
+  userId     String
   propertyId String?
-  email      String?
-  phone      String?
-  payload    Json?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  type       PropertyAlertType
+  eventId    String?
+  channel    NotificationChannel        @default(IN_APP)
+  status     PropertyAlertDeliveryStatus @default(PENDING)
+  title      String
+  body       String?                    @db.Text
+  /** Idempotent delivery key — unique per user when set. */
+  dedupeKey  String?
+  /** Groups batched alerts (e.g. saved-search digest). */
+  batchKey   String?
+  href       String?
+  meta       Json?
+  createdAt  DateTime                   @default(now())
+  sentAt     DateTime?
+  readAt     DateTime?
 
-  user       User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  property   Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  activities LeadActivity[]
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  event    PropertyAlertEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, status, createdAt])
+  @@index([userId, readAt, createdAt])
+  @@index([propertyId, type, createdAt])
+  @@index([batchKey])
+  @@index([type, createdAt])
 }
 
-model LeadActivity {
+// ─── Leads, commerce, partners ───────────────────────────────────────────────
+
+/**
+ * Casual marketplace inquiry (message / viewing interest).
+ * Strictly NOT a QualifiedBuyerLead — no budget, financing stance, or FP linkage.
+ */
+model Inquiry {
+  id             String        @id @default(cuid())
+  propertyId     String
+  organizationId String?
+  agentUserId    String?
+  buyerUserId    String?
+  status         InquiryStatus @default(NEW)
+  buyerName      String?
+  buyerEmail     String?
+  buyerPhone     String?
+  message        String?       @db.Text
+  source         String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  agent        User?         @relation("InquiryAgent", fields: [agentUserId], references: [id], onDelete: SetNull)
+  buyer        User?         @relation("InquiryBuyer", fields: [buyerUserId], references: [id], onDelete: SetNull)
+  qualifiedLead QualifiedBuyerLead?
+
+  @@index([propertyId, status, createdAt])
+  @@index([organizationId, status, createdAt])
+  @@index([agentUserId, status])
+  @@index([buyerUserId, createdAt])
+}
+
+/**
+ * Marketplace qualified buyer lead — product qualification + privacy handoff.
+ *
+ * Privacy:
+ * - Before agent accept → only anonymizedQualifiedProfile (budget band, timeline, financing stance).
+ * - Full FinancialProfile never exposed to agent without AGENT_BUYER_PROFILE_SHARE consent
+ *   AND status ACCEPTED.
+ *
+ * Discrimination firewall: qualification uses ONLY allow-listed non-protected attributes.
+ */
+model QualifiedBuyerLead {
+  id             String                    @id @default(cuid())
+  inquiryId      String?                   @unique
+  propertyId     String
+  organizationId String?
+  agentUserId    String?
+  buyerUserId    String
+  status         QualifiedBuyerLeadStatus  @default(PENDING_AGENT_REVIEW)
+
+  /** Centralized rule version that produced this qualification. */
+  qualificationRuleVersion String
+  qualifiedAt              DateTime?
+  contactVerification      ContactVerificationLevel @default(UNVERIFIED)
+  contactVerified          Boolean @default(false)
+  budgetKnown              Boolean @default(false)
+  /** Coarse bands for agent pre-accept (not exact passport figures). */
+  budgetBandMinCzk         Int?
+  budgetBandMaxCzk         Int?
+  financingStance          BuyerFinancingStance @default(UNKNOWN)
+  /** e.g. 0_3m | 3_6m | 6_12m | 12m_plus */
+  timelineBand             String?
+  /** Immutable anonymized snapshot shown to agent before accept. */
+  anonymizedProfileSnapshot Json?
+  /** Consent row for fuller profile share (post-accept). */
+  profileShareConsentId    String? @unique
+  agentAcceptedAt          DateTime?
+  agentDeclinedAt          DateTime?
+  fullProfileRevealedAt    DateTime?
+  declineReason            String?
+  expiresAt                DateTime?
+  /** SLA: first agent response due (default +24h from qualify). No public ranking. */
+  slaDueAt                 DateTime?
+  firstResponseAt          DateTime?
+  slaBreachedAt            DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  inquiry      Inquiry?      @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  agent        User?         @relation("QualifiedBuyerAgent", fields: [agentUserId], references: [id], onDelete: SetNull)
+  buyer        User          @relation("QualifiedBuyer", fields: [buyerUserId], references: [id], onDelete: Cascade)
+  activities   QualifiedBuyerLeadActivity[]
+  attributions LeadAttribution[]
+  successFees  SuccessFeeRecord[]
+  disputes     LeadDispute[]
+
+  @@index([propertyId, status, createdAt])
+  @@index([organizationId, status, createdAt])
+  @@index([agentUserId, status])
+  @@index([buyerUserId, createdAt])
+  @@index([status, expiresAt])
+  @@index([organizationId, slaDueAt])
+  @@index([agentUserId, slaDueAt])
+}
+
+model QualifiedBuyerLeadActivity {
   id        String   @id @default(cuid())
   leadId    String
   type      String
   note      String?  @db.Text
+  /** Must never contain raw income / liabilities / discriminatory attrs. */
   meta      Json?
   createdAt DateTime @default(now())
+
+  lead QualifiedBuyerLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model Lead {
+  id             String     @id @default(cuid())
+  type           LeadType
+  status         LeadStatus @default(NEW)
+  userId         String?
+  propertyId     String?
+  analysisId     String?
+  /** B2B org scope for agency managers. */
+  organizationId String?
+  /**
+   * Pipeline owner (accountable) — distinct from assignee.
+   * Checklist 142–145: owner drives nextAction accountability.
+   */
+  ownerUserId    String?
+  /** Primary assignee (makléř / analytik). */
+  assignedToUserId String?
+  email          String?
+  phone          String?
+  /** Attribution source path, e.g. kalkulacky/financovani, nemovitosti/{slug}/financovani */
+  source         String?
+  /** Partner identifier, e.g. hypotekajasne */
+  partner        String?
+  /** Pipeline routing decision. */
+  routingTarget  LeadRoutingTarget @default(UNASSIGNED)
+  routingRuleKey String?
+  nextActionType LeadNextActionType @default(NONE)
+  nextActionDueAt DateTime?
+  nextActionOwnerId String?
+  /** XSS-safe plain text (never raw HTML). */
+  nextActionNote String?
+  /**
+   * Internal expected deal value (haléře) — NEVER realized revenue / RevenueEvent.
+   * Not exposed to buyers; staff/broker CRM only (185).
+   */
+  expectedValueMinor Int?
+  expectedValueCurrency String @default("CZK")
+  expectedValueNote String?
+  statusChangedAt DateTime?
+  consentId      String?    @unique
+  /** External-safe correlation token — never expose internal Lead.id to partners */
+  correlationId  String     @unique
+  /** Idempotency guard for duplicate submits */
+  idempotencyKey String?    @unique
+  payload        Json?
+  /** @deprecated Prefer marketCode — legacy routing field. */
+  marketCountry  String?    @default("CZ")
+  /**
+   * Explicit MarketCode (CZ, AE, …). Never infer from currency.
+   * Backfilled from marketCountry / default CZ for existing rows.
+   */
+  marketCode     String     @default("CZ")
+  /** ISO 3166-1 alpha-2. */
+  countryCode    String     @default("CZ")
+  /** ISO 4217 listing / deal currency for this lead. */
+  currency       String     @default("CZK")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  property        Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  analysis        PropertyAnalysis?   @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  owner           User?               @relation("LeadOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  assignedTo      User?               @relation("LeadAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  nextActionOwner User?               @relation("LeadNextActionOwner", fields: [nextActionOwnerId], references: [id], onDelete: SetNull)
+  activities      LeadActivity[]
+  assignments     LeadAssignment[]
+  mortgageProfile MortgageLeadProfile?
+  mortgageLeadCrm MortgageLeadCrm?
+  contextSnapshot MortgageLeadContextSnapshot?
+  submissionAttempts MortgageLeadSubmissionAttempt[]
+  webhookEvents   HypotekaJasneWebhookEvent[]
+
+  /** GDPR retention — when PII may be purged (set at creation from policy). */
+  retentionExpiresAt DateTime?
+  /** When sensitive profile fields were redacted (deletion / consent withdrawal). */
+  piiRedactedAt      DateTime?
+  /** User-initiated deletion request timestamp. */
+  deletionRequestedAt DateTime?
+
+  @@index([userId, propertyId, createdAt])
+  @@index([userId, analysisId, createdAt])
+  @@index([partner, createdAt])
+  @@index([email, type, createdAt])
+  @@index([retentionExpiresAt])
+  @@index([organizationId, status, createdAt])
+  @@index([assignedToUserId, status, nextActionDueAt])
+  @@index([ownerUserId, status, nextActionDueAt])
+  @@index([status, statusChangedAt])
+  @@index([routingTarget, status])
+  @@index([nextActionOwnerId, nextActionDueAt])
+  @@index([marketCode, status, createdAt])
+  @@index([marketCode, countryCode])
+}
+
+/**
+ * Explicit assignment history / multi-assignee support for CRM pipeline.
+ */
+model LeadAssignment {
+  id               String             @id @default(cuid())
+  leadId           String
+  userId           String
+  organizationId   String?
+  role             LeadAssignmentRole @default(ASSIGNEE)
+  active           Boolean            @default(true)
+  assignedAt       DateTime           @default(now())
+  assignedByUserId String?
+  unassignedAt     DateTime?
+  note             String?
+  createdAt        DateTime           @default(now())
+
+  lead         Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user         User          @relation("LeadAssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  assignedBy   User?         @relation("LeadAssignmentCreator", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([leadId, userId, role])
+  @@index([userId, active, assignedAt])
+  @@index([organizationId, active])
+  @@index([leadId, active])
+}
+
+/** Sensitive mortgage-specific fields — separated from Lead.payload JSON. */
+model MortgageLeadProfile {
+  id                    String                      @id @default(cuid())
+  leadId                String                      @unique
+  workflowStatus        MortgageLeadWorkflowStatus  @default(CREATED)
+  availableEquityCzk    Int?
+  monthlyIncomeCzk      Int?
+  monthlyLiabilitiesCzk Int?
+  purchasePriceCzk      Int?
+  externalLeadId        String?
+  partnerReference      String?
+  isMockSubmission      Boolean                     @default(false)
+  submittedAt           DateTime?
+  receivedAt            DateTime?
+  contactedAt           DateTime?
+  lastPartnerSyncAt     DateTime?
+  submissionAttempts    Int                         @default(0)
+  lastSubmissionError   String?                     @db.Text
+  nextRetryAt           DateTime?
+  deadLetterAt          DateTime?
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  lead              Lead                           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([workflowStatus, updatedAt])
+  @@index([workflowStatus, nextRetryAt])
+  @@index([externalLeadId])
+}
+
+/**
+ * Immutable context captured at lead creation (Prompt 13/10).
+ * Never updated after insert — historical lead truth survives property price changes.
+ */
+model MortgageLeadContextSnapshot {
+  id                         String   @id @default(cuid())
+  leadId                     String   @unique
+  schemaVersion              String   @default("mortgage-lead-snapshot.v1")
+  capturedAt                 DateTime @default(now())
+  propertyId                 String?
+  propertySlug               String?
+  propertyUrl                String?
+  propertyTitle              String?
+  askingPriceCzk             Int?
+  valuationCzk               Int?
+  requestedLoanCzk           Int?
+  availableEquityCzk         Int?
+  ltvOnAskingPricePct        Float?
+  nominalInterestRatePp      Float?
+  aprPp                      Float?
+  termYears                  Int?
+  estimatedMonthlyPaymentCzk Int?
+  /** Full frozen payload for audit — write-once. */
+  snapshotJson               Json
 
   lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
 
-model Order {
-  id              String      @id @default(cuid())
-  userId          String
-  analysisId      String?
-  status          OrderStatus @default(PENDING)
-  productKey      String
-  amountCzk       Int
-  currency        String      @default("CZK")
-  configSnapshot  Json?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+/** CRM + internal value tracking — never expose to end-user UI (Prompt 13/9, Prompt 16). */
+enum MortgageLeadCrmNextAction {
+  AWAIT_PARTNER_RESPONSE
+  CONTACT_CLIENT
+  REQUEST_DOCUMENTS
+  FOLLOW_UP
+  NONE
+}
 
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  analysis PropertyAnalysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
-  payments Payment[]
+model MortgageLeadCrm {
+  id                      String                     @id @default(cuid())
+  leadId                  String                     @unique
+  ownerUserId             String?
+  nextAction              MortgageLeadCrmNextAction  @default(AWAIT_PARTNER_RESPONSE)
+  assignedToUserId        String?
+  assignedAt              DateTime?
+  routingCountry          String                     @default("CZ")
+  routingPartner          String                     @default("hypotekajasne")
+  routingRuleKey          String                     @default("cz-default-hypotekajasne")
+  regulatoryConfigVersion String?
+  /** INTERNAL — business reporting only */
+  estimatedLoanAmountCzk  Int?
+  /** INTERNAL — business reporting only */
+  estimatedCommissionCzk  Int?
+  valueMetricsUpdatedAt   DateTime?
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+
+  lead       Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  owner      User? @relation("MortgageLeadCrmOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  assignedTo User? @relation("MortgageLeadCrmAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
+  @@index([routingPartner, routingCountry])
+  @@index([ownerUserId])
+  @@index([assignedToUserId, nextAction])
+}
+
+model MortgageLeadSubmissionAttempt {
+  id           String                            @id @default(cuid())
+  leadId       String
+  attemptNumber Int
+  status       MortgageLeadSubmissionAttemptStatus
+  httpStatus   Int?
+  errorCode    String?
+  errorMessage String?                           @db.Text
+  nextRetryAt  DateTime?
+  createdAt    DateTime                          @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, attemptNumber])
+  @@index([status, nextRetryAt])
+}
+
+/** Idempotent store for inbound HypotekaJasne webhook events. */
+model HypotekaJasneWebhookEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  eventType      String
+  correlationId  String
+  leadId         String?
+  payload        Json
+  signatureValid Boolean  @default(true)
+  processedAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  lead Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([correlationId, createdAt])
+  @@index([eventType, createdAt])
+}
+
+model LeadActivity {
+  id         String                 @id @default(cuid())
+  leadId     String
+  type       String
+  /** XSS-safe plain text — never store unsanitized HTML. */
+  note       String?                @db.Text
+  meta       Json?
+  actorUserId String?
+  visibility LeadActivityVisibility @default(SYSTEM)
+  createdAt  DateTime               @default(now())
+
+  lead  Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actor User? @relation("LeadActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([leadId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([visibility, createdAt])
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  userId             String
+  analysisId         String?
+  /** Property scope for Deep Analysis / Boost / Professional Review grants. */
+  propertyId         String?
+  /** B2B org receiving subscription plan change after paid webhook. */
+  organizationId     String?
+  status             OrderStatus @default(PENDING)
+  productKey         String
+  /** Price version / plan version key frozen at checkout (historical pricing). */
+  priceVersionKey    String
+  /** Optional FK to catalog plan used at purchase (plan may later archive). */
+  pricingPlanId      String?
+  /** Gross amount charged (minor units / haléře for CZK). */
+  amountGrossMinor   Int
+  /** Net of VAT. */
+  amountNetMinor     Int
+  /** VAT amount. */
+  amountVatMinor     Int
+  vatRateBp          Int         @default(2100)
+  currency           String      @default("CZK")
+  /** Client must never set this — server snapshot of catalog + promo. */
+  configSnapshot     Json?
+  billingName        String?
+  billingEmail       String?
+  billingCompany     String?
+  billingStreet      String?
+  billingCity        String?
+  billingZip         String?
+  billingCountry     String?     @default("CZ")
+  billingVatId       String?
+  promoCodeId        String?
+  /** Preferred promotion FK (Commerce Data Layer). */
+  promotionId        String?
+  promoCodeSnapshot  String?
+  discountMinor      Int         @default(0)
+  idempotencyKey     String?     @unique
+  paidAt             DateTime?
+  cancelledAt        DateTime?
+  refundedAt         DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  /** @deprecated Prefer amountGrossMinor — kept for older rows. */
+  amountCzk          Int         @default(0)
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis     PropertyAnalysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  property     Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  organization Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  promoCode    PromoCode?     @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  promotion    Promotion?     @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  pricingPlan  PricingPlan?   @relation(fields: [pricingPlanId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
+  payments     Payment[]
+  entitlements Entitlement[]
+  refunds      PaymentRefund[]
+
+  @@index([userId, status, createdAt])
+  @@index([productKey, priceVersionKey])
+  @@index([pricingPlanId])
+  @@index([promotionId])
+  @@index([propertyId])
+  @@index([organizationId])
+}
+
+/**
+ * Line item with frozen price snapshot at purchase time.
+ * Never re-resolve list price from live PricingPlan for historical orders.
+ */
+model OrderItem {
+  id                   String   @id @default(cuid())
+  orderId              String
+  pricingPlanId        String?
+  /** Catalog key snapshot (e.g. full_analysis). */
+  planKey              String
+  planVersionKey       String
+  planName             String
+  billingType          PricingBillingType @default(ONE_TIME)
+  quantity             Int      @default(1)
+  /** Unit list price before discount (gross minor). */
+  unitListGrossMinor   Int
+  unitPriceGrossMinor  Int
+  unitPriceNetMinor    Int
+  unitPriceVatMinor    Int
+  discountMinor        Int      @default(0)
+  lineGrossMinor       Int
+  lineNetMinor         Int
+  lineVatMinor         Int
+  vatRateBp            Int      @default(2100)
+  currency             String   @default("CZK")
+  limitsSnapshot       Json?
+  featuresSnapshot     Json?
+  createdAt            DateTime @default(now())
+
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  pricingPlan PricingPlan? @relation(fields: [pricingPlanId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([planKey, planVersionKey])
 }
 
 model Payment {
-  id               String        @id @default(cuid())
-  orderId          String
-  status           PaymentStatus @default(PENDING)
-  amountCzk        Int
-  currency         String        @default("CZK")
-  provider         String?
-  providerPaymentId String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  orderId            String
+  status             PaymentStatus @default(PENDING)
+  amountGrossMinor   Int
+  currency           String        @default("CZK")
+  provider           String?
+  providerPaymentId  String?
+  providerCheckoutUrl String?
+  failureCode        String?
+  failureMessage     String?
+  rawProviderStatus  String?
+  /** @deprecated Prefer amountGrossMinor */
+  amountCzk          Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds PaymentRefund[]
+
+  @@unique([provider, providerPaymentId])
+  @@index([orderId, status])
+}
+
+/**
+ * Idempotent inbound payment provider events.
+ * Duplicate delivery must not double-grant entitlements.
+ */
+model PaymentWebhookEvent {
+  id               String    @id @default(cuid())
+  provider         String
+  eventId          String
+  eventType        String
+  payload          Json
+  signatureOk      Boolean   @default(false)
+  /** Provider event timestamp (unix sec) — replay window check. */
+  providerTimestamp Int?
+  /** True when rejected as replay outside tolerance (audit). */
+  replayRejected   Boolean   @default(false)
+  processedAt      DateTime?
+  processError     String?   @db.Text
+  createdAt        DateTime  @default(now())
+
+  @@unique([provider, eventId])
+  @@index([processedAt])
+  @@index([providerTimestamp])
+}
+
+model PaymentRefund {
+  id               String   @id @default(cuid())
+  orderId          String
+  paymentId        String?
+  amountMinor      Int
+  currency         String   @default("CZK")
+  reason           String?
+  providerRefundId String?
+  /** refund | chargeback | storno */
+  kind             String   @default("refund")
+  createdAt        DateTime @default(now())
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+}
+
+/**
+ * Product access grant — analysis/property-scoped when set.
+ * Never create on FAILED payment; PENDING_GRANT when pay succeeded but grant failed.
+ * B2C kinds: DEEP_ANALYSIS, BUYER_PASS, INVESTOR_PRO (+ FREE_TIER implicit).
+ */
+model Entitlement {
+  id          String            @id @default(cuid())
+  userId      String
+  orderId     String?
+  analysisId  String?
+  /** Optional property scope (Deep Analysis). */
+  propertyId  String?
+  productKey  String
+  kind        EntitlementKind   @default(LEGACY_PRODUCT)
+  /**
+   * Markets this entitlement unlocks. Default ["CZ"].
+   * Use ["*"] only for explicitly global products — never imply UAE from CZ Buyer Pass.
+   */
+  marketScope String[]          @default(["CZ"])
+  /** Paid vs free checkout vs manual admin — reporting must not mix (208/209). */
+  source      EntitlementSource @default(PAID_ORDER)
+  status      EntitlementStatus @default(ACTIVE)
+  /** Required when source = MANUAL_ADMIN. */
+  manualReason String?          @db.Text
+  manualActorUserId String?
+  manualGrantedAt DateTime?
+  /**
+   * Feature flags granted by this row (e.g. DEEP_ANALYSIS, ADVANCED_COMPARISON).
+   * Empty = derive from kind + productKey via EntitlementService config.
+   */
+  featureKeys String[]          @default([])
+  /** Content / engine version frozen at purchase (Deep Analysis refresh semantics). */
+  contentVersionKey String?
+  /** Hard end of access (Deep Analysis, Buyer Pass, Pro period). */
+  expiresAt   DateTime?
+  /**
+   * After this instant a new Deep Analysis purchase is required for a refreshed
+   * content version (not lifetime access).
+   */
+  refreshAfter DateTime?
+  /** Investor Pro: still usable while PAST_DUE until this instant. */
+  gracePeriodEndsAt DateTime?
+  billingInterval EntitlementBillingInterval @default(NONE)
+  cancelAtPeriodEnd Boolean @default(false)
+  trialEndsAt DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  grantedAt   DateTime?
+  revokedAt   DateTime?
+  revokeReason String?
+  /** Retry counter for PENDING_GRANT recovery. */
+  grantAttempts Int             @default(0)
+  lastGrantError String?        @db.Text
+  meta        Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order    Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  analysis PropertyAnalysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  property Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  manualActor User?          @relation("ManualEntitlementActor", fields: [manualActorUserId], references: [id], onDelete: SetNull)
+
+  @@unique([orderId])
+  @@index([userId, productKey, status])
+  @@index([userId, kind, status])
+  @@index([userId, propertyId, kind])
+  @@index([userId, status, expiresAt])
+  @@index([status, grantAttempts])
+  @@index([status, gracePeriodEndsAt])
+  @@index([source, status])
+  @@index([manualActorUserId])
+  @@index([marketScope])
+}
+
+/**
+ * Metered usage for entitlements / anti-scrape limits (Buyer Pass, Free tier).
+ * windowKey = calendar day (YYYY-MM-DD) or ISO week (YYYY-Www).
+ * scopeKey = propertyId or "_" when not property-scoped (unique-friendly).
+ */
+model UsageRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  featureKey String
+  metricKey  String
+  quantity   Int      @default(1)
+  propertyId String?
+  scopeKey   String   @default("_")
+  windowKey  String
+  meta       Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, featureKey, metricKey, windowKey, scopeKey])
+  @@index([userId, featureKey, windowKey])
+  @@index([userId, createdAt])
+}
+
+model PriceVersion {
+  id           String   @id @default(cuid())
+  productKey   String
+  versionKey   String
+  currency     String   @default("CZK")
+  /** Gross list price in minor units. */
+  amountGrossMinor Int
+  vatRateBp    Int      @default(2100)
+  activeFrom   DateTime @default(now())
+  activeTo     DateTime?
+  createdAt    DateTime @default(now())
+
+  @@unique([productKey, versionKey])
+  @@index([productKey, activeFrom])
+}
+
+/**
+ * Data-driven versioned catalog — UI must not hardcode plan prices.
+ * New commercial offers = new row / new versionKey; never mutate sold history.
+ */
+model PricingPlan {
+  id                 String             @id @default(cuid())
+  /** Stable product key across versions (basic_analysis, full_analysis, enterprise). */
+  key                String
+  versionKey         String
+  name               String
+  description        String?            @db.Text
+  billingType        PricingBillingType @default(ONE_TIME)
+  status             PricingPlanStatus  @default(DRAFT)
+  /** Gross list price in minor units (haléře). */
+  priceGrossMinor    Int
+  currency           String             @default("CZK")
+  /** Explicit MarketCode — plans are market-scoped (CZK plan ≠ AE AED plan). */
+  marketCode         String             @default("CZ")
+  /** ISO 3166-1 alpha-2. */
+  countryCode        String             @default("CZ")
+  /** Tax region for VAT/sales tax provider (may equal marketCode). */
+  taxRegion          String             @default("CZ")
+  vatRateBp          Int                @default(2100)
+  /** Entitlement product key granted on paid order. */
+  entitlesProductKey String
+  /** Soft limits e.g. { "analysesPerMonth": 1, "comparisonsMax": 4 }. */
+  limits             Json?
+  /** Feature flags / labels e.g. ["valuation", "scenarios", "financing"]. */
+  features           Json?
+  sortOrder          Int                @default(100)
+  /** Ops change note for this version. */
+  changeReason       String?            @db.Text
+  approvedAt         DateTime?
+  approvedByUserId   String?
+  /** Optional preview payload for admin UI before activate. */
+  previewJson        Json?
+  activeFrom         DateTime           @default(now())
+  activeTo           DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  orders        Order[]
+  orderItems    OrderItem[]
+  organizations Organization[]
+
+  @@unique([key, versionKey])
+  @@index([status, activeFrom])
+  @@index([key, status])
+  @@index([sortOrder])
+  @@index([marketCode, status])
+  @@index([marketCode, countryCode])
+  @@index([marketCode, taxRegion, status])
+}
+
+/**
+ * B2B SaaS tenant — real-estate agent, agency, developer, or channel partner.
+ */
+model Organization {
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  name      String
+  type      OrganizationType
+  /** Trust ladder for org-level KYC (badge). Distinct from listing verification. */
+  verificationStatus ListingVerificationStatus @default(UNVERIFIED)
+  /** Admin KYC workflow — PENDING / VERIFIED / REJECTED (Agent verification). */
+  kycStatus              OrganizationKycStatus @default(PENDING)
+  kycDecisionReason      String? @db.Text
+  kycReviewedAt          DateTime?
+  kycReviewedByUserId    String?
+  identityVerifiedAt     DateTime?
+  organizationVerifiedAt DateTime?
+  /** Current B2B PricingPlan key (agent_free, agent_pro, …). */
+  planKey     String @default("agent_free")
+  planStatus  OrganizationPlanStatus @default(ACTIVE)
+  pricingPlanId String?
+  planPeriodStart DateTime?
+  planPeriodEnd   DateTime?
+  /** Denormalized from PricingPlan.limits for fast gate checks. */
+  listingsLimit Int @default(5)
+  seatsLimit    Int @default(1)
+  /**
+   * B2B lead monetization — MODE A (PAY_PER_LEAD) or MODE B (SUCCESS_FEE).
+   * Controls how QualifiedBuyerLead revenue is recognized.
+   */
+  leadBillingMode OrganizationLeadBillingMode @default(PAY_PER_LEAD)
+  /** MODE A: gross price per delivered/accepted qualified lead (haléře). */
+  payPerLeadPriceMinor Int @default(49900)
+  /** MODE B: Majetio share of broker's actual commission (basis points, 1000 = 10%). */
+  successFeeBps Int @default(1000)
+  /** Attribution window in days — competing sources inside window → manual review. */
+  attributionWindowDays Int @default(30)
+  billingEmail  String?
+  ico           String?
+  dic           String?
+  website       String?
+  /**
+   * Explicit MarketCode for the tenant (B2B org operates in one primary market).
+   * Never derive from billing currency alone.
+   */
+  marketCode    String @default("CZ")
+  countryCode   String @default("CZ")
+  /** Primary billing / listing currency for the org. */
+  currency      String @default("CZK")
+  /**
+   * Markets the org may operate in (multi-select). Includes primary marketCode.
+   */
+  marketCoverage String[] @default(["CZ"])
+  /**
+   * Service line: AGENCY | BROKER | DEVELOPER | MIXED | OTHER
+   */
+  serviceType   String @default("AGENCY")
+  meta          Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members       OrganizationMember[]
+  properties    Property[]
+  orders        Order[]
+  planChanges   OrganizationPlanChange[]
+  listingBoosts ListingBoost[]
+  listingAnalyticsDaily ListingAnalyticsDaily[]
+  inquiries     Inquiry[]
+  qualifiedBuyerLeads QualifiedBuyerLead[]
+  successFeeRecords SuccessFeeRecord[]
+  revenueEvents RevenueEvent[]
+  leadAttributions LeadAttribution[]
+  leadDisputes  LeadDispute[]
+  leads         Lead[]
+  leadAssignments LeadAssignment[]
+  propertyTransactions PropertyTransaction[]
+  verificationDocuments OrganizationVerificationDocument[]
+  pricingPlan   PricingPlan? @relation(fields: [pricingPlanId], references: [id], onDelete: SetNull)
+
+  @@index([type, planKey])
+  @@index([planStatus])
+  @@index([verificationStatus])
+  @@index([kycStatus])
+  @@index([pricingPlanId])
+  @@index([marketCode, type])
+  @@index([marketCode, countryCode])
+  @@index([serviceType])
+}
+
+/**
+ * Protected KYC documents for Organization verification (Agent KYC).
+ * Never treat as listing verification docs.
+ */
+model OrganizationVerificationDocument {
+  id               String   @id @default(cuid())
+  organizationId   String
+  /** Storage key / opaque path — never public URL. */
+  storageKey       String
+  fileName         String
+  contentType      String
+  /** DataSensitivityClass.PROTECTED access only. */
+  sensitivity      DataSensitivityClass @default(PROTECTED)
+  uploadedByUserId String?
+  uploadedAt       DateTime @default(now())
+  reviewedAt       DateTime?
+  notes            String?  @db.Text
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, uploadedAt])
+}
+
+model OrganizationMember {
+  id             String                 @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationMemberRole @default(AGENT)
+  active         Boolean                @default(true)
+  invitedAt      DateTime               @default(now())
+  joinedAt       DateTime?
+  /** Broker onboarding profile (133/134) — public display name, not verification. */
+  displayName    String?
+  phonePublic    String?
+  bio            String?                @db.Text
+  onboardingStep String?                @default("profile")
+  onboardingCompletedAt DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, active])
+  @@index([organizationId, role])
+}
+
+/**
+ * Daily listing metrics for Agency Dashboard (135/136).
+ * Aggregate counters only — NEVER stores anonymous user PII / cookies / IPs.
+ */
+model ListingAnalyticsDaily {
+  id             String   @id @default(cuid())
+  propertyId     String
+  organizationId String
+  /** Calendar day UTC YYYY-MM-DD as Date at 00:00. */
+  day            DateTime @db.Date
+  impressions    Int      @default(0)
+  saves          Int      @default(0)
+  inquiries      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  property     Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, day])
+  @@index([organizationId, day])
+  @@index([propertyId, day])
+}
+
+/**
+ * Audit of B2B plan changes — downgrade marks excess listings OVER_LIMIT (no delete).
+ */
+model OrganizationPlanChange {
+  id               String                     @id @default(cuid())
+  organizationId   String
+  changeType       OrganizationPlanChangeType
+  fromPlanKey      String?
+  toPlanKey        String
+  fromListingsLimit Int?
+  toListingsLimit   Int?
+  activeListingsAtChange Int @default(0)
+  listingsMarkedOverLimit Int @default(0)
+  listingsRestoredWithinLimit Int @default(0)
+  actorUserId      String?
+  /** CTA copy / action hints for the org dashboard. */
+  actionRequired   Json?
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User?        @relation("OrgPlanChangeActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([changeType, createdAt])
+}
+
+/**
+ * MODE B — success fee from broker's actual commission on a closed deal.
+ * Lifecycle: POTENTIAL → PENDING_VERIFICATION → VERIFIED → INVOICED → PAID
+ * (or DISPUTED / CANCELLED / WRITTEN_OFF).
+ */
+model SuccessFeeRecord {
+  id                    String           @id @default(cuid())
+  organizationId        String
+  qualifiedBuyerLeadId  String?
+  propertyId            String?
+  agentUserId           String?
+  status                SuccessFeeStatus @default(POTENTIAL)
+  /** Actual broker commission (gross, haléře) — claimed then verified. */
+  brokerCommissionGrossMinor Int
+  /** Snapshot of org successFeeBps at creation. */
+  feeBps                Int
+  /** Majetio fee = round(brokerCommission * feeBps / 10000). */
+  feeAmountMinor        Int
+  currency              String           @default("CZK")
+  /** Evidence of closed deal / commission (refs only — no PAN). */
+  evidenceMeta          Json?
+  verifiedAt            DateTime?
+  verifiedByUserId      String?
+  invoicedAt            DateTime?
+  invoiceRef            String?
+  paidAt                DateTime?
+  /** Link to canonical ledger row once recognized. */
+  revenueEventId        String?          @unique
+  notes                 String?          @db.Text
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qualifiedBuyerLead QualifiedBuyerLead? @relation(fields: [qualifiedBuyerLeadId], references: [id], onDelete: SetNull)
+  verifiedBy         User?              @relation("SuccessFeeVerifier", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  revenueEvent       RevenueEvent?      @relation(fields: [revenueEventId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([qualifiedBuyerLeadId])
+  @@index([status, verifiedAt])
+}
+
+/**
+ * Canonical revenue ledger — subscriptions, analyses, leads, mortgages, boosts.
+ * Double-count guard: unique (sourceType, sourceEntityId) + idempotencyKey.
+ */
+model RevenueEvent {
+  id               String                @id @default(cuid())
+  /** Client/server idempotency token (e.g. ppl:{leadId}, fee:{successFeeId}). */
+  idempotencyKey   String                @unique
+  sourceType       RevenueEventSourceType
+  sourceEntityType String
+  sourceEntityId   String
+  organizationId   String?
+  userId           String?
+  amountGrossMinor Int
+  currency         String                @default("CZK")
+  status           RevenueEventStatus    @default(PENDING)
+  recognizedAt     DateTime?
+  reversedAt       DateTime?
+  reverseReason    String?
+  /** Optional link to Order / Payment for commerce events. */
+  orderId          String?
+  meta             Json?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  successFee   SuccessFeeRecord?
+
+  @@unique([sourceType, sourceEntityId])
+  @@index([organizationId, status, recognizedAt])
+  @@index([sourceType, status, createdAt])
+  @@index([orderId])
+}
+
+/**
+ * Lead attribution inside a configurable window.
+ * Multiple competing sources → MULTI_SOURCE_REVIEW (manual).
+ */
+model LeadAttribution {
+  id                   String                @id @default(cuid())
+  organizationId       String
+  qualifiedBuyerLeadId String?
+  /** Mortgage / legacy Lead.id when attributing financing leads. */
+  mortgageLeadId       String?
+  status               LeadAttributionStatus @default(UNATTRIBUTED)
+  /** Touchpoints: [{ sourceKey, channel, touchedAt, campaign? }]. */
+  sources              Json
+  primarySourceKey     String?
+  windowStartsAt       DateTime
+  windowEndsAt         DateTime
+  attributedAt         DateTime?
+  reviewNotes          String?               @db.Text
+  reviewedAt           DateTime?
+  reviewedByUserId     String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qualifiedBuyerLead QualifiedBuyerLead? @relation(fields: [qualifiedBuyerLeadId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([qualifiedBuyerLeadId])
+  @@index([mortgageLeadId])
+  @@index([status, windowEndsAt])
+}
+
+/**
+ * Dispute workflow — agent cannot void a billable lead without evidence.
+ * Opening without evidence → EVIDENCE_REQUIRED (lead stays billable).
+ */
+model LeadDispute {
+  id                   String            @id @default(cuid())
+  organizationId       String
+  qualifiedBuyerLeadId String
+  openedByUserId       String
+  status               LeadDisputeStatus @default(OPEN)
+  reason               LeadDisputeReason
+  agentStatement       String            @db.Text
+  evidenceRequired     Boolean           @default(true)
+  evidenceSubmittedAt  DateTime?
+  evidenceMeta         Json?
+  reviewNotes          String?           @db.Text
+  resolvedAt           DateTime?
+  resolvedByUserId     String?
+  /** When UPHELD, linked RevenueEvent may be reversed. */
+  revenueEventId       String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qualifiedBuyerLead QualifiedBuyerLead @relation(fields: [qualifiedBuyerLeadId], references: [id], onDelete: Cascade)
+  openedBy           User               @relation("LeadDisputeOpener", fields: [openedByUserId], references: [id], onDelete: Cascade)
+  resolvedBy         User?              @relation("LeadDisputeResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([qualifiedBuyerLeadId, status])
+  @@index([openedByUserId, createdAt])
+  @@index([status, createdAt])
+}
+
+/**
+ * Paid listing Boost — sponsored placement only.
+ *
+ * FIREWALL (non-negotiable):
+ * - Does NOT mutate Majetio Score, valuation, risk analysis, or organic ORDER BY.
+ * - Search must expose boosts only via `sponsoredPlacements` (never mixed into organic rank).
+ * - Every public render must carry label "Sponzorováno".
+ */
+model ListingBoost {
+  id             String             @id @default(cuid())
+  propertyId     String
+  organizationId String?
+  /** Purchaser (agent / org member). */
+  purchasedByUserId String
+  orderId        String?
+  product        ListingBoostProduct
+  productKey     String
+  status         ListingBoostStatus @default(PENDING_PAYMENT)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  /**
+   * Ordering weight among sponsored slots ONLY.
+   * Must never be read by organic search / score / valuation engines.
+   */
+  placementWeight Int @default(100)
+  /** Immutable disclosure flag snapshot at activation. */
+  sponsoredLabel  String @default("Sponzorováno")
+  eligibilitySnapshot Json?
+  meta           Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  purchasedBy  User          @relation("ListingBoostPurchaser", fields: [purchasedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, status, endsAt])
+  @@index([status, startsAt, endsAt])
+  @@index([organizationId, status])
+  @@index([orderId])
+  @@index([productKey, status])
+}
+
+/**
+ * Promotions / promo codes — server-validated only; affect quote before Order snapshot.
+ */
+model Promotion {
+  id              String            @id @default(cuid())
+  code            String            @unique
+  name            String?
+  discountType    PromoDiscountType
+  /** Percent in basis points (1000 = 10%) or fixed minor units. */
+  discountValue   Int
+  currency        String            @default("CZK")
+  /** Empty = all plans; otherwise PricingPlan.key allow-list. */
+  planKeys        String[]
+  maxRedemptions  Int?
+  redemptionCount Int               @default(0)
+  maxPerUser      Int?
+  activeFrom      DateTime          @default(now())
+  activeTo        DateTime?
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  orders      Order[]
+  redemptions PromotionRedemption[]
+
+  @@index([active, activeFrom])
+}
+
+model PromotionRedemption {
+  id          String   @id @default(cuid())
+  promotionId String
+  userId      String
+  orderId     String?
+  createdAt   DateTime @default(now())
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId, userId])
+  @@index([userId, createdAt])
+}
+
+model PromoCode {
+  id            String            @id @default(cuid())
+  code          String            @unique
+  discountType  PromoDiscountType
+  /** Percent in basis points (1000 = 10%) or fixed minor units. */
+  discountValue Int
+  currency      String            @default("CZK")
+  productKeys   String[]
+  maxRedemptions Int?
+  redemptionCount Int             @default(0)
+  activeFrom    DateTime          @default(now())
+  activeTo      DateTime?
+  active        Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+
+  orders      Order[]
+  redemptions PromoRedemption[]
+}
+
+model PromoRedemption {
+  id         String   @id @default(cuid())
+  promoCodeId String
+  userId     String
+  orderId    String?
+  createdAt  DateTime @default(now())
+
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([promoCodeId, userId])
 }
 
 model Partner {
+  id          String                 @id @default(cuid())
+  slug        String?                @unique
+  name        String
+  type        String
+  /** Primary marketplace category (optional; offerings can vary). */
+  primaryCategory PartnerServiceCategory?
+  email       String?
+  phone       String?
+  website     String?
+  active      Boolean                @default(true)
+  metadata    Json?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  agreements  PartnerCommercialAgreement[]
+  offerings   PartnerServiceOffering[]
+}
+
+/**
+ * Commercial terms with a marketplace partner — fixed fee and/or revenue share.
+ */
+model PartnerCommercialAgreement {
+  id                 String                   @id @default(cuid())
+  partnerId          String
+  serviceCategory    PartnerServiceCategory
+  compensationModel  PartnerCompensationModel
+  /** Fixed fee per engagement (haléře), when FIXED or HYBRID. */
+  fixedFeeMinor      Int?
+  /** Revenue share in basis points, when REVENUE_SHARE or HYBRID. */
+  revenueShareBps    Int?
+  currency           String                   @default("CZK")
+  status             PartnerAgreementStatus   @default(DRAFT)
+  termsVersion       String
+  activeFrom         DateTime                 @default(now())
+  activeTo           DateTime?
+  meta               Json?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  partner   Partner                 @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  offerings PartnerServiceOffering[]
+
+  @@index([partnerId, status])
+  @@index([serviceCategory, status])
+  @@index([compensationModel])
+}
+
+model PartnerServiceOffering {
+  id           String                 @id @default(cuid())
+  partnerId    String
+  agreementId  String?
+  category     PartnerServiceCategory
+  name         String
+  description  String?                @db.Text
+  active       Boolean                @default(true)
+  sortOrder    Int                    @default(100)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  partner   Partner                     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  agreement PartnerCommercialAgreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull)
+
+  @@index([partnerId, active, category])
+  @@index([agreementId])
+}
+
+/**
+ * Expert Review / Investment Audit — human-in-the-loop (not auto engines).
+ */
+model ProfessionalServiceRequest {
+  id               String                     @id @default(cuid())
+  kind             ProfessionalServiceKind
+  status           ProfessionalServiceStatus  @default(DRAFT)
+  propertyId       String?
+  analysisId       String?
+  requesterUserId  String
+  assigneeUserId   String?
+  orderId          String?
+  /** Checklist of required buyer/seller inputs before ASSIGNED. */
+  inputsChecklist  Json?
+  inputsReceivedAt DateTime?
+  assignedAt       DateTime?
+  reviewStartedAt  DateTime?
+  deliveredAt      DateTime?
+  closedAt         DateTime?
+  /** Non-sensitive delivery summary for requester (no PROTECTED deal prices). */
+  deliverySummary  String?                    @db.Text
+  /** Staff-only XSS-safe notes. */
+  internalNotes    String?                    @db.Text
+  meta             Json?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  property  Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  requester User      @relation("ProfessionalServiceRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  assignee  User?     @relation("ProfessionalServiceAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  activities ProfessionalServiceActivity[]
+
+  @@index([kind, status, createdAt])
+  @@index([requesterUserId, createdAt])
+  @@index([assigneeUserId, status])
+  @@index([propertyId, kind])
+}
+
+model ProfessionalServiceActivity {
   id        String   @id @default(cuid())
-  name      String
+  requestId String
   type      String
-  email     String?
-  phone     String?
-  active    Boolean  @default(true)
-  metadata  Json?
+  note      String?  @db.Text
+  actorUserId String?
+  meta      Json?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  request ProfessionalServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+}
+
+/**
+ * Property deal record — sensitivity PROTECTED.
+ * Agreed price must only be read via audited accessor (never public DTOs / analytics).
+ * Purchase Concierge agency promises gated by TRANSACTION_SUCCESS_FEE_ENABLED=false default.
+ */
+model PropertyTransaction {
+  id                 String                    @id @default(cuid())
+  propertyId         String
+  buyerUserId        String?
+  agentUserId        String?
+  organizationId     String?
+  status             PropertyTransactionStatus @default(EXPLORING)
+  sensitivityClass   DataSensitivityClass      @default(PROTECTED)
+  currency           String                    @default("CZK")
+  /**
+   * Agreed purchase price in minor units — PROTECTED / Sensitive.
+   * Never log, never expose in public serializers, never send to partners without consent.
+   */
+  agreedPriceMinor   Int?
+  agreedPriceSetAt   DateTime?
+  /** Concierge / success-fee path — only when feature flag enabled. */
+  conciergeEnabled   Boolean                   @default(false)
+  closedAt           DateTime?
+  meta               Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyer        User?         @relation("PropertyTransactionBuyer", fields: [buyerUserId], references: [id], onDelete: SetNull)
+  agent        User?         @relation("PropertyTransactionAgent", fields: [agentUserId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  accessLogs   PropertyTransactionAccessLog[]
+
+  @@index([propertyId, status])
+  @@index([buyerUserId, status])
+  @@index([organizationId, status])
+  @@index([sensitivityClass, status])
+  @@index([status, updatedAt])
+}
+
+/** Audit every privileged read/write of transaction financials. */
+model PropertyTransactionAccessLog {
+  id            String   @id @default(cuid())
+  transactionId String
+  actorUserId   String?
+  action        String
+  /** Never store the price value here — only field names accessed. */
+  fieldsAccessed String[]
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  transaction PropertyTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model Notification {
@@ -1333,23 +4609,49 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum AuditActorType {
+  USER
+  SYSTEM
+  SERVICE
+  ANONYMOUS
+}
+
 model AuditLog {
-  id        String   @id @default(cuid())
-  actorId   String?
-  action    String
-  entity    String
-  entityId  String?
-  ip        String?
-  userAgent String?
-  meta      Json?
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  actorId        String?
+  /** USER | SYSTEM | SERVICE | ANONYMOUS — never store credentials. */
+  actorType      AuditActorType @default(USER)
+  action         String
+  /** Legacy entity name — keep for existing readers; prefer entityType. */
+  entity         String
+  entityType     String?
+  entityId       String?
+  reason         String?  @db.Text
+  /** Redacted human-readable before state — never secrets/tokens. */
+  beforeSummary  String?  @db.Text
+  /** Redacted human-readable after state — never secrets/tokens. */
+  afterSummary   String?  @db.Text
+  correlationId  String?
+  ip             String?
+  userAgent      String?
+  /**
+   * Optional structured meta — MUST be pre-sanitized (no secrets).
+   * Append-only table: updates/deletes blocked at DB + app layer.
+   */
+  meta           Json?
+  createdAt      DateTime @default(now())
 
   actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([entity, entityId])
+  @@index([entityType, entityId])
   @@index([action])
   @@index([createdAt])
   @@index([actorId])
+  @@index([actorType, createdAt])
+  @@index([correlationId])
+  @@index([action, createdAt])
+  @@index([entityType, action, createdAt])
 }
 
 model AppConfiguration {
@@ -1357,8 +4659,787 @@ model AppConfiguration {
   key         String   @unique
   value       Json
   description String?
+  /** BUSINESS_LIMIT | FEATURE | OPERATIONAL — never store raw secrets here. */
+  category    String   @default("BUSINESS_LIMIT")
   updatedAt   DateTime @updatedAt
   updatedById String?
 
   updatedBy User? @relation("ConfigUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+// ─── HypotekaJasne integration (Prompt 13 / Part 1) ─────────────────────────
+
+enum MortgageOfferStatus {
+  ACTIVE
+  REVIEW_REQUIRED
+  INACTIVE
+  STALE
+}
+
+enum MortgageDataTier {
+  LIVE
+  CACHED
+  VERIFIED
+}
+
+model MortgageOffer {
+  id               String              @id @default(cuid())
+  externalId       String?             @unique
+  bankName         String
+  productName      String
+  interestRateFrom Float
+  aprFrom          Float?
+  fixationYears    Int?
+  ltvMaxPct        Float?
+  ltvMinPct        Float?
+  arrangementFeeCzk Int?
+  valuationFeeCzk  Int?
+  monthlyFeeCzk    Int?
+  source           String              @default("hypotekajasne")
+  status           MortgageOfferStatus @default(ACTIVE)
+  dataTier         MortgageDataTier      @default(CACHED)
+  retrievedAt      DateTime
+  verifiedAt       DateTime?
+  staleMarkedAt    DateTime?
+  schemaVersion    String
+  dedupeKey        String
+  anomalyFlags     Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  rateHistory MortgageRateHistory[]
+
+  @@unique([dedupeKey])
+  @@index([status, dataTier])
+  @@index([retrievedAt])
+  @@index([bankName])
+}
+
+/** Append-only rate change log — row created only when rate/APR changes. */
+model MortgageRateHistory {
+  id                       String   @id @default(cuid())
+  offerId                  String
+  interestRateFrom         Float
+  aprFrom                  Float?
+  fixationYears            Int?
+  previousInterestRateFrom Float?
+  previousAprFrom          Float?
+  changeDetectedAt         DateTime @default(now())
+  source                   String
+  ingestionRunId           String?
+
+  offer MortgageOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, changeDetectedAt])
+  @@index([ingestionRunId])
+}
+
+// ─── International markets (Prompt 17.1) ─────────────────────────────────────
+
+/**
+ * Launch lifecycle for a market. Public UI may only treat BETA|LIVE as active
+ * (and only when enabled + hasMinimumPublicData).
+ */
+enum MarketLaunchStatus {
+  PLANNED
+  RESEARCH
+  BETA
+  LIVE
+  PAUSED
+}
+
+enum MarketMeasurementSystem {
+  METRIC
+  IMPERIAL
+}
+
+/**
+ * Optional DB mirror of MarketRegistry for ops overrides.
+ * Code plugins remain source of truth for definitions / capabilities.
+ */
+model Market {
+  id                       String                  @id @default(cuid())
+  marketCode               String                  @unique
+  countryCode              String
+  displayNameEn            String
+  displayNameLocal         String
+  defaultLocale            String
+  supportedLocales         String[]                @default([])
+  defaultCurrency          String
+  timezone                 String
+  measurementSystem        MarketMeasurementSystem @default(METRIC)
+  enabled                  Boolean                 @default(false)
+  launchStatus             MarketLaunchStatus      @default(PLANNED)
+  regulatoryConfigVersion  String
+  hasMinimumPublicData     Boolean                 @default(false)
+  /**
+   * Kill-switch snapshot (also mirrored in process store for hot path).
+   * { pauseNewListings, pauseValuations, pauseLeadRouting, reviewRequired, … }
+   */
+  killSwitch               Json?
+  /** Optional JSON: regions[], notes, feature overrides. */
+  metadata                 Json?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+
+  @@index([launchStatus, enabled])
+  @@index([countryCode])
+}
+
+/**
+ * Persisted FX observation (Prompt 17.2).
+ * Calculations must copy/freeze a snapshot — never re-read live rates for history.
+ */
+model ExchangeRateSnapshot {
+  id             String   @id @default(cuid())
+  baseCurrency   String
+  quoteCurrency  String
+  /** Decimal string — units of quote per 1 base. */
+  rate           String
+  source         String
+  /** UTC instant when observed. */
+  observedAt     DateTime
+  providerRef    String?
+  meta           Json?
+  createdAt      DateTime @default(now())
+
+  @@unique([baseCurrency, quoteCurrency, observedAt, source])
+  @@index([baseCurrency, quoteCurrency, observedAt])
+  @@index([observedAt])
+}
+
+/**
+ * Versioned regulatory rule (Prompt 17.4).
+ * Code packs seed runtime; this table supports admin overrides.
+ */
+model RegulatoryRule {
+  id                              String                @id @default(cuid())
+  code                            String
+  marketCode                      String
+  kind                            RegulatoryRuleKind
+  version                         String
+  status                          RegulatoryRuleStatus  @default(DRAFT)
+  validFrom                       DateTime
+  validTo                         DateTime?
+  verifiedAt                      DateTime?
+  verifiedBy                      String?
+  titleEn                         String
+  summaryEn                       String                @db.Text
+  payload                         Json
+  requiresLegalVerificationNotice Boolean               @default(true)
+  /** When set and past due → admin attention queue (stale regulation). */
+  reviewRequiredAt                DateTime?
+  sourceUrl                       String?
+  sourceLabel                     String?
+  /** Demo / research — excluded from production resolution unless allowDemo. */
+  isDemo                          Boolean               @default(false)
+  createdAt                       DateTime              @default(now())
+  updatedAt                       DateTime              @updatedAt
+
+  @@unique([marketCode, code, version])
+  @@index([marketCode, kind, status])
+  @@index([validFrom, validTo])
+  @@index([isDemo])
+  @@index([reviewRequiredAt])
+}
+
+/**
+ * Versioned market due-diligence checklist pack (Rules 153–154).
+ */
+model DueDiligenceChecklistPack {
+  id          String    @id @default(cuid())
+  marketCode  String
+  version     String
+  titleEn     String
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  isDemo      Boolean   @default(false)
+  /** JSON array of DueDiligenceChecklistItem. */
+  items       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([marketCode, version])
+  @@index([marketCode, isDemo])
+  @@index([reviewedAt])
+}
+
+/** Off-plan developer payment plan (Prompt 17.4). */
+model PropertyPaymentPlan {
+  id               String   @id @default(cuid())
+  propertyId       String?
+  marketCode       String
+  currency         String
+  totalPriceMinor  BigInt
+  developerName    String?
+  projectName      String?
+  version          String   @default("1")
+  fxSnapshotId     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  property Property?                 @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  phases   PropertyPaymentPlanPhase[]
+
+  @@index([propertyId])
+  @@index([marketCode])
+}
+
+model PropertyPaymentPlanPhase {
+  id                      String               @id @default(cuid())
+  planId                  String
+  kind                    PaymentPlanPhaseKind
+  labelEn                 String
+  sequence                Int
+  amountBps               Int                  @default(0)
+  amountMinorOverride     BigInt?
+  dueDate                 DateTime?
+  constructionPctTrigger  Int?
+  notesEn                 String?
+  createdAt               DateTime             @default(now())
+
+  plan PropertyPaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, sequence])
+}
+
+/** Financing partner catalog (Prompt 17.4). */
+model FinancingProvider {
+  id                        String                @id @default(cuid())
+  code                      String                @unique
+  displayNameEn             String
+  marketCodes               String[]
+  kind                      FinancingProviderKind @default(UNAVAILABLE)
+  leadHandoffEnabled        Boolean               @default(false)
+  ratePackId                String?
+  regulatoryConfigVersion   String?
+  notesEn                   String?               @db.Text
+  isActive                  Boolean               @default(true)
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+
+  @@index([isActive])
+}
+
+// ─── Platform governance (Prompt 6) ──────────────────────────────────────────
+
+enum FeatureFlagScope {
+  GLOBAL
+  MARKET
+  USER_PERCENTAGE
+}
+
+/**
+ * Centralized feature flags + kill switches.
+ * Kill switches: isKillSwitch=true (payments, listings, valuation, markets).
+ */
+model FeatureFlag {
+  id             String           @id @default(cuid())
+  key            String
+  scope          FeatureFlagScope @default(GLOBAL)
+  /** Empty string for GLOBAL / USER_PERCENTAGE (Postgres unique + NULL). */
+  marketCode     String           @default("")
+  /** 0–100 when scope = USER_PERCENTAGE */
+  percentage     Int?
+  enabled        Boolean          @default(false)
+  isKillSwitch   Boolean          @default(false)
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  changes FeatureFlagChange[]
+
+  @@unique([key, scope, marketCode])
+  @@index([isKillSwitch, enabled])
+  @@index([scope, marketCode])
+  @@index([key])
+}
+
+model FeatureFlagChange {
+  id           String   @id @default(cuid())
+  featureFlagId String
+  actorUserId  String?
+  reason       String   @db.Text
+  oldEnabled   Boolean
+  newEnabled   Boolean
+  oldValueJson Json?
+  newValueJson Json?
+  createdAt    DateTime @default(now())
+
+  featureFlag FeatureFlag @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
+
+  @@index([featureFlagId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+enum CmsContentKind {
+  GUIDE
+  FAQ
+  METHODOLOGY
+  REGULATORY
+}
+
+enum CmsContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+}
+
+enum ContentTranslationStatus {
+  MACHINE_DRAFT
+  REVIEWED
+  APPROVED
+}
+
+/** Lightweight in-app CMS when no external CMS is wired. */
+model CmsContent {
+  id                String          @id @default(cuid())
+  slug              String
+  kind              CmsContentKind
+  status            CmsContentStatus @default(DRAFT)
+  title             String
+  bodyMarkdown      String           @db.Text
+  marketCode        String           @default("CZ")
+  locale            String           @default("cs-CZ")
+  /** Regulatory / financial copy must declare source. */
+  isRegulatory      Boolean          @default(false)
+  sourceLabel       String?
+  sourceUrl         String?
+  reviewRequiredAt  DateTime?
+  lastReviewedAt    DateTime?
+  publishedAt       DateTime?
+  createdByUserId   String?
+  updatedByUserId   String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  translations ContentTranslation[]
+
+  @@unique([slug, locale, marketCode])
+  @@index([status, kind])
+  @@index([isRegulatory, reviewRequiredAt])
+  @@index([marketCode, status])
+}
+
+model ContentTranslation {
+  id              String                   @id @default(cuid())
+  contentId       String
+  locale          String
+  status          ContentTranslationStatus @default(MACHINE_DRAFT)
+  title           String
+  bodyMarkdown    String                   @db.Text
+  reviewedAt      DateTime?
+  reviewedByUserId String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  content CmsContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, locale])
+  @@index([status])
+}
+
+enum IncidentCategory {
+  DATA
+  SECURITY
+  PAYMENTS
+  AVAILABILITY
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  MITIGATED
+  RESOLVED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model PlatformIncident {
+  id              String           @id @default(cuid())
+  title           String
+  summary         String           @db.Text
+  category        IncidentCategory
+  severity        IncidentSeverity @default(MEDIUM)
+  status          IncidentStatus   @default(OPEN)
+  marketCode      String?
+  openedByUserId  String?
+  ownerUserId     String?
+  resolvedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([status, severity])
+  @@index([category, status])
+  @@index([createdAt])
+}
+
+// ─── Ops Control Center — Incident / Audit / Dataset (126–138, 218–227) ─────
+
+/**
+ * Incident severity (spec 126–131). SEV1 = highest urgency.
+ * Distinct from legacy PlatformIncident.IncidentSeverity (LOW…CRITICAL).
+ */
+enum IncidentSevLevel {
+  SEV1
+  SEV2
+  SEV3
+  SEV4
+}
+
+enum IncidentOpsStatus {
+  OPEN
+  ACKNOWLEDGED
+  INVESTIGATING
+  MITIGATED
+  RESOLVED
+  CLOSED
+}
+
+enum IncidentTimelineEventType {
+  CREATED
+  STATUS_CHANGE
+  SEVERITY_CHANGE
+  NOTE
+  OWNER_CHANGE
+  LINK_ADDED
+  LINK_REMOVED
+  SYSTEM
+}
+
+/**
+ * Canonical ops Incident (126–131).
+ * PlatformIncident remains a lightweight category view; this is the full model.
+ */
+model Incident {
+  id               String            @id @default(cuid())
+  title            String
+  description      String            @db.Text
+  severity         IncidentSevLevel  @default(SEV3)
+  status           IncidentOpsStatus @default(OPEN)
+  /** Primary owner (ops user id). */
+  ownerUserId      String?
+  openedByUserId   String?
+  startedAt        DateTime          @default(now())
+  resolvedAt       DateTime?
+  /** System keys affected, e.g. payments, imports, valuation. */
+  affectedSystems  String[]          @default([])
+  internalNotes    String?           @db.Text
+  marketCode       String?
+  correlationId    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  timeline      IncidentTimelineEvent[]
+  linkedEntities IncidentLinkedEntity[]
+
+  @@index([status, severity])
+  @@index([ownerUserId, status])
+  @@index([startedAt])
+  @@index([resolvedAt])
+  @@index([correlationId])
+  @@index([createdAt])
+}
+
+model IncidentTimelineEvent {
+  id          String                   @id @default(cuid())
+  incidentId  String
+  eventType   IncidentTimelineEventType @default(NOTE)
+  /** Actor who recorded the event (nullable for SYSTEM). */
+  actorUserId String?
+  message     String                   @db.Text
+  /** Redacted payload — no secrets. */
+  meta        Json?
+  occurredAt  DateTime                 @default(now())
+  createdAt   DateTime                 @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+model IncidentLinkedEntity {
+  id         String   @id @default(cuid())
+  incidentId String
+  entityType String
+  entityId   String
+  label      String?
+  linkedAt   DateTime @default(now())
+  linkedByUserId String?
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@index([incidentId])
+}
+
+enum DatasetHealthStatus {
+  HEALTHY
+  STALE
+  DEGRADED
+  DISABLED
+}
+
+enum DatasetUpdateFrequency {
+  REALTIME
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  MANUAL
+  UNKNOWN
+}
+
+/**
+ * Dataset Registry — governance metadata (218–227).
+ */
+model DatasetRegistry {
+  id                 String                 @id @default(cuid())
+  /** Stable machine key, e.g. properties.canonical, fx.ecb */
+  key                String                 @unique
+  name               String
+  description        String?                @db.Text
+  ownerUserId        String?
+  stewardUserId      String?
+  /** Source system / provider label (not credentials). */
+  source             String
+  sourceRef          String?
+  updateFrequency    DatasetUpdateFrequency @default(UNKNOWN)
+  /** Max acceptable staleness in minutes for SLA. */
+  qualitySlaMinutes  Int?
+  /** Target DQ score 0–100. */
+  qualitySlaScoreMin Float?
+  healthStatus       DatasetHealthStatus    @default(HEALTHY)
+  lastRefreshedAt    DateTime?
+  marketCode         String?
+  tags               String[]               @default([])
+  metadata           Json?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  qualityScores DatasetQualityScore[]
+  upstreamOf    DatasetLineage[] @relation("LineageUpstream")
+  downstreamOf  DatasetLineage[] @relation("LineageDownstream")
+
+  @@index([healthStatus])
+  @@index([ownerUserId])
+  @@index([stewardUserId])
+  @@index([source])
+  @@index([lastRefreshedAt])
+  @@index([marketCode, healthStatus])
+}
+
+model DatasetQualityScore {
+  id              String   @id @default(cuid())
+  datasetId       String
+  /** Overall 0–100. */
+  score           Float
+  completeness    Float?
+  freshness       Float?
+  consistency     Float?
+  validity        Float?
+  sampleSize      Int?
+  notes           String?  @db.Text
+  scoredAt        DateTime @default(now())
+  scoredByUserId  String?
+  metrics         Json?
+
+  dataset DatasetRegistry @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([datasetId, scoredAt])
+  @@index([scoredAt])
+}
+
+enum DatasetLineageKind {
+  DERIVES_FROM
+  ENRICHES
+  JOINS
+  VALIDATES
+  MIRRORS
+}
+
+/** Directed dependency: upstream → downstream. */
+model DatasetLineage {
+  id                 String             @id @default(cuid())
+  upstreamDatasetId  String
+  downstreamDatasetId String
+  kind               DatasetLineageKind @default(DERIVES_FROM)
+  notes              String?
+  createdAt          DateTime           @default(now())
+
+  upstream   DatasetRegistry @relation("LineageUpstream", fields: [upstreamDatasetId], references: [id], onDelete: Cascade)
+  downstream DatasetRegistry @relation("LineageDownstream", fields: [downstreamDatasetId], references: [id], onDelete: Cascade)
+
+  @@unique([upstreamDatasetId, downstreamDatasetId, kind])
+  @@index([upstreamDatasetId])
+  @@index([downstreamDatasetId])
+}
+
+// ─── Ops Admin API — notes & assignments (151–155, 182–192) ─────────────────
+
+enum AdminEntityKind {
+  PROPERTY
+  USER
+  ORGANIZATION
+  LEAD
+  ORDER
+  INCIDENT
+  DATASET
+  IMPORT_JOB
+}
+
+enum AdminAssignmentStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+/**
+ * Private staff notes on any ops entity — never exposed on public DTOs.
+ */
+model AdminEntityNote {
+  id              String          @id @default(cuid())
+  entityKind      AdminEntityKind
+  entityId        String
+  body            String          @db.Text
+  authorUserId    String
+  isPinned        Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  @@index([entityKind, entityId, createdAt])
+  @@index([authorUserId, createdAt])
+  @@index([deletedAt])
+}
+
+/**
+ * Simple ops assignment (owner / watcher) — not a universal task system.
+ */
+model AdminAssignment {
+  id               String                @id @default(cuid())
+  entityKind       AdminEntityKind
+  entityId         String
+  assigneeUserId   String
+  assignedByUserId String
+  status           AdminAssignmentStatus @default(OPEN)
+  dueAt            DateTime?
+  note             String?               @db.Text
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  completedAt      DateTime?
+
+  @@index([assigneeUserId, status])
+  @@index([entityKind, entityId, status])
+  @@index([assignedByUserId, createdAt])
+  @@index([dueAt, status])
+}
+
+// ─── System health, jobs, DLQ (139–150, 166–171) ─────────────────────────────
+
+enum SystemComponentKind {
+  DATABASE
+  QUEUE
+  PAYMENTS
+  SEARCH
+  EXTERNAL_PROVIDER
+}
+
+enum SystemComponentHealthStatus {
+  UP
+  DEGRADED
+  DOWN
+  UNKNOWN
+}
+
+enum SystemJobKind {
+  PROPERTY_RECALC
+  PROPERTY_EVALUATION
+  PROPERTY_MERGE
+  MODEL_SHADOW_EVAL
+  GENERIC
+}
+
+enum SystemJobStatus {
+  QUEUED
+  RUNNING
+  RETRYING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  DEAD_LETTER
+}
+
+/**
+ * Unified background job row — enqueue returns immediately; workers claim jobs.
+ */
+model SystemJob {
+  id              String          @id @default(cuid())
+  kind            SystemJobKind
+  status          SystemJobStatus @default(QUEUED)
+  priority        Int             @default(100)
+  payload         Json
+  /** Progress 0–100. */
+  progressPct     Int             @default(0)
+  attempts        Int             @default(0)
+  maxAttempts     Int             @default(5)
+  lastError       String?         @db.Text
+  rateLimitKey    String?
+  scheduledAt     DateTime        @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdByUserId String?
+  correlationId   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  deadLetters SystemJobDeadLetter[]
+
+  @@index([status, scheduledAt])
+  @@index([kind, status])
+  @@index([rateLimitKey, createdAt])
+  @@index([correlationId])
+  @@index([createdAt])
+}
+
+model SystemJobDeadLetter {
+  id          String   @id @default(cuid())
+  jobId       String
+  kind        SystemJobKind
+  payload     Json
+  error       String   @db.Text
+  attempts    Int
+  failedAt    DateTime @default(now())
+  requeuedAt  DateTime?
+  meta        Json?
+
+  job SystemJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([kind, failedAt])
+  @@index([failedAt])
+  @@index([jobId])
+}
+
+/** Latest probe result per component (optional cache for dashboards). */
+model SystemHealthProbe {
+  id           String                      @id @default(cuid())
+  component    SystemComponentKind
+  /** Provider key for EXTERNAL_PROVIDER, else component name. */
+  componentKey String
+  status       SystemComponentHealthStatus @default(UNKNOWN)
+  latencyMs    Int?
+  message      String?
+  checkedAt    DateTime                    @default(now())
+  meta         Json?
+
+  @@unique([component, componentKey])
+  @@index([status, checkedAt])
 }

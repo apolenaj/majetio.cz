@@ -1,9 +1,16 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { AccountSidebar } from "@/components/account/account-sidebar";
 import { Logo } from "@/components/brand/logo";
+import { CompareTray } from "@/components/comparisons/compare-tray";
 import { MobileBottomNavigation } from "@/components/navigation/mobile-nav";
 import { Container } from "@/components/ui/container";
+
+/** User-specific account surfaces must never be indexed (Part 2/D). */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function AccountLayout({
   children,
@@ -42,6 +49,7 @@ export default function AccountLayout({
       </Container>
 
       <MobileBottomNavigation />
+      <CompareTray />
     </div>
   );
 }

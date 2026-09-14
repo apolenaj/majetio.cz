@@ -286,15 +286,35 @@ export function PropertySearchFilters({
   React.useEffect(() => {
     if (!sheetOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSheetOpen(false);
+      if (e.key === "Escape") {
+        setSheetOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !sheetRef.current) return;
+      const focusable = sheetRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    // Move focus into dialog for keyboard users
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     const closeBtn = sheetRef.current?.querySelector<HTMLElement>(
       "[data-sheet-close]",
     );
     closeBtn?.focus();
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus?.();
+    };
   }, [sheetOpen]);
 
   function commitFromVisibleRoot() {
@@ -404,9 +424,11 @@ export function PropertySearchFilters({
               className="shrink-0"
               aria-label={
                 activeCount > 0
-                  ? `Filtry, aktivních ${activeCount}`
+                  ? `Otevřít filtry, aktivních ${activeCount}`
                   : "Otevřít filtry"
               }
+              aria-haspopup="dialog"
+              aria-expanded={sheetOpen}
               onClick={() => setSheetOpen(true)}
             >
               <span className="relative inline-flex">

@@ -3,6 +3,11 @@
  * Strip internal notes, audit, and precise address for private / restricted listings.
  */
 
+import { marketRegistry } from "@/domains/markets/registry/market-registry";
+import {
+  listAliasesForMarket,
+  resolveCanonicalPropertyType,
+} from "@/domains/properties/taxonomy/canonical-types";
 import { toPublicMediaList, type PublicMediaItem } from "./media-public";
 
 export type DataQualityLevel =
@@ -54,6 +59,8 @@ export type PropertyRecord = {
   askingPrice?: number | null;
   priceCzk?: number | null;
   currency: string;
+  /** Market registry code — never derived from currency alone. */
+  marketCode?: string;
   pricePerSqm?: number | null;
   usableArea?: number | null;
   floorArea?: number | null;
@@ -125,6 +132,20 @@ export type PublicPropertyLocation = {
   addressLine: string | null;
 };
 
+/**
+ * Localized labels for public API clients (Rule 198+).
+ * Always present — CZ clients may ignore and keep using raw enums.
+ */
+export type PublicPropertyLabels = {
+  propertyType: string;
+  propertyTypeEn: string;
+  market: string;
+  marketLocal: string;
+  /** Local currency code (same as dto.currency). */
+  currency: string;
+  demoBadge: string | null;
+};
+
 export type PublicPropertyDto = {
   id: string;
   slug: string;
@@ -135,7 +156,20 @@ export type PublicPropertyDto = {
   description: string | null;
   propertyType: string;
   askingPrice: number | null;
+  /** Local listing currency (ISO 4217). */
   currency: string;
+  /**
+   * Explicit market registry code.
+   * Never derive from currency alone.
+   */
+  marketCode: string;
+  /**
+   * Alias of marketCode for API consumers preferring `market`.
+   * Same value — additive, non-breaking for CZ clients.
+   */
+  market: string;
+  /** Localized display labels (property type, market names, demo badge). */
+  labels: PublicPropertyLabels;
   pricePerSqm: number | null;
   usableArea: number | null;
   /** Prefer conflict display when sources disagree. */
@@ -273,6 +307,30 @@ function areaDisplay(record: PropertyRecord): string | null {
   return area != null ? `${area} m²` : null;
 }
 
+function buildPublicLabels(
+  record: PropertyRecord,
+  marketCode: string,
+  currency: string,
+): PublicPropertyLabels {
+  const surface = marketRegistry.toPublicSurface(marketCode);
+  const canonical =
+    resolveCanonicalPropertyType({
+      marketCode,
+      raw: record.propertyType,
+    }) ?? record.propertyType;
+  const alias =
+    listAliasesForMarket(marketCode).find((a) => a.canonical === canonical) ??
+    listAliasesForMarket("*").find((a) => a.canonical === canonical);
+  return {
+    propertyType: alias?.labelLocal ?? String(canonical),
+    propertyTypeEn: alias?.labelEn ?? String(canonical),
+    market: surface?.displayNameEn ?? marketCode,
+    marketLocal: surface?.displayNameLocal ?? marketCode,
+    currency,
+    demoBadge: record.isDemo === true ? "Demo" : null,
+  };
+}
+
 /**
  * Map DB/internal record → public DTO.
  * Strips: street internals when HIDDEN, notes, audit, canonicalKey, media sourceId,
@@ -284,6 +342,8 @@ export function toPublicPropertyDto(
 ): PublicPropertyDto {
   const role = opts.viewerRole ?? "PUBLIC";
   const media = toPublicMediaList(record.media);
+  const marketCode = (record.marketCode ?? "CZ").toUpperCase();
+  const currency = record.currency;
 
   return {
     id: record.id,
@@ -295,7 +355,10 @@ export function toPublicPropertyDto(
     description: record.description ?? null,
     propertyType: record.propertyType,
     askingPrice: record.askingPrice ?? record.priceCzk ?? null,
-    currency: record.currency,
+    currency,
+    marketCode,
+    market: marketCode,
+    labels: buildPublicLabels(record, marketCode, currency),
     pricePerSqm: record.pricePerSqm ?? null,
     usableArea: record.usableArea ?? record.areaSqm ?? null,
     usableAreaDisplay: areaDisplay(record),

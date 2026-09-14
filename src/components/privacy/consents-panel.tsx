@@ -13,7 +13,14 @@ import {
   type ConsentsPageData,
 } from "@/lib/privacy/consents";
 
-export function ConsentsPanel({ initial }: { initial: ConsentsPageData }) {
+export function ConsentsPanel({
+  initial,
+  embedded = false,
+}: {
+  initial: ConsentsPageData;
+  /** When nested in Privacy Center — avoid duplicate H1. */
+  embedded?: boolean;
+}) {
   const [data, setData] = React.useState(initial);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -25,7 +32,7 @@ export function ConsentsPanel({ initial }: { initial: ConsentsPageData }) {
     setError(null);
     const result = await setMarketingConsent({
       granted,
-      source: "ucet/souhlasy",
+      source: embedded ? "ucet/soukromi" : "ucet/souhlasy",
       syncChannelPrefs: true,
     });
     setSaving(false);
@@ -42,7 +49,7 @@ export function ConsentsPanel({ initial }: { initial: ConsentsPageData }) {
               granted,
               grantedAt: granted ? new Date().toISOString() : c.grantedAt,
               revokedAt: granted ? null : new Date().toISOString(),
-              source: "ucet/souhlasy",
+              source: embedded ? "ucet/soukromi" : "ucet/souhlasy",
             }
           : c,
       ),
@@ -51,13 +58,15 @@ export function ConsentsPanel({ initial }: { initial: ConsentsPageData }) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-h2 text-[var(--text-primary)]">Souhlasy a soukromí</h1>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Přehled aktivních souhlasů, verzí textů a historie předání dat partnerům. Marketingový
-          souhlas není nikdy předvyplněný.
-        </p>
-      </div>
+      {embedded ? null : (
+        <div>
+          <h1 className="text-h2 text-[var(--text-primary)]">Souhlasy a soukromí</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
+            Přehled aktivních souhlasů, verzí textů a historie předání dat partnerům. Marketingový
+            souhlas není nikdy předvyplněný.
+          </p>
+        </div>
+      )}
 
       {error ? (
         <InlineAlert tone="error" title="Nelze uložit">
@@ -134,13 +143,23 @@ export function ConsentsPanel({ initial }: { initial: ConsentsPageData }) {
                   </CardHeader>
                   <dl className="space-y-1 text-sm">
                     <div className="flex justify-between gap-3">
-                      <dt className="text-[var(--text-muted)]">Datum</dt>
-                      <dd>{formatDateTime(item.createdAt)}</dd>
+                      <dt className="text-[var(--text-muted)]">Datum souhlasu</dt>
+                      <dd>{formatDateTime(item.consentAt ?? item.createdAt)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-[var(--text-muted)]">Typ souhlasu</dt>
+                      <dd className="text-xs font-metric">{item.consentType}</dd>
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt className="text-[var(--text-muted)]">Verze souhlasu</dt>
                       <dd className="font-metric">{item.version}</dd>
                     </div>
+                    {item.consentTextVersion ? (
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-[var(--text-muted)]">Verze textu</dt>
+                        <dd className="font-metric">{item.consentTextVersion}</dd>
+                      </div>
+                    ) : null}
                     <div className="flex justify-between gap-3">
                       <dt className="text-[var(--text-muted)]">Zdroj</dt>
                       <dd>{item.source}</dd>
@@ -167,6 +186,29 @@ export function ConsentsPanel({ initial }: { initial: ConsentsPageData }) {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="space-y-4" aria-labelledby="mortgage-privacy">
+        <h2 id="mortgage-privacy" className="text-h3 text-[var(--text-primary)]">
+          Hypoteční leady a odvolání souhlasu
+        </h2>
+        <InlineAlert tone="info" title="Co odvolání na Majetio znamená">
+          Odvolání souhlasu nebo žádost o výmaz v Majetio smaže/rediguje citlivá pole
+          (příjem, závazky, kontakt) v našem systému. Pokud už proběhlo odeslání do
+          HypotekaJasne nebo banky, data u partnera tím automaticky nezmizí — partner
+          je samostatný správce a výmaz je potřeba domluvit přímo s ním dle jeho
+          podmínek a zákonných povinností.
+        </InlineAlert>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Detail leadu není veřejně dostupný — zobrazí se jen po přihlášení v sekci{" "}
+          <Link
+            href="/ucet/financovani"
+            className="font-medium text-[var(--action-primary)] underline-offset-2 hover:underline"
+          >
+            Financování
+          </Link>
+          . Finanční hodnoty neukládáme do analytiky ani aplikačních logů.
+        </p>
       </section>
     </div>
   );

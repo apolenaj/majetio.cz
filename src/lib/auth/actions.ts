@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { writeAuditLog, getRequestIp } from "@/lib/auth/audit";
 import { getSafeCallbackUrl } from "@/lib/auth/callback-url";
-import { AUTH_MESSAGES, CURRENT_CONSENT_VERSIONS } from "@/lib/auth/constants";
+import { AUTH_MESSAGES, CURRENT_CONSENT_VERSIONS, rateLimitedMessage } from "@/lib/auth/constants";
 import { signIn, signOut } from "@/lib/auth";
 import {
   hashPassword,
@@ -66,7 +66,28 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   const ip = await getRequestIp();
   const limited = await assertNotRateLimited([ip, "register", email]);
   if (!limited.ok) {
-    return { ok: false, error: AUTH_MESSAGES.rateLimited };
+    return { ok: false, error: rateLimitedMessage(limited.retryAfterSec) };
+  }
+
+  const { detectFreeAccountVelocity, isBlockedByAbuse } = await import(
+    "@/domains/fraud",
+  );
+  const abuse = await detectFreeAccountVelocity({ ip, email });
+  if (isBlockedByAbuse(abuse.signals)) {
+    await recordAuthFailure([ip, "register", email]);
+    const { writeMonetizationAuditLog } = await import(
+      "@/domains/revenue/monetization-audit",
+    );
+    await writeMonetizationAuditLog({
+      action: "fraud.signal.blocked",
+      entity: "UserRegistration",
+      ip,
+      meta: {
+        codes: abuse.signals.map((s) => s.code),
+        severities: abuse.signals.map((s) => s.severity),
+      },
+    });
+    return { ok: false, error: AUTH_MESSAGES.genericError };
   }
 
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
@@ -130,7 +151,8 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   });
 
   track({ name: "signup_completed", props: { consents: "terms_privacy" } });
-  const base = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+  const { getPublicAppUrl } = await import("@/lib/app-url");
+  const base = getPublicAppUrl();
   logEmailInDev(welcomeEmail(`${base}/onboarding`), "new-user");
 
   try {
@@ -148,6 +170,15 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     }
     throw error;
   }
+
+  const { linkUnclaimedMortgageLeadsOnAuth } = await import(
+    "@/domains/leads/service/lead-linking"
+  );
+  await linkUnclaimedMortgageLeadsOnAuth({
+    userId: user.id,
+    verifiedEmail: email,
+    authMethod: "register",
+  });
 
   redirect(getSafeCallbackUrl(parsed.data.callbackUrl, "/onboarding"));
 }
@@ -182,6 +213,21 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
     throw error;
   }
 
+  const dbUser = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (dbUser) {
+    const { linkUnclaimedMortgageLeadsOnAuth } = await import(
+      "@/domains/leads/service/lead-linking"
+    );
+    await linkUnclaimedMortgageLeadsOnAuth({
+      userId: dbUser.id,
+      verifiedEmail: email,
+      authMethod: "login",
+    });
+  }
+
   redirect(callbackUrl);
 }
 
@@ -200,7 +246,7 @@ export async function requestPasswordResetAction(formData: FormData): Promise<Ac
 
   const limited = await assertNotRateLimited([ip, "reset"]);
   if (!limited.ok) {
-    return { ok: false, error: AUTH_MESSAGES.rateLimited };
+    return { ok: false, error: rateLimitedMessage(limited.retryAfterSec) };
   }
 
   // Always return the same message (no account enumeration).
@@ -238,7 +284,8 @@ export async function requestPasswordResetAction(formData: FormData): Promise<Ac
       },
     });
 
-    const base = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+    const { getPublicAppUrl } = await import("@/lib/app-url");
+    const base = getPublicAppUrl();
     const resetUrl = `${base}/obnovit-heslo?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     if (process.env.NODE_ENV !== "production") {
@@ -269,7 +316,7 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
   const ip = await getRequestIp();
   const limited = await assertNotRateLimited([ip, "reset-confirm", email]);
   if (!limited.ok) {
-    return { ok: false, error: AUTH_MESSAGES.rateLimited };
+    return { ok: false, error: rateLimitedMessage(limited.retryAfterSec) };
   }
 
   const tokenHash = sha256(token);
@@ -303,6 +350,7 @@ export async function resetPasswordAction(formData: FormData): Promise<ActionRes
         },
       },
     }),
+    prisma.session.deleteMany({ where: { userId: user.id } }),
   ]);
 
   await clearAuthFailures([ip, "reset-confirm", email]);

@@ -1,6 +1,9 @@
 /**
  * Czech-first financial formatting for Majetio UI.
  * Always use these helpers instead of ad-hoc toLocaleString in components.
+ *
+ * International surfaces (Prompt 17.2): prefer `@/domains/i18n`
+ * (`formatMoneyMajor`, `formatInstantForTimezone`, …).
  */
 
 const numberCs = (options?: Intl.NumberFormatOptions) =>

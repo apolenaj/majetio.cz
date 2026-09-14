@@ -44,7 +44,7 @@ describe("search input + normalize", () => {
     expect(result.filters.layout).toEqual(["2+kk"]);
   });
 
-  it("always scopes public discovery to ACTIVE + PUBLIC", () => {
+  it("always scopes public discovery to ACTIVE + PUBLIC + CLEAR + WITHIN_LIMIT", () => {
     const parsed = propertySearchInputSchema.parse({ city: "Brno" });
     const result = normalizeSearchFilters(parsed);
     expect(result.ok).toBe(true);
@@ -54,6 +54,8 @@ describe("search input + normalize", () => {
     const where = buildSearchWhere(result.filters);
     expect(where.status).toBe("ACTIVE");
     expect(where.visibility).toBe("PUBLIC");
+    expect(where.listingQuotaState).toBe("WITHIN_LIMIT");
+    expect(where.listingModerationStatus).toBe("CLEAR");
     expect(where.publicCity).toBe("Brno");
   });
 });

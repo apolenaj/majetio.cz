@@ -1,18 +1,18 @@
-import { TrackedButtonLink } from "@/components/homepage/tracked";
+import { TrackedAnchor, TrackedButtonLink } from "@/components/homepage/tracked";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Grid, Section } from "@/components/ui/layout-primitives";
-import { commerceConfig } from "@/config/commerce";
+import { formatCzkFromMinor } from "@/config/commerce";
+import { getCatalogProductByKey } from "@/config/pricing-architecture";
 import { homepageContent } from "@/content/homepage";
-import { formatCzk } from "@/lib/format";
 
 /**
- * Pricing preview from central commerce config — no hardcoded product prices.
+ * Pricing preview from canonical catalog — no hardcoded product prices.
  */
 export function PricingPreview() {
   const copy = homepageContent.pricing;
-  const basic = commerceConfig.products.basicAnalysis;
-  const pro = commerceConfig.products.fullAnalysis;
+  const basic = getCatalogProductByKey("basic_analysis");
+  const pro = getCatalogProductByKey("full_analysis");
 
   return (
     <Section aria-labelledby="pricing-heading">
@@ -24,7 +24,9 @@ export function PricingPreview() {
 
         <Grid cols={2} className="mt-8">
           <Card as="article">
-            <h3 className="font-display text-xl text-[var(--text-primary)]">{basic.name}</h3>
+            <h3 className="font-display text-xl text-[var(--text-primary)]">
+              {basic?.nameCs ?? "Základní analýza"}
+            </h3>
             <p className="mt-2 text-2xl font-semibold text-[var(--investment-positive)]">
               Zdarma
             </p>
@@ -47,9 +49,13 @@ export function PricingPreview() {
           </Card>
 
           <Card as="article" elevation="raised">
-            <h3 className="font-display text-xl text-[var(--text-primary)]">{pro.name}</h3>
+            <h3 className="font-display text-xl text-[var(--text-primary)]">
+              {pro?.nameCs ?? "Kompletní analýza"}
+            </h3>
             <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
-              {formatCzk(pro.priceCzk)}
+              {pro?.priceGrossMinor != null
+                ? formatCzkFromMinor(pro.priceGrossMinor)
+                : "—"}
             </p>
             <ul className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
               {copy.proFeatures.map((feature) => (
@@ -68,6 +74,20 @@ export function PricingPreview() {
             </TrackedButtonLink>
           </Card>
         </Grid>
+
+        <p className="mt-6 text-sm text-[var(--text-muted)]">
+          Kompletní ceník podle segmentů:{" "}
+          <TrackedAnchor
+            href="/cenik"
+            className="underline text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            event={{
+              name: "pricing_cta_clicked",
+              props: { product: "cenik", href: "/cenik" },
+            }}
+          >
+            /cenik
+          </TrackedAnchor>
+        </p>
       </Container>
     </Section>
   );

@@ -41,9 +41,20 @@ const PropertyMarketHistorySection = dynamic(
   },
 );
 
+import type { PropertySegmentBenchmark } from "@/domains/locations/integration/types";
+import type { MarketOpportunityInsight } from "@/domains/locations/integration/market-opportunity-insight";
+import type { LocationMarketContextBlock } from "@/domains/locations/integration/market-context";
+import type { LocationStrRegulatoryBundle } from "@/domains/locations/integration/str-regulatory-context";
+
 export function LazyPropertyLocationSection(props: {
   location: PublicPropertyLocation;
-  benchmark: LocationBenchmarkDemo | null;
+  benchmark?: LocationBenchmarkDemo | null;
+  segmentBenchmark?: PropertySegmentBenchmark | null;
+  locationPageHref?: string | null;
+  opportunityInsight?: MarketOpportunityInsight | null;
+  marketContext?: LocationMarketContextBlock | null;
+  strRegulatory?: LocationStrRegulatoryBundle | null;
+  watchSlug?: string | null;
 }) {
   return <PropertyLocationSection {...props} />;
 }

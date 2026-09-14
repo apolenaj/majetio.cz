@@ -18,7 +18,14 @@ export function mapPublicDtoToPropertyCard(
   const freshness = "freshness" in dto ? dto.freshness : null;
   const status = "status" in dto ? dto.status : null;
   let listingStatus: PropertyCardData["listingStatus"] = "active";
-  if (freshness === "UNAVAILABLE" || status === "UNAVAILABLE") {
+  if (
+    freshness === "UNAVAILABLE" ||
+    status === "UNAVAILABLE" ||
+    status === "SOLD" ||
+    status === "RENTED" ||
+    status === "RESERVED" ||
+    status === "WITHDRAWN"
+  ) {
     listingStatus = "unavailable";
   } else if (freshness === "STALE") {
     listingStatus = "stale";

@@ -67,7 +67,9 @@ export async function buildAccountExport(
       }),
       prisma.comparison.findMany({
         where: { userId },
-        include: { items: { select: { propertyId: true, sortOrder: true } } },
+        include: {
+          properties: { select: { propertyId: true, sortOrder: true } },
+        },
       }),
       prisma.lead.findMany({
         where: { userId },

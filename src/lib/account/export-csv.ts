@@ -1,4 +1,5 @@
 import type { AccountExportPayload } from "@/lib/account/export";
+import { escapeCsvCell } from "@/lib/admin/csv-export";
 
 /** Pure CSV serializer — kept outside "use server" so clients can import it. */
 export function exportToCsv(data: AccountExportPayload): string {
@@ -46,14 +47,6 @@ export function exportToCsv(data: AccountExportPayload): string {
   flatten("comparisons", data.comparisons);
   flatten("leads", data.leads);
 
-  return rows
-    .map((cols) =>
-      cols
-        .map((c) => {
-          const escaped = c.replace(/"/g, '""');
-          return `"${escaped}"`;
-        })
-        .join(","),
-    )
-    .join("\n");
+  // Formula-injection safe cells (CSV injection / spreadsheet macros).
+  return rows.map((cols) => cols.map(escapeCsvCell).join(",")).join("\n");
 }

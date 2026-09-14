@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Majetio.cz
 
-## Getting Started
+Česká realitní a investiční platforma, která pomáhá odpovědět na otázku: **Vyplatí se tuto konkrétní nemovitost koupit?**
 
-First, run the development server:
+Tento repozitář obsahuje Fázi 1 — produkční základ (Next.js, Prisma, design tokeny, dokumentace, CI).
+
+## Stack
+
+- Next.js (App Router) + TypeScript strict
+- Tailwind CSS 4 + lightweight UI primitives
+- PostgreSQL + Prisma
+- Auth.js (next-auth v5) + server-side RBAC
+- Zod, Vitest, Playwright, ESLint, Prettier
+- GitHub Actions CI
+
+Podrobnosti: [`docs/TECH_STACK.md`](docs/TECH_STACK.md)
+
+## Rychlý start
+
+### Požadavky
+
+- Node.js 22+
+- PostgreSQL 14+ (lokálně nebo managed)
+
+### Instalace
 
 ```bash
+cp .env.example .env
+# upravte DATABASE_URL a AUTH_SECRET
+npm install
+npx prisma generate
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Pokud ještě nemáte databázi, můžete místo `migrate deploy` použít `npx prisma db push` (prototypování).
+Otevřete [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Kontroly kvality
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-## Learn More
+E2E (volitelně, vyžaduje Playwright browsery):
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx playwright install
+npm run test:e2e
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dokumentace
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Dokument | Obsah |
+| --- | --- |
+| [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md) | Vize produktu |
+| [`docs/PRODUCT_REQUIREMENTS.md`](docs/PRODUCT_REQUIREMENTS.md) | Požadavky |
+| [`docs/SYSTEM_ARCHITECTURE.md`](docs/SYSTEM_ARCHITECTURE.md) | Architektura |
+| [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md) | Databázový návrh |
+| [`docs/ROUTE_MAP.md`](docs/ROUTE_MAP.md) | Mapa rout |
+| [`docs/SECURITY_BASELINE.md`](docs/SECURITY_BASELINE.md) | Bezpečnost |
+| [`docs/DESIGN_DIRECTION.md`](docs/DESIGN_DIRECTION.md) | Design |
+| [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) | Roadmapa |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | ADR |
 
-## Deploy on Vercel
+## Struktura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+  app/                 # App Router pages & API
+  components/          # Shared UI + layout + homepage
+  config/              # Commerce & navigation config
+  domains/             # Domain modules (modular monolith)
+  integrations/        # HypotekaJasne mock adapter
+  lib/                 # db, auth, utils
+prisma/                # Schema
+docs/                  # Product & engineering docs
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Značka a design systém
+
+- Značka: [`docs/BRAND_GUIDE.md`](docs/BRAND_GUIDE.md)
+- Design systém: [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
+- Galerie (dev): `/dev/design-system`
+- Assety: `public/brand/`, komponenty: `src/components/`
+- Regenerace PNG ikon: `npm run brand:icons`
+
+## HypotekaJasne
+
+Integrační vrstva: `src/integrations/hypotekajasne`  
+Phase 1 používá pouze mock (`HYPOTEKAJASNE_USE_MOCK=true`).
+
+## Licence
+
+Proprietární — Majetio.cz

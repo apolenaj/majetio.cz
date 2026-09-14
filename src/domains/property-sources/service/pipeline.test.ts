@@ -66,7 +66,7 @@ describe("idempotency + import job", () => {
     let c = emptyImportCounters();
     c = applyItemOutcome(c, "success");
     c = applyItemOutcome(c, "error");
-    expect(finalizeImportJobStatus(c)).toBe("PARTIAL");
+    expect(finalizeImportJobStatus(c)).toBe("COMPLETED_WITH_WARNINGS");
   });
 });
 

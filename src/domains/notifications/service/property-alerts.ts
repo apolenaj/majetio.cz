@@ -31,20 +31,21 @@ export async function enqueuePropertyAlertEvent(
 
 /**
  * Ensure subscription rows exist for a saved search when alerts are enabled.
- * INSTANT/WEEKLY → PRICE_DROP + NEW_PROPERTY (+ SAVED_SEARCH_MATCH) IN_APP.
+ * INSTANT/DAILY/WEEKLY → PRICE_DROP + NEW_PROPERTY (+ SAVED_SEARCH_MATCH) IN_APP.
  */
 export async function syncAlertSubscriptionsForSavedSearch(
   db: PrismaClient,
   input: {
     userId: string;
     savedSearchId: string;
-    alertFrequency: "OFF" | "INSTANT" | "WEEKLY";
+    alertFrequency: "OFF" | "INSTANT" | "DAILY" | "WEEKLY";
     channel?: NotificationChannel;
   },
 ) {
   const channel = input.channel ?? "IN_APP";
   const types: PropertyAlertType[] = [
-    "PRICE_DROP",
+    "PRICE_DECREASE",
+    "PRICE_INCREASE",
     "NEW_PROPERTY",
     "SAVED_SEARCH_MATCH",
   ];

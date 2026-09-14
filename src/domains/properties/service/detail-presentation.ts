@@ -48,9 +48,25 @@ export function buildPropertyDetailBreadcrumbs(property: PublicPropertyDto): {
 
 export function propertyListingStatusTone(
   status: string,
-): "unavailable" | "archived" | "active" {
+): "unavailable" | "archived" | "active" | "reserved" {
   const s = status.toUpperCase();
-  if (s === "UNAVAILABLE" || s === "SOLD" || s === "RENTED") return "unavailable";
-  if (s === "ARCHIVED" || s === "DRAFT") return "archived";
+  if (s === "RESERVED") return "reserved";
+  if (
+    s === "UNAVAILABLE" ||
+    s === "SOLD" ||
+    s === "RENTED" ||
+    s === "WITHDRAWN"
+  ) {
+    return "unavailable";
+  }
+  if (
+    s === "ARCHIVED" ||
+    s === "DRAFT" ||
+    s === "REJECTED" ||
+    s === "SUSPENDED" ||
+    s === "PENDING_REVIEW"
+  ) {
+    return "archived";
+  }
   return "active";
 }
