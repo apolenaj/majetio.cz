@@ -12,10 +12,11 @@ import {
 } from "@/config/navigation";
 
 describe("navigation config", () => {
-  it("keeps primary nav shallow", () => {
+  it("keeps primary nav focused on marketing conversion", () => {
     expect(NAV_PRIMARY.length).toBeLessThanOrEqual(8);
-    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/nemovitosti");
-    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/analyza");
+    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/ukazky");
+    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/cenik");
+    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/kontakt");
   });
 
   it("only links megamenu to known routes", () => {

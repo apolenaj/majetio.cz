@@ -54,3 +54,4 @@ test-results/
 playwright-report/
 tsc-out.txt
 
+.vercel

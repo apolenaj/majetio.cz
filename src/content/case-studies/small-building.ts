@@ -1,0 +1,106 @@
+import type { CaseStudyDefinition } from "./types";
+
+export const smallBuildingStudy: CaseStudyDefinition = {
+  slug: "mensi-bytovy-dum",
+  title: "Menší bytový dům se 4 jednotkami",
+  shortTitle: "Malý bytový dům",
+  assignment:
+    "Modelový dům se čtyřmi byty — spočítat portfolio nájmů, opex a cash flow po úvěru.",
+  purposeLabel: "Pronájem více jednotek",
+  locationLabel: "Modelová lokalita — klidná ulice okresního města",
+  propertyTypeLabel: "Menší bytový dům",
+  areaSqm: 240,
+  units: 4,
+  heroImage: {
+    src: "/case-studies/small-building.png",
+    alt: "Ilustrační fotografie menšího bytového domu",
+    caption: "Ilustrační fotografie · AI vizualizace · Modelová analýza",
+    kind: "illustration",
+    width: 1200,
+    height: 900,
+  },
+  purchasePriceCzk: 12_800_000,
+  closingCostsCzk: 420_000,
+  renovationCostCzk: 650_000,
+  reserveCzk: 250_000,
+  equityCzk: 4_200_000,
+  loanTermYears: 25,
+  baseMonthlyRentCzk: 68_000,
+  baseVacancyRatePct: 6,
+  baseInterestRatePctPoints: 5.0,
+  opexAnnual: {
+    propertyManagementCzk: 81_600,
+    maintenanceCzk: 72_000,
+    insuranceCzk: 18_000,
+    propertyTaxCzk: 12_000,
+    svjOwnerCostCzk: 0,
+  },
+  scenarios: [
+    {
+      id: "conservative",
+      label: "Konzervativní",
+      monthlyRentEffectiveCzk: 60_000,
+      vacancyRatePct: 12,
+      opexMultiplier: 1.15,
+      interestRatePctPoints: 5.5,
+    },
+    {
+      id: "base",
+      label: "Základní",
+      monthlyRentEffectiveCzk: 68_000,
+      vacancyRatePct: 6,
+      opexMultiplier: 1,
+      interestRatePctPoints: 5.0,
+    },
+    {
+      id: "favorable",
+      label: "Příznivý",
+      monthlyRentEffectiveCzk: 74_000,
+      vacancyRatePct: 4,
+      opexMultiplier: 0.95,
+      interestRatePctPoints: 4.6,
+    },
+  ],
+  inputFields: [
+    {
+      label: "Kupní cena",
+      value: "12 800 000 Kč",
+      provenance: "stated",
+    },
+    {
+      label: "Jednotky",
+      value: "4 byty · cca 240 m² užitné",
+      provenance: "stated",
+    },
+    {
+      label: "Součet modelových nájmů",
+      value: "68 000 Kč / měsíc",
+      provenance: "model_assumption",
+    },
+    {
+      label: "Správa",
+      value: "10 % z inkasa (model)",
+      provenance: "model_assumption",
+    },
+  ],
+  risks: [
+    "Výpadek jedné jednotky výrazně ovlivní cash flow.",
+    "Stáří rozvodů a střechy není doložené průzkumem.",
+    "Správa a údržba mohou být vyšší než modelových 10 %.",
+  ],
+  missingDocuments: [
+    "Nájemní smlouvy a historie plateb",
+    "Technický stav střechy, rozvodů a společných částí",
+    "Daňové doklady k provozním nákladům",
+    "Přehled pojištění objektu",
+  ],
+  findings: [
+    "Portfolio nájmů snižuje riziko oproti jednomu bytu, ale zvyšuje provozní zátěž.",
+    "Neobsazenost je modelována jako průměr — ne jako jisté obsazení všech jednotek.",
+    "Tržní hodnotu domu neuvádíme — chybí srovnávací podklady.",
+  ],
+  conclusion:
+    "Při uvedených předpokladech model popisuje provozní ekonomiku menšího domu. Výsledek je před zdaněním a platí jen do doby doložení skutečných nájmů, nákladů a technického stavu.",
+  omitMarketValue: true,
+  targetGrossYieldPct: 5.5,
+};

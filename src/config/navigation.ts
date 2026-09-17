@@ -3,15 +3,20 @@
  * Only list routes that exist with real content or an honest "Připravujeme" page.
  */
 
+/** Public marketing navigation — only complete customer journeys. */
 export const NAV_PRIMARY = [
-  { href: "/nemovitosti", label: "Nemovitosti", hasMega: true },
-  { href: "/analyza", label: "Analyzovat nemovitost", hasMega: false },
-  { href: "/kalkulacky", label: "Kalkulačky", hasMega: true },
-  { href: "/lokality", label: "Lokality", hasMega: false },
-  { href: "/jak-to-funguje", label: "Jak to funguje", hasMega: false },
-  { href: "/cenik", label: "Ceník", hasMega: false },
-  { href: "/pruvodce", label: "Průvodce", hasMega: false },
+  { href: "/ukazky", label: "Ukázky analýz", hasMega: false },
+  { href: "/#co-ziskate", label: "Co získáte", hasMega: false },
+  { href: "/#jak-to-funguje", label: "Jak to funguje", hasMega: false },
+  { href: "/cenik", label: "Cena", hasMega: false },
+  { href: "/kontakt", label: "Kontakt", hasMega: false },
 ] as const;
+
+/** Primary conversion CTA in header. */
+export const NAV_PRIMARY_CTA = {
+  href: "/#posoudit",
+  label: "Posoudit nemovitost",
+} as const;
 
 export const MEGA_NEMOVITOSTI = {
   search: [
@@ -54,21 +59,19 @@ export const FOOTER_GROUPS = [
   {
     title: "Produkt",
     links: [
-      { href: "/nemovitosti", label: "Nemovitosti" },
-      { href: "/analyza", label: "Analýza" },
-      { href: "/kalkulacky", label: "Kalkulačky" },
-      { href: "/porovnani", label: "Porovnání" },
+      { href: "/ukazky", label: "Ukázky analýz" },
+      { href: "/#posoudit", label: "Posoudit nemovitost" },
       { href: "/cenik", label: "Ceník" },
+      { href: "/metodika", label: "Metodika" },
     ],
   },
   {
-    title: "Investování",
+    title: "Orientace",
     links: [
-      { href: "/strategie", label: "Strategie" },
-      { href: "/lokality", label: "Lokality" },
+      { href: "/#jak-to-funguje", label: "Jak to funguje" },
+      { href: "/#co-ziskate", label: "Co získáte" },
       { href: "/pruvodce", label: "Průvodce" },
-      { href: "/metodika", label: "Metodika" },
-      { href: "/majetio-skore", label: "Majetio skóre" },
+      { href: "/slovnik", label: "Slovník" },
     ],
   },
   {
@@ -77,15 +80,12 @@ export const FOOTER_GROUPS = [
       { href: "/o-nas", label: "O nás" },
       { href: "/duvera-a-bezpecnost", label: "Důvěra a bezpečnost" },
       { href: "/kontakt", label: "Kontakt" },
-      { href: "/partneri", label: "Partneři" },
     ],
   },
   {
     title: "Důvěra a právo",
     links: [
       { href: "/zdroje-dat", label: "Zdroje dat" },
-      { href: "/metodika", label: "Metodika" },
-      { href: "/slovnik", label: "Slovník" },
       { href: "/ochrana-soukromi", label: "Ochrana soukromí" },
       { href: "/cookies", label: "Cookies" },
       { href: "/podminky", label: "Obchodní podmínky" },

@@ -1,90 +1,79 @@
 import type { Metadata } from "next";
 
 import { JsonLd, buildOrganizationJsonLd } from "@/components/seo/json-ld";
-import { AnnouncementBar } from "@/components/homepage/announcement-bar";
-import { HomepageBody } from "@/components/homepage/homepage-body";
-import { HomepageHero } from "@/components/homepage/homepage-hero";
-import { HomepageViewTracker } from "@/components/homepage/tracked";
-import { InlineAlert } from "@/components/feedback/states";
-import { Container } from "@/components/ui/container";
+import { MarketingHomepage } from "@/components/marketing/marketing-homepage";
 import { brand } from "@/config/brand";
-import {
-  homepageExperimentDefaults,
-  homepageSeo,
-  resolveHomepageHero,
-  resolveHomepageSectionOrder,
-} from "@/config/homepage";
-import { homepageContent } from "@/content/homepage";
+import { getFeaturedCaseStudy, listCaseStudies } from "@/content/case-studies";
 import { getSiteOrigin } from "@/domains/seo/site-origin";
 
+const title = "Majetio — analýza nemovitosti před koupí";
+const description =
+  "Než koupíte nemovitost, poznejte její čísla i rizika. Ekonomika koupě, náklady, scénáře a otázky k ověření.";
+
 export const metadata: Metadata = {
-  title: { absolute: homepageSeo.title },
-  description: homepageSeo.description,
-  alternates: { canonical: homepageSeo.canonicalPath },
+  title: { absolute: title },
+  description,
+  alternates: { canonical: "/" },
   robots: { index: true, follow: true },
   openGraph: {
-    title: homepageSeo.title,
-    description: homepageSeo.description,
-    url: homepageSeo.canonicalPath,
+    title,
+    description,
+    url: "/",
     siteName: brand.name,
     locale: "cs_CZ",
     type: "website",
     images: [
       {
-        url: homepageSeo.ogImagePath,
+        url: "/case-studies/homepage-hero.png",
         width: 1200,
-        height: 630,
-        alt: homepageSeo.ogImageAlt,
+        height: 675,
+        alt: "Ilustrační fotografie — Majetio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: homepageSeo.title,
-    description: homepageSeo.description,
-    images: [homepageSeo.ogImagePath],
+    title,
+    description,
+    images: ["/case-studies/homepage-hero.png"],
   },
 };
 
 export default function HomePage() {
-  const experiments = homepageExperimentDefaults;
-  const hero = resolveHomepageHero({
-    h1: experiments.homepage_h1,
-    cta: experiments.homepage_primary_cta,
-  });
-  const sectionOrder = resolveHomepageSectionOrder(
-    experiments.homepage_section_order,
-  );
   const origin = getSiteOrigin();
+  const featured = getFeaturedCaseStudy();
+  const studies = listCaseStudies();
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: brand.name,
     url: origin,
-    description: homepageSeo.description,
+    description,
     inLanguage: "cs-CZ",
-    // Browse entry — avoid ?q= SearchAction that lands on noindex filtered SERP
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${origin}/nemovitosti`,
-      },
-    },
   };
 
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: homepageContent.faq.items.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Umíte načíst inzerát automaticky?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Zatím ne. Pošlete odkaz nebo údaje ručně — podklady doplníme při zpracování poptávky.",
+        },
       },
-    })),
+      {
+        "@type": "Question",
+        name: "Je odeslání formuláře objednávkou?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Ne. Jde o nezávaznou poptávku. Platbu nespouštíme, dokud nebude funkční objednávkový proces.",
+        },
+      },
+    ],
   };
 
   return (
@@ -92,26 +81,25 @@ export default function HomePage() {
       <JsonLd id="ld-organization" data={buildOrganizationJsonLd(origin)} />
       <JsonLd id="ld-website" data={websiteJsonLd} />
       <JsonLd id="ld-faq" data={faqJsonLd} />
-
-      <HomepageViewTracker
-        experimentH1={experiments.homepage_h1}
-        experimentCta={experiments.homepage_primary_cta}
-        experimentOrder={experiments.homepage_section_order}
+      <JsonLd
+        id="ld-featured-study"
+        data={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: "Modelové analýzy Majetio",
+          numberOfItems: studies.length,
+          itemListElement: studies.map((study, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: study.definition.title,
+            url: `${origin}/ukazky/${study.definition.slug}`,
+          })),
+        }}
       />
-
-      <AnnouncementBar />
-      <HomepageHero hero={hero} experimentVariant={experiments.homepage_h1} />
-
-      <Container className="overflow-x-clip pt-6 sm:pt-8">
-        <InlineAlert
-          tone="info"
-          title={homepageContent.financialDisclaimer.title}
-        >
-          {homepageContent.financialDisclaimer.text}
-        </InlineAlert>
-      </Container>
-
-      <HomepageBody order={sectionOrder} />
+      <p className="sr-only">
+        Ukázková studie: {featured.definition.title}
+      </p>
+      <MarketingHomepage />
     </>
   );
 }

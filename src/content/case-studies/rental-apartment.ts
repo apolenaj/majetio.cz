@@ -1,0 +1,110 @@
+import type { CaseStudyDefinition } from "./types";
+
+export const rentalApartmentStudy: CaseStudyDefinition = {
+  slug: "byt-dlouhodoby-pronajem",
+  title: "Byt 2+kk pro dlouhodobý pronájem",
+  shortTitle: "Byt na pronájem",
+  assignment:
+    "Modelový byt 2+kk — ověřit, zda dlouhodobý pronájem pokryje náklady a splátky.",
+  purposeLabel: "Dlouhodobý pronájem",
+  locationLabel: "Modelová lokalita — středně velké české město",
+  propertyTypeLabel: "Byt v osobním vlastnictví",
+  areaSqm: 54,
+  heroImage: {
+    src: "/case-studies/rental-apartment.png",
+    alt: "Ilustrační fotografie obývacího pokoje modelového bytu",
+    caption: "Ilustrační fotografie · AI vizualizace · Modelová analýza",
+    kind: "illustration",
+    width: 1200,
+    height: 900,
+  },
+  purchasePriceCzk: 4_250_000,
+  closingCostsCzk: 170_000,
+  renovationCostCzk: 180_000,
+  reserveCzk: 80_000,
+  equityCzk: 1_200_000,
+  loanTermYears: 30,
+  baseMonthlyRentCzk: 18_500,
+  baseVacancyRatePct: 4,
+  baseInterestRatePctPoints: 4.9,
+  opexAnnual: {
+    propertyManagementCzk: 22_200,
+    maintenanceCzk: 18_000,
+    insuranceCzk: 4_800,
+    propertyTaxCzk: 2_400,
+    svjOwnerCostCzk: 36_000,
+  },
+  scenarios: [
+    {
+      id: "conservative",
+      label: "Konzervativní",
+      monthlyRentEffectiveCzk: 17_000,
+      vacancyRatePct: 8,
+      opexMultiplier: 1.15,
+      interestRatePctPoints: 5.4,
+    },
+    {
+      id: "base",
+      label: "Základní",
+      monthlyRentEffectiveCzk: 18_500,
+      vacancyRatePct: 4,
+      opexMultiplier: 1,
+      interestRatePctPoints: 4.9,
+    },
+    {
+      id: "favorable",
+      label: "Příznivý",
+      monthlyRentEffectiveCzk: 19_500,
+      vacancyRatePct: 2,
+      opexMultiplier: 0.95,
+      interestRatePctPoints: 4.5,
+    },
+  ],
+  inputFields: [
+    {
+      label: "Kupní cena",
+      value: "4 250 000 Kč",
+      provenance: "stated",
+    },
+    {
+      label: "Dispozice / plocha",
+      value: "2+kk · 54 m²",
+      provenance: "stated",
+    },
+    {
+      label: "Modelové nájemné",
+      value: "18 500 Kč / měsíc",
+      provenance: "model_assumption",
+    },
+    {
+      label: "Neobsazenost",
+      value: "4 % (základní scénář)",
+      provenance: "model_assumption",
+    },
+    {
+      label: "Úroková sazba",
+      value: "4,9 % p.a. nominálně",
+      provenance: "model_assumption",
+    },
+  ],
+  risks: [
+    "Nájemné není doložené smlouvou — jde o modelový předpoklad.",
+    "SVJ fond oprav může v následujících letech vyrůst.",
+    "Cash flow je citlivé na sazbu i na 1–2 měsíce neobsazenosti.",
+  ],
+  missingDocuments: [
+    "Výpis z katastru a list vlastnictví",
+    "Stanovy a rozpočet SVJ",
+    "Potvrzení o výši záloh a fondu oprav",
+    "Průkaz energetické náročnosti",
+  ],
+  findings: [
+    "Hrubý výnos sám o sobě nestačí — rozhoduje NOI a cash flow po splátkách.",
+    "Rezerva a drobná rekonstrukce zvyšují celkové pořizovací náklady.",
+    "Bez doloženého nájmu nelze výsledek považovat za investiční doporučení.",
+  ],
+  conclusion:
+    "Při uvedených předpokladech model ukazuje ekonomiku dlouhodobého pronájmu. Závěr platí jen pro zadané vstupy a před zdaněním — po doložení SVJ, nájmu a stavu bytu je nutné model přepočítat.",
+  omitMarketValue: true,
+  targetGrossYieldPct: 5,
+};
