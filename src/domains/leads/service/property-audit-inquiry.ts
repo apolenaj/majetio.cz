@@ -29,6 +29,13 @@ export const propertyAuditInquirySchema = z
     email: z.string().trim().email().max(254),
     phone: z.string().trim().max(40).optional().or(z.literal("")),
     note: z.string().trim().max(2_000).optional().or(z.literal("")),
+    caseStudySlug: z
+      .enum([
+        "byt-dlouhodoby-pronajem",
+        "dum-pred-rekonstrukci",
+        "mensi-bytovy-dum",
+      ])
+      .optional(),
     /** Honeypot — bots fill this; humans leave empty. */
     companyWebsite: z.string().max(200).optional().default(""),
     consent: z.literal(true),
@@ -214,6 +221,7 @@ export async function submitPropertyAuditInquiry(
           purpose: data.purpose,
           purposeLabel: PURPOSE_LABELS[data.purpose],
           note,
+          caseStudySlug: data.caseStudySlug ?? null,
           submittedAt: new Date().toISOString(),
         },
       },

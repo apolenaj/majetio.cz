@@ -38,6 +38,11 @@ export type CatalogProductDef = {
   featureFlag?: string;
   sortOrder: number;
   comparisonHighlight?: boolean;
+  /**
+   * When true, product may appear on the public customer ceník.
+   * Internal catalog rows stay available for entitlements / existing orders.
+   */
+  publicCustomerOffer?: boolean;
 };
 
 /**
@@ -77,17 +82,23 @@ export const pricingCatalog: readonly CatalogProductDef[] = [
   {
     key: "deep_analysis",
     segment: "buyers",
-    nameCs: "Deep Analysis",
-    taglineCs: "Jednorázová hluboká analýza konkrétní nemovitosti (90 dní refresh).",
+    nameCs: "Analýza nemovitosti před koupí",
+    taglineCs:
+      "Jednorázová analýza konkrétní nemovitosti — ekonomika, scénáře a rizika.",
     priceGrossMinor: 499_000,
     billingType: "ONE_TIME",
     requiresRenewConsent: false,
     autoRenewDefault: false,
     entitlesProductKey: "deep_analysis",
-    features: ["DEEP_ANALYSIS", "FULL_SCENARIOS", "BASIC_SCORE", "BASIC_RISKS"],
+    features: [
+      "Ekonomika koupě a náklady",
+      "Scénáře a cash flow",
+      "Rizika a chybějící podklady",
+    ],
     limits: { refreshDays: 90, propertiesPerPurchase: 1 },
     comparisonHighlight: true,
     sortOrder: 20,
+    publicCustomerOffer: true,
   },
   {
     key: "full_analysis",

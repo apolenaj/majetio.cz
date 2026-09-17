@@ -5,7 +5,12 @@ import { smallBuildingStudy } from "./small-building";
 import type { CaseStudyComputed, CaseStudySlug } from "./types";
 
 export * from "./types";
-export { computeCaseStudy, purchasePriceAtTargetGrossYield } from "./compute";
+export {
+  computeCaseStudy,
+  purchasePriceAtTargetYieldOnTac,
+  purchasePriceAtTargetGrossYield,
+  breakEvenPurchasePriceHoldingEquity,
+} from "./compute";
 
 export const CASE_STUDY_DEFINITIONS = [
   rentalApartmentStudy,

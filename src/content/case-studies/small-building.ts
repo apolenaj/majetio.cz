@@ -99,8 +99,7 @@ export const smallBuildingStudy: CaseStudyDefinition = {
     "Neobsazenost je modelována jako průměr — ne jako jisté obsazení všech jednotek.",
     "Tržní hodnotu domu neuvádíme — chybí srovnávací podklady.",
   ],
-  conclusion:
-    "Při uvedených předpokladech model popisuje provozní ekonomiku menšího domu. Výsledek je před zdaněním a platí jen do doby doložení skutečných nájmů, nákladů a technického stavu.",
   omitMarketValue: true,
-  targetGrossYieldPct: 5.5,
+  targetYieldAfterVacancyOnTacPct: 5.5,
+  managementFeePctOfContractRent: 10,
 };

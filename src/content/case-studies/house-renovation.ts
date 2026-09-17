@@ -109,8 +109,6 @@ export const houseRenovationStudy: CaseStudyDefinition = {
     "Bez rezervy model podceňuje riziko překročení rozpočtu.",
     "Tržní hodnotu po rekonstrukci záměrně neuvádíme — chybí podklady k ocenění.",
   ],
-  conclusion:
-    "Model ukazuje ekonomiku po zadané rekonstrukci a rezervě. Nejde o potvrzení stavební proveditelnosti ani o odhad budoucí tržní hodnoty — pouze o scénáře cash flow při uvedených předpokladech.",
   omitMarketValue: true,
-  targetGrossYieldPct: 4.5,
+  targetYieldAfterVacancyOnTacPct: 4.5,
 };

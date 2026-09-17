@@ -53,15 +53,17 @@ export function CaseStudyCard({
             </dd>
           </div>
           <div>
-            <dt className="text-[var(--text-muted)]">Hrubý výnos</dt>
+            <dt className="text-[var(--text-muted)]">
+              Hrubý nájemní výnos
+            </dt>
             <dd className="font-medium text-[var(--text-primary)]">
-              {formatPct(base.grossYieldPct)}
+              {formatPct(base.grossRentalYieldOnPurchasePct)}
             </dd>
           </div>
           <div>
-            <dt className="text-[var(--text-muted)]">Provozní výnos</dt>
+            <dt className="text-[var(--text-muted)]">Po neobsazenosti</dt>
             <dd className="font-medium text-[var(--text-primary)]">
-              {formatPct(base.operatingYieldPct)}
+              {formatPct(base.yieldAfterVacancyOnTacPct)}
             </dd>
           </div>
           <div>

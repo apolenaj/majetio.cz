@@ -20,7 +20,7 @@ export type CaseStudyScenarioId = "conservative" | "base" | "favorable";
 export type CaseStudyScenario = {
   id: CaseStudyScenarioId;
   label: string;
-  /** Monthly rent after vacancy adjustment (model). */
+  /** Smluvní měsíční nájemné před neobsazeností. */
   monthlyRentEffectiveCzk: number;
   vacancyRatePct: number;
   /** Multiplier applied to base opex (e.g. 1.15 conservative). */
@@ -33,6 +33,7 @@ export type CaseStudyOpexAnnual = {
   maintenanceCzk: number;
   insuranceCzk: number;
   propertyTaxCzk: number;
+  /** Owner-borne SVJ / common charges — not tenant prepaid utilities. */
   svjOwnerCostCzk: number;
 };
 
@@ -49,7 +50,6 @@ export type CaseStudyDefinition = {
   slug: CaseStudySlug;
   title: string;
   shortTitle: string;
-  /** One-line assignment shown on cards. */
   assignment: string;
   purposeLabel: string;
   locationLabel: string;
@@ -58,59 +58,137 @@ export type CaseStudyDefinition = {
   units?: number;
   heroImage: CaseStudyMedia;
   secondaryImages?: CaseStudyMedia[];
-  /** Purchase price — stated model input, not a market valuation. */
   purchasePriceCzk: number;
   closingCostsCzk: number;
   renovationCostCzk: number;
+  /**
+   * Cash reserve set aside at acquisition and included in total acquisition cost.
+   * Not an annual operating expense and not double-counted in opex.
+   */
   reserveCzk: number;
+  /** Fixed equity; loan = max(0, TAC − equity). */
   equityCzk: number;
   loanTermYears: number;
-  /** Base-case monthly contract rent before vacancy. */
   baseMonthlyRentCzk: number;
   baseVacancyRatePct: number;
   baseInterestRatePctPoints: number;
   opexAnnual: CaseStudyOpexAnnual;
+  /**
+   * Declared management fee as % of contractual rent (inkaso), if applicable.
+   * Used only to verify propertyManagementCzk consistency.
+   */
+  managementFeePctOfContractRent?: number;
   scenarios: CaseStudyScenario[];
   inputFields: CaseStudyInputField[];
   risks: string[];
   missingDocuments: string[];
   findings: string[];
-  conclusion: string;
-  /** If true, do not show a fabricated market value. */
+  /** Optional static notes; decision text is computed. */
+  conclusionHints?: string[];
   omitMarketValue: true;
   /**
-   * Optional: purchase price at which base-case gross yield hits this target.
-   * Explained as target-yield price, not appraisal.
+   * Target yield after vacancy on total acquisition cost (EGI / TAC).
+   * Used for illustrative purchase-price solve — not an appraisal.
    */
-  targetGrossYieldPct?: number;
+  targetYieldAfterVacancyOnTacPct?: number;
+};
+
+export type OpexLineComputed = {
+  key: keyof CaseStudyOpexAnnual;
+  label: string;
+  annualCzk: number;
+  note: string;
+};
+
+export type CashFlowWaterfall = {
+  annualContractRentCzk: number;
+  vacancyLossCzk: number;
+  effectiveGrossIncomeCzk: number;
+  opexTotalCzk: number;
+  noiCzk: number;
+  annualDebtServiceCzk: number;
+  annualCashFlowCzk: number;
+  monthlyCashFlowCzk: number;
 };
 
 export type CaseStudyComputedScenario = {
   id: CaseStudyScenarioId;
   label: string;
-  grossYieldPct: number;
-  operatingYieldPct: number;
+  /** Inputs used for this scenario. */
+  inputs: {
+    monthlyContractRentCzk: number;
+    vacancyRatePct: number;
+    opexMultiplier: number;
+    interestRatePctPoints: number;
+  };
+  /** Hrubý nájemní výnos = smluvní nájem / rok ÷ kupní cena. */
+  grossRentalYieldOnPurchasePct: number;
+  /** Výnos po neobsazenosti = efektivní hrubý příjem ÷ celkové pořizovací náklady. */
+  yieldAfterVacancyOnTacPct: number;
+  /** Provozní výnos = provozní výsledek (NOI) ÷ celkové pořizovací náklady. */
+  operatingYieldOnTacPct: number;
   monthlyCashFlowCzk: number;
+  annualCashFlowCzk: number;
   monthlyDebtServiceCzk: number;
+  annualContractRentCzk: number;
   annualEgiCzk: number;
   annualNoiCzk: number;
   vacancyRatePct: number;
   interestRatePctPoints: number;
+  opexLines: OpexLineComputed[];
+  opexTotalCzk: number;
+  waterfall: CashFlowWaterfall;
+};
+
+export type DecisionSummary = {
+  coversOpsAndDebt: boolean;
+  monthlyTopUpCzk: number;
+  annualTopUpCzk: number;
+  monthlyCashFlowCzk: number;
+  annualCashFlowCzk: number;
+  principalAmortizationNote: string;
+  mostSensitiveAssumptions: string[];
+  mustVerify: string[];
+  pathToTarget: string;
+  breakEvenPurchasePriceCzk: number | null;
+  breakEvenAssumptions: string;
+  narrative: string;
 };
 
 export type CaseStudyComputed = {
   definition: CaseStudyDefinition;
   totalAcquisitionCostCzk: number;
+  otherAcquisitionCostsCzk: number;
   loanPrincipalCzk: number;
   equityRequiredCzk: number;
-  /** Pre-tax results; bases documented in metricNotes. */
+  financing: {
+    loanPrincipalCzk: number;
+    equityCzk: number;
+    interestRatePctPoints: number;
+    termYears: number;
+    repaymentMethod: string;
+    monthlyDebtServiceCzk: number;
+  };
+  reserveTreatment: string;
+  managementFeeCheck: {
+    declaredPct: number | null;
+    impliedPctOfContractRent: number | null;
+    matchesDeclared: boolean | null;
+  };
   base: CaseStudyComputedScenario;
   scenarios: CaseStudyComputedScenario[];
   metricNotes: {
-    grossYield: string;
-    operatingYield: string;
+    grossRentalYieldOnPurchase: string;
+    yieldAfterVacancyOnTac: string;
+    operatingYieldOnTac: string;
     cashFlow: string;
     tax: string;
   };
-  priceAtTargetGrossYieldCzk: number | null;
+  /**
+   * Kupní cena, při které EGI / TAC = cílový výnos po neobsazenosti
+   * (ostatní pořizovací náklady pevné).
+   */
+  priceAtTargetYieldOnTacCzk: number | null;
+  targetYieldLabel: string | null;
+  decision: DecisionSummary;
 };

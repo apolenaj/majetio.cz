@@ -9,13 +9,17 @@ import {
 import { PropertyAuditInquiryForm } from "@/components/marketing/property-audit-inquiry-form";
 import { CompanyIdentityPlaceholder } from "@/components/trust/do-dont";
 import { ExternalLink } from "@/components/trust/external-link";
+import {
+  OPERATOR_IDENTITY,
+  OPERATOR_IDENTITY_BLOCKERS,
+} from "@/content/operator-identity";
 import { COMPANY_PLACEHOLDER } from "@/content/trust";
 import { InlineAlert } from "@/components/feedback/states";
 
 export const metadata: Metadata = preparePageMeta({
   title: "Kontakt",
   description:
-    "Nezávazná poptávka posouzení nemovitosti, podpora a soukromí — bez fiktivních firemních údajů.",
+    "Nezávazná poptávka posouzení nemovitosti a kontaktní údaje provozovatele.",
   path: "/kontakt",
 });
 
@@ -24,7 +28,7 @@ export default function KontaktPage() {
     <StandardPageLayout>
       <PageHeader
         title="Kontakt"
-        description="Nezávazně pošlete nemovitost k posouzení, nebo napište na provozní e-mail. Firemní IČO neuvádíme, dokud není oficiálně zveřejněné."
+        description="Nezávazně pošlete nemovitost k posouzení, nebo napište na provozní e-mail."
         breadcrumbs={[
           { href: "/", label: "Domů" },
           { label: "Kontakt" },
@@ -35,38 +39,61 @@ export default function KontaktPage() {
         <PropertyAuditInquiryForm id="kontakt-posoudit" />
 
         <div className="max-w-2xl space-y-8">
-          <InlineAlert tone="info" title="Bez falešných kontaktů">
-            Dokud nejsou zveřejněny oficiální údaje, používejte e-mailové aliasy
-            níže jako provozní záměr — ne jako ověřenou schránku třetí strany.
+          <InlineAlert
+            tone="warning"
+            title="Identita provozovatele není kompletní"
+          >
+            V kódu je publikovaný e-mail{" "}
+            <strong>{OPERATOR_IDENTITY.contactEmailPublished}</strong>, ale
+            doručitelnost schránky ani obchodní údaje (IČO, sídlo) nejsou v tomto
+            repozitáři doložené. Samotné uvedení adresy není důkaz funkčnosti.
           </InlineAlert>
 
           <section className="space-y-3">
             <h2 className="font-display text-h3 text-[var(--text-primary)]">
-              Podpora produktu
+              Co ještě chybí k důvěryhodnému kontaktu
+            </h2>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--text-secondary)]">
+              {OPERATOR_IDENTITY_BLOCKERS.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-h3 text-[var(--text-primary)]">
+              Provozní e-mail
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">
-              Dotazy k účtu, analýzám a předplatnému:{" "}
+              Záměr kontaktu:{" "}
               <a
                 href={`mailto:${COMPANY_PLACEHOLDER.contactEmail}`}
                 className="font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
               >
                 {COMPANY_PLACEHOLDER.contactEmail}
               </a>
+              . Security:{" "}
+              <a
+                href={`mailto:${COMPANY_PLACEHOLDER.securityEmail}`}
+                className="font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
+              >
+                {COMPANY_PLACEHOLDER.securityEmail}
+              </a>
+              .
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="font-display text-h3 text-[var(--text-primary)]">
-              Soukromí a osobní údaje
+              Soukromí
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">
-              Žádosti o přístup / výmaz: Privacy Center v účtu, nebo e-mail výše s
-              předmětem „Soukromí“. Popisujeme konkrétní kontroly v{" "}
+              Podrobnosti zpracování údajů:{" "}
               <Link
                 href="/ochrana-soukromi"
                 className="font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
               >
-                ochraně soukromí
+                ochrana soukromí
               </Link>
               .
             </p>
@@ -84,7 +111,7 @@ export default function KontaktPage() {
               HypotekaJasne.cz
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">
-              Financování řešíme přes partnera. Osobní údaje do URL neposíláme.{" "}
+              Financování lze řešit s partnerem až po analýze.{" "}
               <ExternalLink href="https://hypotekajasne.cz">
                 hypotekajasne.cz
               </ExternalLink>

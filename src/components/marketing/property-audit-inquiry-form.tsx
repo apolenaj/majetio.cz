@@ -47,9 +47,14 @@ const INITIAL: FormState = {
 export function PropertyAuditInquiryForm({
   className,
   id = "posoudit",
+  caseStudySlug,
 }: {
   className?: string;
   id?: string;
+  caseStudySlug?:
+    | "byt-dlouhodoby-pronajem"
+    | "dum-pred-rekonstrukci"
+    | "mensi-bytovy-dum";
 }) {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +78,7 @@ export function PropertyAuditInquiryForm({
         phone: form.phone,
         note: form.note,
         companyWebsite: form.companyWebsite,
+        caseStudySlug,
         consent: form.consent ? true : undefined,
       });
       if (!result.ok) {
@@ -135,8 +141,9 @@ export function PropertyAuditInquiryForm({
         Posoudit moji nemovitost
       </h3>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Automatický import inzerátu zatím neběží. Pošlete odkaz a základní údaje
-        — podklady doplníme ručně. Nejde o placenou objednávku.
+        Pošlete odkaz na inzerát nebo základní údaje. Automatické načtení inzerátu
+        zatím není dostupné — podklady doplníme při zpracování. Odesláním
+        nevzniká objednávka ani platba.
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -315,8 +322,8 @@ export function PropertyAuditInquiryForm({
       </button>
 
       <p className="mt-3 text-xs text-[var(--text-muted)]">
-        Financování lze později řešit s HypotekaJasne.cz — osobní údaje do URL
-        neposíláme.
+        Po odeslání vás budeme kontaktovat ohledně podkladů a termínu. Případné
+        financování řešíme samostatně až po analýze.
       </p>
     </form>
   );

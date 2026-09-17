@@ -77,6 +77,11 @@ export const rentalApartmentStudy: CaseStudyDefinition = {
       provenance: "model_assumption",
     },
     {
+      label: "Správa",
+      value: "10 % ze smluvního nájemného (inkasa)",
+      provenance: "model_assumption",
+    },
+    {
       label: "Neobsazenost",
       value: "4 % (základní scénář)",
       provenance: "model_assumption",
@@ -99,12 +104,11 @@ export const rentalApartmentStudy: CaseStudyDefinition = {
     "Průkaz energetické náročnosti",
   ],
   findings: [
-    "Hrubý výnos sám o sobě nestačí — rozhoduje NOI a cash flow po splátkách.",
-    "Rezerva a drobná rekonstrukce zvyšují celkové pořizovací náklady.",
+    "Hrubý nájemní výnos z kupní ceny nestačí sám o sobě — rozhoduje výnos po neobsazenosti a provozní výsledek po splátkách.",
+    "Rezerva a drobná rekonstrukce zvyšují celkové pořizovací náklady, ne roční provoz.",
     "Bez doloženého nájmu nelze výsledek považovat za investiční doporučení.",
   ],
-  conclusion:
-    "Při uvedených předpokladech model ukazuje ekonomiku dlouhodobého pronájmu. Závěr platí jen pro zadané vstupy a před zdaněním — po doložení SVJ, nájmu a stavu bytu je nutné model přepočítat.",
   omitMarketValue: true,
-  targetGrossYieldPct: 5,
+  targetYieldAfterVacancyOnTacPct: 5,
+  managementFeePctOfContractRent: 10,
 };

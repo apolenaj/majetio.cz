@@ -8,6 +8,7 @@ import {
   formatPct,
   formatSignedCzk,
 } from "@/components/marketing/format";
+import { PropertyAuditInquiryForm } from "@/components/marketing/property-audit-inquiry-form";
 import {
   PageHeader,
   StandardPageLayout,
@@ -51,7 +52,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   const study = getCaseStudy(slug);
   if (!study) notFound();
 
-  const { definition, base, scenarios } = study;
+  const { definition, base, scenarios, decision, financing } = study;
 
   return (
     <StandardPageLayout>
@@ -135,12 +136,12 @@ export default async function CaseStudyDetailPage({ params }: Props) {
               </dd>
             </div>
           </dl>
-          <Link
-            href="/#posoudit"
+          <a
+            href="#poptavka-studie"
             className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--action-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--action-primary-hover)]"
           >
             Chci takto posoudit svou nemovitost
-          </Link>
+          </a>
         </aside>
       </div>
 
@@ -196,27 +197,119 @@ export default async function CaseStudyDetailPage({ params }: Props) {
           </div>
         ))}
       </section>
+      <p className="mt-3 text-sm text-[var(--text-muted)]">
+        {study.reserveTreatment} Celkové pořizovací náklady:{" "}
+        {formatCzk(study.totalAcquisitionCostCzk)}.
+      </p>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl text-[var(--text-primary)]">
+          Provozní náklady vlastníka
+        </h2>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          Položky níže hradí vlastník. Nezahrnují zálohy nájemce za energie a
+          služby. Rezerva z koupě sem nevstupuje.
+        </p>
+        <div className="mt-4 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-default)]">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-[var(--background-secondary)] text-[var(--text-muted)]">
+              <tr>
+                <th className="px-4 py-3 font-medium">Položka</th>
+                <th className="px-4 py-3 font-medium">Ročně</th>
+                <th className="px-4 py-3 font-medium">Poznámka</th>
+              </tr>
+            </thead>
+            <tbody>
+              {base.opexLines.map((line) => (
+                <tr
+                  key={line.key}
+                  className="border-t border-[var(--border-default)]"
+                >
+                  <td className="px-4 py-3">{line.label}</td>
+                  <td className="px-4 py-3">{formatCzk(line.annualCzk)}</td>
+                  <td className="px-4 py-3 text-[var(--text-muted)]">
+                    {line.note}
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t border-[var(--border-default)] font-medium">
+                <td className="px-4 py-3">Celkem provozní náklady</td>
+                <td className="px-4 py-3">{formatCzk(base.opexTotalCzk)}</td>
+                <td className="px-4 py-3 text-[var(--text-muted)]">
+                  Rozdíl efektivního hrubého příjmu a provozního výsledku:{" "}
+                  {formatCzk(base.annualEgiCzk - base.annualNoiCzk)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {study.managementFeeCheck.declaredPct != null ? (
+          <p className="mt-3 text-sm text-[var(--text-muted)]">
+            Deklarovaná správa {formatPct(study.managementFeeCheck.declaredPct, 0)}{" "}
+            ze smluvního nájemného
+            {study.managementFeeCheck.impliedPctOfContractRent != null
+              ? ` · ve výpočtu ${formatPct(study.managementFeeCheck.impliedPctOfContractRent, 1)}`
+              : ""}
+            {study.managementFeeCheck.matchesDeclared
+              ? " · sedí."
+              : " · nesedí, zkontrolujte model."}
+          </p>
+        ) : null}
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl text-[var(--text-primary)]">
+          Od nájemného k cash flow
+        </h2>
+        <ol className="mt-4 space-y-3 text-sm">
+          {[
+            [
+              "Smluvní nájemné / rok",
+              formatCzk(base.waterfall.annualContractRentCzk),
+            ],
+            [
+              "− Ztráta z neobsazenosti",
+              formatCzk(base.waterfall.vacancyLossCzk),
+            ],
+            [
+              "= Efektivní hrubý příjem",
+              formatCzk(base.waterfall.effectiveGrossIncomeCzk),
+            ],
+            [
+              "− Provozní náklady vlastníka",
+              formatCzk(base.waterfall.opexTotalCzk),
+            ],
+            [
+              "= Provozní výsledek před financováním",
+              formatCzk(base.waterfall.noiCzk),
+            ],
+            [
+              "− Splátky úvěru / rok",
+              formatCzk(base.waterfall.annualDebtServiceCzk),
+            ],
+            [
+              "= Roční cash flow (před daní)",
+              formatCzk(base.waterfall.annualCashFlowCzk),
+            ],
+            [
+              "Měsíční cash flow",
+              formatSignedCzk(base.waterfall.monthlyCashFlowCzk),
+            ],
+          ].map(([label, value]) => (
+            <li
+              key={label}
+              className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--border-default)] pb-2"
+            >
+              <span className="text-[var(--text-secondary)]">{label}</span>
+              <span className="font-medium text-[var(--text-primary)]">
+                {value}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <section className="mt-12 grid gap-6 lg:grid-cols-3">
-        <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5">
-          <h2 className="font-display text-xl text-[var(--text-primary)]">
-            Příjmy a provoz
-          </h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">EGI / rok</dt>
-              <dd>{formatCzk(base.annualEgiCzk)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">NOI / rok</dt>
-              <dd>{formatCzk(base.annualNoiCzk)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">Neobsazenost</dt>
-              <dd>{formatPct(base.vacancyRatePct, 0)}</dd>
-            </div>
-          </dl>
-        </div>
         <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5">
           <h2 className="font-display text-xl text-[var(--text-primary)]">
             Financování
@@ -224,49 +317,71 @@ export default async function CaseStudyDetailPage({ params }: Props) {
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between gap-3">
               <dt className="text-[var(--text-muted)]">Úvěr</dt>
-              <dd>{formatCzk(study.loanPrincipalCzk)}</dd>
+              <dd>{formatCzk(financing.loanPrincipalCzk)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-[var(--text-muted)]">Vlastní kapitál</dt>
+              <dd>{formatCzk(financing.equityCzk)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-[var(--text-muted)]">Úrok</dt>
+              <dd>{formatPct(financing.interestRatePctPoints)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-[var(--text-muted)]">Splatnost</dt>
+              <dd>{financing.termYears} let</dd>
             </div>
             <div className="flex justify-between gap-3">
               <dt className="text-[var(--text-muted)]">Splátka / měs.</dt>
-              <dd>{formatCzk(base.monthlyDebtServiceCzk)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">Sazba (základ)</dt>
-              <dd>{formatPct(base.interestRatePctPoints)}</dd>
+              <dd>{formatCzk(financing.monthlyDebtServiceCzk)}</dd>
             </div>
           </dl>
+          <p className="mt-3 text-xs text-[var(--text-muted)]">
+            {financing.repaymentMethod}
+          </p>
         </div>
-        <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 lg:col-span-2">
           <h2 className="font-display text-xl text-[var(--text-primary)]">
-            Metriky (základ)
+            Metriky výnosu (základní scénář)
           </h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">Hrubý výnos</dt>
-              <dd>{formatPct(base.grossYieldPct)}</dd>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-3 text-sm">
+            <div>
+              <dt className="text-[var(--text-muted)]">
+                Hrubý nájemní výnos z kupní ceny
+              </dt>
+              <dd className="mt-1 text-lg font-semibold">
+                {formatPct(base.grossRentalYieldOnPurchasePct)}
+              </dd>
             </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">Provozní výnos</dt>
-              <dd>{formatPct(base.operatingYieldPct)}</dd>
+            <div>
+              <dt className="text-[var(--text-muted)]">
+                Výnos po neobsazenosti z pořizovacích nákladů
+              </dt>
+              <dd className="mt-1 text-lg font-semibold">
+                {formatPct(base.yieldAfterVacancyOnTacPct)}
+              </dd>
             </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-[var(--text-muted)]">Cash flow / měs.</dt>
-              <dd
-                className={cn(
-                  base.monthlyCashFlowCzk < 0 &&
-                    "text-[var(--action-destructive)]",
-                )}
-              >
-                {formatSignedCzk(base.monthlyCashFlowCzk)}
+            <div>
+              <dt className="text-[var(--text-muted)]">
+                Provozní výnos před financováním
+              </dt>
+              <dd className="mt-1 text-lg font-semibold">
+                {formatPct(base.operatingYieldOnTacPct)}
               </dd>
             </div>
           </dl>
+          <ul className="mt-4 space-y-1 text-xs text-[var(--text-muted)]">
+            <li>{study.metricNotes.grossRentalYieldOnPurchase}</li>
+            <li>{study.metricNotes.yieldAfterVacancyOnTac}</li>
+            <li>{study.metricNotes.operatingYieldOnTac}</li>
+            <li>{study.metricNotes.tax}</li>
+          </ul>
         </div>
       </section>
 
       <section className="mt-12">
         <h2 className="font-display text-2xl text-[var(--text-primary)]">
-          Scénáře
+          Scénáře — vstupy i výsledky
         </h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {scenarios.map((scenario) => (
@@ -278,41 +393,58 @@ export default async function CaseStudyDetailPage({ params }: Props) {
                 {scenario.label}
               </h3>
               <dl className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-[var(--text-muted)]">Hrubý výnos</dt>
-                  <dd>{formatPct(scenario.grossYieldPct)}</dd>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-[var(--text-muted)]">Nájem / měs.</dt>
+                  <dd>{formatCzk(scenario.inputs.monthlyContractRentCzk)}</dd>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-[var(--text-muted)]">Neobsazenost</dt>
+                  <dd>{formatPct(scenario.inputs.vacancyRatePct, 0)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-[var(--text-muted)]">Opex násobitel</dt>
+                  <dd>×{scenario.inputs.opexMultiplier}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-[var(--text-muted)]">Úrok</dt>
+                  <dd>{formatPct(scenario.inputs.interestRatePctPoints)}</dd>
+                </div>
+                <div className="mt-2 border-t border-[var(--border-default)] pt-2 flex justify-between gap-2">
+                  <dt className="text-[var(--text-muted)]">Po neobsazenosti</dt>
+                  <dd>{formatPct(scenario.yieldAfterVacancyOnTacPct)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
                   <dt className="text-[var(--text-muted)]">Provozní výnos</dt>
-                  <dd>{formatPct(scenario.operatingYieldPct)}</dd>
+                  <dd>{formatPct(scenario.operatingYieldOnTacPct)}</dd>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <dt className="text-[var(--text-muted)]">Cash flow</dt>
-                  <dd>{formatSignedCzk(scenario.monthlyCashFlowCzk)}</dd>
+                  <dd
+                    className={cn(
+                      scenario.monthlyCashFlowCzk < 0 &&
+                        "text-[var(--action-destructive)]",
+                    )}
+                  >
+                    {formatSignedCzk(scenario.monthlyCashFlowCzk)}
+                  </dd>
                 </div>
               </dl>
             </div>
           ))}
         </div>
-        <ul className="mt-4 space-y-1 text-xs text-[var(--text-muted)]">
-          <li>{study.metricNotes.grossYield}</li>
-          <li>{study.metricNotes.operatingYield}</li>
-          <li>{study.metricNotes.cashFlow}</li>
-          <li>{study.metricNotes.tax}</li>
-        </ul>
       </section>
 
-      {study.priceAtTargetGrossYieldCzk != null &&
-      definition.targetGrossYieldPct != null ? (
+      {study.priceAtTargetYieldOnTacCzk != null && study.targetYieldLabel ? (
         <section className="mt-12 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--background-secondary)] p-5">
           <h2 className="font-display text-xl text-[var(--text-primary)]">
-            Cena při cílovém hrubém výnosu {formatPct(definition.targetGrossYieldPct, 1)}
+            {study.targetYieldLabel}
           </h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Při základním EGI by samotná kupní cena{" "}
-            <strong>{formatCzk(study.priceAtTargetGrossYieldCzk)}</strong>{" "}
-            odpovídala tomuto výnosovému cíli. Nejde o odhad tržní hodnoty —
-            tržní ocenění neuvádíme, protože chybí srovnávací podklady.
+            Při pevném efektivním hrubém příjmu a pevných vedlejších nákladech,
+            rekonstrukci a rezervě by kupní cena{" "}
+            <strong>{formatCzk(study.priceAtTargetYieldOnTacCzk)}</strong>{" "}
+            odpovídala tomuto cíli (výnos po neobsazenosti z celkových
+            pořizovacích nákladů). Nejde o odhad tržní hodnoty.
           </p>
         </section>
       ) : null}
@@ -330,7 +462,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         </div>
         <div>
           <h2 className="font-display text-xl text-[var(--text-primary)]">
-            Chybějící podklady
+            Co ověřit před podpisem
           </h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--text-secondary)]">
             {definition.missingDocuments.map((item) => (
@@ -340,30 +472,72 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section className="mt-12 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-6">
         <h2 className="font-display text-xl text-[var(--text-primary)]">
-          Zjištění
+          Závěr pro rozhodnutí
         </h2>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--text-secondary)]">
-          {definition.findings.map((item) => (
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+          {decision.narrative}
+        </p>
+        <dl className="mt-6 grid gap-4 sm:grid-cols-2 text-sm">
+          <div>
+            <dt className="text-[var(--text-muted)]">Pokryje nájem provoz i splátku?</dt>
+            <dd className="font-medium text-[var(--text-primary)]">
+              {decision.coversOpsAndDebt ? "Ano (v modelu)" : "Ne — vychází doplatek"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[var(--text-muted)]">Měsíční / roční doplatek</dt>
+            <dd className="font-medium text-[var(--text-primary)]">
+              {decision.coversOpsAndDebt
+                ? "0 Kč"
+                : `${formatCzk(decision.monthlyTopUpCzk)} / ${formatCzk(decision.annualTopUpCzk)}`}
+            </dd>
+          </div>
+          {decision.breakEvenPurchasePriceCzk != null ? (
+            <div className="sm:col-span-2">
+              <dt className="text-[var(--text-muted)]">
+                Kupní cena při nulovém cash flow
+              </dt>
+              <dd className="font-medium text-[var(--text-primary)]">
+                {formatCzk(decision.breakEvenPurchasePriceCzk)}
+              </dd>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                {decision.breakEvenAssumptions}
+              </p>
+            </div>
+          ) : null}
+        </dl>
+        <p className="mt-4 text-sm text-[var(--text-secondary)]">
+          {decision.principalAmortizationNote}
+        </p>
+        <p className="mt-3 text-sm text-[var(--text-secondary)]">
+          {decision.pathToTarget}
+        </p>
+        <h3 className="mt-6 font-medium text-[var(--text-primary)]">
+          Nejcitlivější předpoklady
+        </h3>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--text-secondary)]">
+          {decision.mostSensitiveAssumptions.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
       </section>
 
-      <section className="mt-12 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-6">
-        <h2 className="font-display text-xl text-[var(--text-primary)]">
-          Závěr (podmíněný předpoklady)
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-          {definition.conclusion}
-        </p>
-        <Link
-          href="/#posoudit"
-          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-[var(--action-primary)] px-5 text-sm font-medium text-white hover:bg-[var(--action-primary-hover)]"
-        >
+      <section id="poptavka-studie" className="mt-12 scroll-mt-24">
+        <h2 className="font-display text-2xl text-[var(--text-primary)]">
           Chci takto posoudit svou nemovitost
-        </Link>
+        </h2>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          Do poptávky předáme odkaz na tuto modelovou studii, abychom věděli, jaký
+          formát výstupu očekáváte.
+        </p>
+        <div className="mt-6">
+          <PropertyAuditInquiryForm
+            id={`posoudit-${definition.slug}`}
+            caseStudySlug={definition.slug}
+          />
+        </div>
       </section>
     </StandardPageLayout>
   );

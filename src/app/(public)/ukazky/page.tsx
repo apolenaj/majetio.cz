@@ -21,7 +21,7 @@ export default function CaseStudiesIndexPage() {
     <StandardPageLayout>
       <PageHeader
         title="Ukázky analýz"
-        description="Tři modelové studie se společným výpočetním modulem. Všechny jsou označené jako modelové — nejde o nabídky k prodeji."
+        description="Tři modelové příklady ukazují formát analýzy. Nejde o aktuální nabídky k prodeji ani o klientské realizace."
         breadcrumbs={[
           { href: "/", label: "Domů" },
           { label: "Ukázky analýz" },

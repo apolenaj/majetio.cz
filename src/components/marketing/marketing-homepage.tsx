@@ -9,7 +9,7 @@ import {
 import { CaseStudyCard } from "@/components/marketing/case-study-card";
 import { PropertyAuditInquiryForm } from "@/components/marketing/property-audit-inquiry-form";
 import { Container } from "@/components/ui/container";
-import { getCatalogProductByKey } from "@/config/pricing-architecture";
+import { publicCustomerOffer } from "@/config/public-offer";
 import {
   getFeaturedCaseStudy,
   listCaseStudies,
@@ -52,18 +52,10 @@ function SectionHeading({
 export function MarketingHomepage() {
   const studies = listCaseStudies();
   const featured = getFeaturedCaseStudy();
-  const deep = getCatalogProductByKey("deep_analysis");
-  const full = getCatalogProductByKey("full_analysis");
-  const price =
-    deep?.priceGrossMinor != null
-      ? Math.round(deep.priceGrossMinor / 100)
-      : full?.priceGrossMinor != null
-        ? Math.round(full.priceGrossMinor / 100)
-        : null;
+  const offer = publicCustomerOffer;
 
   return (
     <>
-      {/* Hero */}
       <section className="relative overflow-hidden border-b border-[var(--border-default)]">
         <div
           aria-hidden
@@ -115,7 +107,7 @@ export function MarketingHomepage() {
               <div className="space-y-4 p-5 sm:p-6">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
-                    Výstup modelové studie
+                    Ukázka výstupu
                   </p>
                   <p className="mt-1 font-display text-xl text-[var(--text-primary)]">
                     {featured.definition.title}
@@ -129,15 +121,15 @@ export function MarketingHomepage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--text-muted)]">Hrubý výnos</dt>
+                    <dt className="text-[var(--text-muted)]">Hrubý nájemní výnos</dt>
                     <dd className="font-semibold text-[var(--text-primary)]">
-                      {formatPct(featured.base.grossYieldPct)}
+                      {formatPct(featured.base.grossRentalYieldOnPurchasePct)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--text-muted)]">Provozní výnos</dt>
+                    <dt className="text-[var(--text-muted)]">Po neobsazenosti</dt>
                     <dd className="font-semibold text-[var(--text-primary)]">
-                      {formatPct(featured.base.operatingYieldPct)}
+                      {formatPct(featured.base.yieldAfterVacancyOnTacPct)}
                     </dd>
                   </div>
                   <div>
@@ -148,8 +140,8 @@ export function MarketingHomepage() {
                   </div>
                 </dl>
                 <p className="text-xs text-[var(--text-muted)]">
-                  Čísla z jednoho datového modelu studie — před zdaněním, ne
-                  tržní ocenění.
+                  Modelová čísla před zdaněním. Nejde o ocenění ani o nabídku k
+                  prodeji.
                 </p>
               </div>
             </div>
@@ -157,14 +149,13 @@ export function MarketingHomepage() {
         </Container>
       </section>
 
-      {/* Case studies */}
       <section className="py-16 sm:py-20" aria-labelledby="ukazky-heading">
         <Container>
           <SectionHeading
             id="ukazky-heading"
             eyebrow="Ukázky analýz"
-            title="Tři modelové studie"
-            description="Každá studie je označená jako modelová. Nejde o aktuální nabídky k prodeji ani o klientské realizace."
+            title="Jak vypadá hotová analýza"
+            description="Tři modelové příklady — byt na pronájem, dům před rekonstrukcí a menší bytový dům. Nejsou to aktuální nabídky ani klientské realizace."
           />
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
             {studies.map((study, index) => (
@@ -178,7 +169,6 @@ export function MarketingHomepage() {
         </Container>
       </section>
 
-      {/* What you get */}
       <section
         id="co-ziskate"
         className="border-y border-[var(--border-default)] bg-[var(--surface-primary)] py-16 sm:py-20"
@@ -189,32 +179,31 @@ export function MarketingHomepage() {
             <SectionHeading
               id="deliverable-heading"
               eyebrow="Co získáte"
-              title="Přehled, který odpovídá skutečnému výstupu"
-              description="Ne marketingové kartičky — struktura výstupu z modelové analýzy."
+              title="Přehled, ze kterého se rozhoduje snáz"
+              description="Stejná struktura, jakou uvidíte v ukázkových studiích."
             />
             <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--background-primary)]">
               <div className="border-b border-[var(--border-default)] px-5 py-4">
                 <p className="text-sm font-medium text-[var(--text-primary)]">
                   Náhled výstupu · {featured.definition.shortTitle}
                 </p>
-                <p className="text-xs text-[var(--text-muted)]">Modelová data</p>
               </div>
               <div className="grid gap-0 sm:grid-cols-2">
                 {[
                   {
                     title: "Ekonomika koupě",
-                    body: `Pořizovací náklady ${formatCzk(featured.totalAcquisitionCostCzk)} včetně vedlejších nákladů, rekonstrukce a rezervy.`,
+                    body: `Celkové pořizovací náklady ${formatCzk(featured.totalAcquisitionCostCzk)} včetně vedlejších nákladů, rekonstrukce a rezervy.`,
                   },
                   {
                     title: "Přehled nákladů",
-                    body: "Správa, údržba, pojištění, daň z nemovitosti a náklady vlastníka — bez dvojího započtení.",
+                    body: "Správa, údržba, pojištění, daň z nemovitosti a náklady vlastníka — odděleně od služeb hrazených nájemcem.",
                   },
                   {
                     title: "Scénáře",
                     body: featured.scenarios
                       .map(
                         (s) =>
-                          `${s.label}: CF ${formatSignedCzk(s.monthlyCashFlowCzk)}`,
+                          `${s.label}: ${formatSignedCzk(s.monthlyCashFlowCzk)} / měs.`,
                       )
                       .join(" · "),
                   },
@@ -243,7 +232,6 @@ export function MarketingHomepage() {
         </Container>
       </section>
 
-      {/* How it works */}
       <section
         id="jak-to-funguje"
         className="py-16 sm:py-20"
@@ -253,24 +241,24 @@ export function MarketingHomepage() {
           <SectionHeading
             id="how-heading"
             eyebrow="Jak to funguje"
-            title="Tři kroky k posouzení"
+            title="Od poptávky k vysvětlení čísel"
           />
           <ol className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-3">
             {[
               {
                 step: "1",
                 title: "Pošlete nemovitost",
-                text: "Odkaz na inzerát, nebo základní údaje ručně. Import z portálů zatím neběží automaticky.",
+                text: "Odkaz na inzerát, nebo typ, lokalitu a účel. Co chybí, doplníme společně.",
               },
               {
                 step: "2",
                 title: "Doplníme podklady",
-                text: "Upřesníme chybějící vstupy a oddělíme zadané údaje od modelových předpokladů.",
+                text: "Oddělíme zadané údaje od modelových předpokladů a upřesníme chybějící vstupy.",
               },
               {
                 step: "3",
-                title: "Získáte analýzu",
-                text: "Ekonomika, scénáře, rizika a otázky k ověření — s vysvětlením výpočtů.",
+                title: "Dostanete analýzu",
+                text: "Ekonomika, scénáře, rizika a konkrétní otázky k ověření před podpisem.",
               },
             ].map((item) => (
               <li key={item.step} className="text-center sm:text-left">
@@ -289,7 +277,6 @@ export function MarketingHomepage() {
         </Container>
       </section>
 
-      {/* Pricing */}
       <section
         id="cena"
         className="border-y border-[var(--border-default)] bg-[var(--surface-primary)] py-16 sm:py-20"
@@ -299,79 +286,71 @@ export function MarketingHomepage() {
           <SectionHeading
             id="price-heading"
             eyebrow="Cena"
-            title="Přehledná nabídka"
-            description="Ceny bereme z centrálního ceníku. Dokud neběží kompletní objednávka online, používejte nezávaznou poptávku."
+            title={offer.nameCs}
+            description={offer.summaryCs}
           />
           <div className="mx-auto mt-10 max-w-3xl rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--background-primary)] p-6 sm:p-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="font-display text-2xl text-[var(--text-primary)]">
-                  {deep?.nameCs ?? full?.nameCs ?? "Hloubková analýza"}
-                </p>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  {deep?.taglineCs ??
-                    "Jednorázová analýza konkrétní nemovitosti."}
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {offer.billingCs} · {offer.vatNoteCs}
                 </p>
               </div>
               <p className="font-display text-3xl text-[var(--text-primary)]">
-                {price != null ? `${formatCzk(price)}` : "Na dotaz"}
+                {formatCzk(offer.priceGrossCzk)}
               </p>
             </div>
             <ul className="mt-6 grid gap-2 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
-              {(deep?.features ?? full?.features ?? []).slice(0, 4).map((f) => (
+              {offer.includesCs.slice(0, 4).map((f) => (
                 <li key={f}>• {f}</li>
               ))}
-              <li>• Ekonomika koupě, náklady, scénáře a rizika</li>
-              <li>• Oddělení zadaných údajů a modelových předpokladů</li>
             </ul>
             <p className="mt-6 text-sm text-[var(--text-muted)]">
-              Termín dodání potvrdíme po přijetí podkladů. V ceníku je u Deep
-              Analysis uveden refresh 90 dní — není to SLA na první dodání.
+              {offer.nonBindingNoteCs}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href="#posoudit"
                 className="inline-flex h-11 items-center justify-center rounded-lg bg-[var(--action-primary)] px-5 text-sm font-medium text-white hover:bg-[var(--action-primary-hover)]"
               >
-                Nezávazně poptat
+                {offer.ctaLabelCs}
               </a>
               <Link
                 href="/cenik"
                 className="inline-flex h-11 items-center justify-center rounded-lg border border-[var(--border-strong)] px-5 text-sm font-medium text-[var(--text-primary)]"
               >
-                Kompletní ceník
+                Detail nabídky
               </Link>
             </div>
           </div>
         </Container>
       </section>
 
-      {/* FAQ + form */}
       <section className="py-16 sm:py-20" aria-labelledby="faq-heading">
         <Container className="grid gap-12 lg:grid-cols-2">
           <div>
             <SectionHeading
               id="faq-heading"
               eyebrow="FAQ"
-              title="Stručné odpovědi"
+              title="Než odešlete poptávku"
             />
             <dl className="mt-8 space-y-5">
               {[
                 {
-                  q: "Umíte načíst inzerát automaticky?",
-                  a: "Zatím ne. Pošlete odkaz nebo údaje ručně — podklady doplníme při zpracování poptávky.",
+                  q: "Co mám připravit?",
+                  a: "Odkaz na inzerát pomůže, ale stačí typ nemovitosti, lokalita, účel a e-mail. Zbytek doplníme.",
                 },
                 {
                   q: "Je odeslání formuláře objednávkou?",
-                  a: "Ne. Jde o nezávaznou poptávku. Platbu nespouštíme, dokud nebude funkční objednávkový proces.",
+                  a: "Ne. Jde o nezávaznou poptávku. Cenu a termín potvrdíme po přijetí podkladů.",
                 },
                 {
-                  q: "Co znamená modelová analýza?",
-                  a: "Ukázky používají smyšlené, ale konzistentní vstupy. Nejsou to aktuální nabídky ani klientské výsledky.",
+                  q: "Co znamenají ukázkové analýzy?",
+                  a: "Jsou modelové — ukazují formát výstupu. Nejsou to aktuální nabídky ani výsledky konkrétních klientů.",
                 },
                 {
-                  q: "Jak souvisí HypotekaJasne.cz?",
-                  a: "Po analýze můžete řešit financování s partnerem. Citlivé údaje neposíláme v URL.",
+                  q: "Co následuje po odeslání?",
+                  a: "Ozveme se, upřesníme podklady a domluvíme zpracování analýzy.",
                 },
               ].map((item) => (
                 <div key={item.q}>

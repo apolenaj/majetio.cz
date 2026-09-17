@@ -60,7 +60,8 @@ export function assertCatalogProductCheckoutAllowed(
   return { ok: true };
 }
 
-/** Public ceník: hide legal/flag-gated OFF products (no broken CTAs). */
+/** Public ceník: only products explicitly marked for new customers. */
 export function isCatalogProductPubliclyListed(def: CatalogProductDef): boolean {
+  if (!def.publicCustomerOffer) return false;
   return isCatalogProductFeatureEnabled(def);
 }
