@@ -25,10 +25,12 @@ export function PriceFilter({
   cenaOd,
   cenaDo,
   onChange,
+  collapsible = false,
 }: {
   cenaOd?: number;
   cenaDo?: number;
   onChange: (next: { cenaOd?: number; cenaDo?: number }) => void;
+  collapsible?: boolean;
 }) {
   const sliderMin = cenaOd ?? PRICE_FILTER_MIN;
   const sliderMax = cenaDo ?? PRICE_FILTER_MAX;
@@ -53,6 +55,7 @@ export function PriceFilter({
       title="Cena"
       description="Rozsah kupní ceny — posuvník nebo přesná čísla"
       defaultOpen
+      collapsible={collapsible}
     >
       <div className="space-y-5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">

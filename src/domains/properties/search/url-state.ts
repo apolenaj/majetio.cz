@@ -9,6 +9,19 @@ import {
   SEARCH_REGION_IDS,
 } from "@/domains/properties/search/regions";
 
+export type SearchContextTab =
+  | "doporucene"
+  | "ulozene"
+  | "okoli"
+  | "zahranicni";
+
+export const SEARCH_CONTEXT_TABS = [
+  { value: "doporucene" as const, label: "Doporučené pro Vás" },
+  { value: "ulozene" as const, label: "Moje uložené" },
+  { value: "okoli" as const, label: "V okolí" },
+  { value: "zahranicni" as const, label: "Zahraniční" },
+] as const;
+
 export type PropertyUrlFilterState = {
   q?: string;
   lokalita?: string;
@@ -35,6 +48,11 @@ export type PropertyUrlFilterState = {
   rekonstrukceDo?: number;
   /** Selected CZ/SK region slugs (`SEARCH_REGIONS`). */
   kraje: string[];
+  /**
+   * Discovery context tab:
+   * doporucene | ulozene | okoli | zahranicni
+   */
+  kontext?: SearchContextTab;
   stranka: number;
   /** Market filters — shown only when coverage >= 40 % */
   cenovaHladina?: string;
@@ -69,10 +87,13 @@ const URL_TO_SORT: Record<string, SearchSortPreset> = Object.fromEntries(
 ) as Record<string, SearchSortPreset>;
 
 export const TYP_OPTIONS = [
-  { value: "byt", label: "Byt", propertyType: "APARTMENT" },
-  { value: "dum", label: "Dům", propertyType: "HOUSE" },
-  { value: "pozemek", label: "Pozemek", propertyType: "LAND" },
+  { value: "byt", label: "Byty", propertyType: "APARTMENT" },
+  { value: "dum", label: "Domy", propertyType: "HOUSE" },
+  { value: "dum-na-klic", label: "Domy na klíč", propertyType: "HOUSE" },
+  { value: "pozemek", label: "Pozemky", propertyType: "LAND" },
   { value: "komercni", label: "Komerční", propertyType: "COMMERCIAL" },
+  { value: "projekty", label: "Projekty", propertyType: "COMMERCIAL" },
+  { value: "ostatni", label: "Ostatní", propertyType: "OTHER" },
 ] as const;
 
 export const DISPOZICE_OPTIONS = [
@@ -186,6 +207,7 @@ export function parsePropertySearchParams(
     kraje: list(params.kraje).filter((id) =>
       (SEARCH_REGION_IDS as readonly string[]).includes(id),
     ),
+    kontext: parseContextTab(first(params.kontext)),
     stranka: page,
     cenovaHladina: first(params["cenova-hladina"]),
     vynosVsBenchmark: first(params["vynos-benchmark"]),
@@ -198,6 +220,16 @@ function normalizeDisposition(value: string): string {
   if (/^\d\+kk$/.test(v) || /^\d\+\d$/.test(v)) return v;
   if (/^\dkk$/.test(v)) return `${v[0]}+kk`;
   return v;
+}
+
+function parseContextTab(
+  raw: string | undefined,
+): SearchContextTab | undefined {
+  if (!raw) return undefined;
+  const allowed = SEARCH_CONTEXT_TABS.map((t) => t.value);
+  return (allowed as readonly string[]).includes(raw)
+    ? (raw as SearchContextTab)
+    : undefined;
 }
 
 /** Serialize state → query object (omit empties). */
@@ -230,6 +262,9 @@ export function serializePropertySearchParams(
     out["rekonstrukce-do"] = String(state.rekonstrukceDo);
   }
   if (state.kraje.length) out.kraje = state.kraje.join(",");
+  if (state.kontext && state.kontext !== "doporucene") {
+    out.kontext = state.kontext;
+  }
   if (state.cenovaHladina) out["cenova-hladina"] = state.cenovaHladina;
   if (state.vynosVsBenchmark) out["vynos-benchmark"] = state.vynosVsBenchmark;
   if (state.cenovyTrend) out["cenovy-trend"] = state.cenovyTrend;
@@ -264,6 +299,7 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   if (state.cashflowOd != null) n += 1;
   if (state.rekonstrukceOd != null || state.rekonstrukceDo != null) n += 1;
   n += state.kraje.length;
+  if (state.kontext && state.kontext !== "doporucene") n += 1;
   if (state.cenovaHladina) n += 1;
   if (state.vynosVsBenchmark) n += 1;
   if (state.cenovyTrend) n += 1;
@@ -399,6 +435,14 @@ export function getActiveFilterChips(
       id: `kraj-${k}`,
       label: region?.short ?? k,
       clear: { kraje: state.kraje.filter((x) => x !== k) },
+    });
+  }
+  if (state.kontext && state.kontext !== "doporucene") {
+    const tab = SEARCH_CONTEXT_TABS.find((t) => t.value === state.kontext);
+    chips.push({
+      id: "kontext",
+      label: tab?.label ?? state.kontext,
+      clear: { kontext: "doporucene" },
     });
   }
   return chips;

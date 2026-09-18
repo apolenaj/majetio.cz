@@ -86,9 +86,11 @@ function RegionPills({
 export function MapFilter({
   selected,
   onChange,
+  collapsible = false,
 }: {
   selected: string[];
   onChange: (kraje: string[]) => void;
+  collapsible?: boolean;
 }) {
   function toggle(id: string) {
     onChange(
@@ -103,9 +105,10 @@ export function MapFilter({
 
   return (
     <FilterAccordion
-      title="Lokalita a mapa"
-      description="Vyberte kraje v ČR a SR — mapa nebo rychlé volby"
+      title="Lokalita"
+      description="Interaktivní mapa krajů ČR a SR + rychlý výběr"
       defaultOpen
+      collapsible={collapsible}
       badge={
         selected.length > 0 ? (
           <span className="rounded-full bg-[var(--action-accent)]/12 px-2 py-0.5 text-[0.65rem] font-medium text-[var(--action-accent)]">

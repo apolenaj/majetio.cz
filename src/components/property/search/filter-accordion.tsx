@@ -5,6 +5,42 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+export function FilterSection({
+  title,
+  description,
+  children,
+  className,
+  badge,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  className?: string;
+  badge?: React.ReactNode;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-sm sm:p-6",
+        className,
+      )}
+    >
+      <header className="mb-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-display text-lg text-[var(--text-primary)]">
+            {title}
+          </h3>
+          {badge}
+        </div>
+        {description ? (
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{description}</p>
+        ) : null}
+      </header>
+      {children}
+    </section>
+  );
+}
+
 export function FilterAccordion({
   title,
   description,
@@ -12,6 +48,7 @@ export function FilterAccordion({
   children,
   className,
   badge,
+  collapsible = true,
 }: {
   title: string;
   description?: string;
@@ -19,8 +56,23 @@ export function FilterAccordion({
   children: React.ReactNode;
   className?: string;
   badge?: React.ReactNode;
+  /** When false, renders as a static FilterSection card. */
+  collapsible?: boolean;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
+
+  if (!collapsible) {
+    return (
+      <FilterSection
+        title={title}
+        description={description}
+        className={className}
+        badge={badge}
+      >
+        {children}
+      </FilterSection>
+    );
+  }
 
   return (
     <section
