@@ -4,8 +4,16 @@
  * On Vercel/serverless the filesystem is ephemeral: local uploads MUST NOT be
  * the only persistence path for customer photos. Prefer S3-compatible storage
  * when BLOB/S3 env is configured.
+ *
+ * Credentials are read only when the S3 adapter runs (put/delete), not at
+ * module import time. This module is server-only (Prisma/actions callers).
  */
 
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
@@ -105,6 +113,20 @@ function extForMime(mime: string): string {
   return ".jpg";
 }
 
+function createS3Client(): S3Client {
+  const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, "");
+  const region = process.env.S3_REGION || "auto";
+  return new S3Client({
+    region,
+    endpoint: endpoint || undefined,
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+    },
+  });
+}
+
 async function putLocal(input: PutObjectInput & { mime: string }): Promise<StoredObject> {
   const ext = extForMime(input.mime);
   const fileBase = `${Date.now()}-${randomBytes(4).toString("hex")}${ext}`;
@@ -121,28 +143,6 @@ async function putLocal(input: PutObjectInput & { mime: string }): Promise<Store
   };
 }
 
-async function loadS3Client(): Promise<
-  | {
-      S3Client: typeof import("@aws-sdk/client-s3").S3Client;
-      PutObjectCommand: typeof import("@aws-sdk/client-s3").PutObjectCommand;
-      DeleteObjectCommand: typeof import("@aws-sdk/client-s3").DeleteObjectCommand;
-    }
-  | null
-> {
-  try {
-    // Avoid Vite/Vitest static resolution when the optional SDK is not installed.
-    const spec = "@aws-sdk/" + "client-s3";
-    const mod = (await import(spec)) as typeof import("@aws-sdk/client-s3");
-    return {
-      S3Client: mod.S3Client,
-      PutObjectCommand: mod.PutObjectCommand,
-      DeleteObjectCommand: mod.DeleteObjectCommand,
-    };
-  } catch {
-    return null;
-  }
-}
-
 async function putS3(input: PutObjectInput & { mime: string }): Promise<StoredObject> {
   const bucket = process.env.S3_BUCKET!;
   const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, "");
@@ -154,25 +154,9 @@ async function putS3(input: PutObjectInput & { mime: string }): Promise<StoredOb
   const ext = extForMime(input.mime);
   const objectKey = `${input.keyPrefix.replace(/^\/+|\/+$/g, "")}/${Date.now()}-${randomBytes(4).toString("hex")}${ext}`;
 
-  const sdk = await loadS3Client();
-  if (!sdk) {
-    throw new Error(
-      "S3 úložiště je nakonfigurované, ale chybí balíček @aws-sdk/client-s3. Nainstalujte jej nebo použijte STORAGE_DRIVER=local mimo ephemeral host.",
-    );
-  }
-
-  const client = new sdk.S3Client({
-    region,
-    endpoint: endpoint || undefined,
-    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
-    credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-    },
-  });
-
+  const client = createS3Client();
   await client.send(
-    new sdk.PutObjectCommand({
+    new PutObjectCommand({
       Bucket: bucket,
       Key: objectKey,
       Body: input.bytes,
@@ -250,19 +234,9 @@ export async function deleteListingObject(storageKey: string): Promise<void> {
   }
   if (driver === "s3" && hasS3Config()) {
     try {
-      const sdk = await loadS3Client();
-      if (!sdk) return;
-      const client = new sdk.S3Client({
-        region: process.env.S3_REGION || "auto",
-        endpoint: process.env.S3_ENDPOINT || undefined,
-        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
-        credentials: {
-          accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-        },
-      });
+      const client = createS3Client();
       await client.send(
-        new sdk.DeleteObjectCommand({
+        new DeleteObjectCommand({
           Bucket: process.env.S3_BUCKET!,
           Key: storageKey,
         }),
