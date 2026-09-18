@@ -8,15 +8,17 @@ import {
   MEGA_NEMOVITOSTI,
   MOBILE_APP_NAV,
   NAV_PRIMARY,
+  NAV_PRIMARY_CTA,
   STRATEGIES,
 } from "@/config/navigation";
 
 describe("navigation config", () => {
-  it("keeps primary nav focused on marketing conversion", () => {
+  it("keeps primary nav focused on platform journeys", () => {
     expect(NAV_PRIMARY.length).toBeLessThanOrEqual(8);
-    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/ukazky");
+    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/nemovitosti");
     expect(NAV_PRIMARY.map((i) => i.href)).toContain("/cenik");
-    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/kontakt");
+    expect(NAV_PRIMARY.map((i) => i.href)).toContain("/moznosti");
+    expect(NAV_PRIMARY_CTA.href).toBe("/pridat-nemovitost");
   });
 
   it("only links megamenu to known routes", () => {
@@ -43,6 +45,7 @@ describe("navigation config", () => {
 
   it("account and admin nav are complete", () => {
     expect(ACCOUNT_NAV.some((i) => i.href === "/ucet")).toBe(true);
+    expect(ACCOUNT_NAV.some((i) => i.href === "/ucet/nabidky")).toBe(true);
     expect(ADMIN_NAV.some((i) => i.href === "/admin")).toBe(true);
   });
 

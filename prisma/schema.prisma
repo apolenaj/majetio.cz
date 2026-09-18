@@ -1172,6 +1172,9 @@ model User {
   decisionPreference        DecisionPreference?
   listingReports            ListingReport[]            @relation("ListingReportReporter")
   listingReportsReviewed    ListingReport[]            @relation("ListingReportReviewer")
+  marketplaceModeInterests  MarketplaceModeInterest[]  @relation("MarketplaceModeInterestUser")
+  auctionBids               AuctionBid[]               @relation("AuctionBidUser")
+  successFeeEngagements     SuccessFeeEngagement[]     @relation("SuccessFeeEngagementUser")
 }
 
 model Account {
@@ -1918,6 +1921,8 @@ model Property {
   propertyTransactions PropertyTransaction[]
   paymentPlans    PropertyPaymentPlan[]
   listingReports  ListingReport[]
+  marketplaceModeInterests MarketplaceModeInterest[]
+  auctionConfigs  AuctionConfig[]
 
   @@index([status, visibility])
   @@index([propertyType, transactionType])
@@ -5442,4 +5447,125 @@ model SystemHealthProbe {
 
   @@unique([component, componentKey])
   @@index([status, checkedAt])
+}
+
+/**
+ * Alternative marketplace modes — shared investment, offer-a-price, swap, etc.
+ * Status distinguishes declared interest vs confirmed participation vs settled deal.
+ * Never treat DECLARED as collected money or legal ownership.
+ */
+enum MarketplaceModeKind {
+  SHARED_INVESTMENT
+  PARTIAL_BUY
+  SHARED_RENT
+  OFFER_PRICE
+  SWAP
+  HOUSING_HELP
+  AUCTION
+  FOREIGN_INFO
+}
+
+enum MarketplaceInterestStatus {
+  DECLARED
+  WAITLIST
+  ACCEPTED_FOR_NEGOTIATION
+  CONFIRMED_PARTICIPATION
+  SETTLED
+  WITHDRAWN
+  REJECTED
+}
+
+model MarketplaceModeInterest {
+  id           String                     @id @default(cuid())
+  propertyId   String?
+  mode         MarketplaceModeKind
+  userId       String?
+  status       MarketplaceInterestStatus  @default(DECLARED)
+  /** Requested share % for shared investment (not ownership). */
+  sharePct     Float?
+  amountMinor  Int?
+  currency     String?                    @default("CZK")
+  /** Mode-specific payload (counterparty items, rent prefs, etc.). */
+  payload      Json?
+  message      String?                    @db.Text
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User?     @relation("MarketplaceModeInterestUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, mode, status])
+  @@index([userId, mode, createdAt])
+  @@index([mode, status, createdAt])
+}
+
+/**
+ * Configurable auction module — not legally activated until rules are decided.
+ * Bids are atomic; highest bid ≠ property transfer.
+ */
+model AuctionConfig {
+  id              String   @id @default(cuid())
+  propertyId      String
+  currency        String   @default("CZK")
+  startsAt        DateTime
+  endsAt          DateTime
+  minIncrement    Int
+  reservePrice    Int?
+  /** Soft rules blob — bindingness undecided until product decision. */
+  rulesMeta       Json?
+  status          String   @default("DRAFT")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  property Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bids     AuctionBid[]
+
+  @@index([propertyId, status])
+  @@index([endsAt, status])
+}
+
+model AuctionBid {
+  id             String   @id @default(cuid())
+  auctionId      String
+  bidderUserId   String
+  amountMinor    Int
+  currency       String   @default("CZK")
+  serverReceivedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  auction AuctionConfig @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder  User          @relation("AuctionBidUser", fields: [bidderUserId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId, amountMinor])
+  @@index([bidderUserId, createdAt])
+}
+
+/**
+ * Non-binding success-fee package engagement — no automatic PSP charge.
+ */
+enum SuccessFeeEngagementStatus {
+  DRAFT
+  REQUESTED
+  ACCEPTED_NONBINDING
+  CANCELLED
+}
+
+model SuccessFeeEngagement {
+  id           String                     @id @default(cuid())
+  userId       String
+  propertyId   String?
+  actorKind    String
+  tier         String
+  ratePct      Float
+  ratePctMax   Float?
+  transaction  String
+  status       SuccessFeeEngagementStatus @default(DRAFT)
+  notes        String?                    @db.Text
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+
+  user User @relation("SuccessFeeEngagementUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([propertyId])
 }

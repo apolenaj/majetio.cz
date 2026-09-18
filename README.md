@@ -29,12 +29,23 @@ cp .env.example .env
 # upravte DATABASE_URL a AUTH_SECRET
 npm install
 npx prisma generate
-npx prisma migrate deploy
-npm run dev
 ```
 
-Pokud ještě nemáte databázi, můžete místo `migrate deploy` použít `npx prisma db push` (prototypování).
-Otevřete [http://localhost:3000](http://localhost:3000).
+Databáze (jedna z variant):
+
+```bash
+# A) Docker Desktop (stejné credentials jako CI)
+docker compose up -d
+npx prisma migrate deploy   # nebo při greenfield problému: npx prisma db push
+
+# B) Bez Dockeru (Windows): embedded PostgreSQL
+npm run db:embedded
+# nechte proces běžet; .env DATABASE_URL musí mířit na 127.0.0.1:5432/majetio
+```
+
+```bash
+npm run dev
+```
 
 ### Kontroly kvality
 

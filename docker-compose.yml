@@ -1,0 +1,27 @@
+# Isolated local/dev PostgreSQL — mirrors CI (.github/workflows/ci.yml).
+# Usage: docker compose up -d
+# Then: npx prisma migrate deploy
+#
+# Credentials match CI only (synthetic). Never reuse for production.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: majetio-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: majetio
+      POSTGRES_PASSWORD: majetio
+      POSTGRES_DB: majetio
+    ports:
+      - "5432:5432"
+    volumes:
+      - majetio_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U majetio -d majetio"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  majetio_pgdata:

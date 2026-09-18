@@ -32,7 +32,7 @@ export default async function OstravaLandingPage() {
   };
   const { isAuthenticated, matchProfile, profileComplete, rejectedPropertyIds } =
     await resolveMatchProfile();
-  const { cards, sortLabel, relaxedCount, showPassportCta } = buildDiscoveryCards(
+  const { cards, sortLabel, relaxedCount, showPassportCta, hasLiveListings, hasDemoListings } = await buildDiscoveryCards(
     state,
     matchProfile,
     profileComplete,
@@ -59,6 +59,8 @@ export default async function OstravaLandingPage() {
       isAuthenticated={isAuthenticated}
       showPassportCta={showPassportCta}
       sponsoredCards={sponsoredCards}
+      hasLiveListings={hasLiveListings}
+      hasDemoListings={hasDemoListings}
     />
   );
 }

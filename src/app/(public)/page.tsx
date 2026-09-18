@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 
 import { JsonLd, buildOrganizationJsonLd } from "@/components/seo/json-ld";
-import { MarketingHomepage } from "@/components/marketing/marketing-homepage";
+import { PlatformHomepage } from "@/components/marketing/platform-homepage";
 import { brand } from "@/config/brand";
-import { getFeaturedCaseStudy, listCaseStudies } from "@/content/case-studies";
+import { listCaseStudies } from "@/content/case-studies";
 import { getSiteOrigin } from "@/domains/seo/site-origin";
+import { listDiscoveryPropertyRecords } from "@/domains/properties/service/prisma-property-repository";
+import { toPublicPropertyListItemDto } from "@/domains/properties/service/dto";
+import { mapPublicDtoToPropertyCard } from "@/domains/properties/service/card-mapper";
 
-const title = "Majetio — analýza nemovitosti před koupí";
+const title = "Majetio — realitní inzertní platforma";
 const description =
-  "Než koupíte nemovitost, poznejte její čísla i rizika. Ekonomika koupě, náklady, scénáře a otázky k ověření.";
+  "Nabízejte a hledejte nemovitosti, alternativní režimy bydlení a investování, nebo si nechte posoudit konkrétní nabídku.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
         url: "/case-studies/homepage-hero.png",
         width: 1200,
         height: 675,
-        alt: "Ilustrační fotografie — Majetio",
+        alt: "Majetio — nemovitosti",
       },
     ],
   },
@@ -39,11 +42,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
   const origin = getSiteOrigin();
-  const featured = getFeaturedCaseStudy();
   const studies = listCaseStudies();
 
+  const records = await listDiscoveryPropertyRecords(12);
+  const featuredListings = records
+    .filter((r) => !r.isDemo)
+    .slice(0, 6)
+    .map((r) => mapPublicDtoToPropertyCard(toPublicPropertyListItemDto(r)));
+
+  // If no live listings yet, show nothing (empty state) — do not pass demos as live.
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -51,38 +60,19 @@ export default function HomePage() {
     url: origin,
     description,
     inLanguage: "cs-CZ",
-  };
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "Umíte načíst inzerát automaticky?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Zatím ne. Pošlete odkaz nebo údaje ručně — podklady doplníme při zpracování poptávky.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Je odeslání formuláře objednávkou?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Ne. Jde o nezávaznou poptávku. Platbu nespouštíme, dokud nebude funkční objednávkový proces.",
-        },
-      },
-    ],
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${origin}/nemovitosti?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
 
   return (
     <>
       <JsonLd id="ld-organization" data={buildOrganizationJsonLd(origin)} />
       <JsonLd id="ld-website" data={websiteJsonLd} />
-      <JsonLd id="ld-faq" data={faqJsonLd} />
       <JsonLd
-        id="ld-featured-study"
+        id="ld-case-studies"
         data={{
           "@context": "https://schema.org",
           "@type": "ItemList",
@@ -96,10 +86,7 @@ export default function HomePage() {
           })),
         }}
       />
-      <p className="sr-only">
-        Ukázková studie: {featured.definition.title}
-      </p>
-      <MarketingHomepage />
+      <PlatformHomepage featuredListings={featuredListings} />
     </>
   );
 }

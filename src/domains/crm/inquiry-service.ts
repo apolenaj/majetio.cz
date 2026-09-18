@@ -21,6 +21,7 @@ export async function createInquiry(input: {
       id: true,
       organizationId: true,
       listedByUserId: true,
+      ownerUserId: true,
       status: true,
     },
   });
@@ -40,7 +41,7 @@ export async function createInquiry(input: {
     data: {
       propertyId: property.id,
       organizationId: property.organizationId,
-      agentUserId: property.listedByUserId,
+      agentUserId: property.listedByUserId ?? property.ownerUserId,
       buyerUserId: input.buyerUserId ?? null,
       buyerName: input.buyerName?.trim().slice(0, 120) || null,
       buyerEmail: input.buyerEmail?.trim().toLowerCase().slice(0, 200) || null,
@@ -100,6 +101,14 @@ export async function getInquiryForAgent(input: {
       id: input.inquiryId,
       OR: [
         { agentUserId: input.agentUserId },
+        {
+          property: {
+            OR: [
+              { ownerUserId: input.agentUserId },
+              { listedByUserId: input.agentUserId },
+            ],
+          },
+        },
         {
           organization: {
             members: {

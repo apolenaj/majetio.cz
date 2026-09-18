@@ -113,7 +113,7 @@ export default async function LokalitaDetailPage({ params }: Props) {
     lokalita: profile.location.searchLokalita,
     razeni: "newest" as const,
   };
-  const { cards } = buildDiscoveryCards(searchState, matchProfile, profileComplete);
+  const { cards } = await buildDiscoveryCards(searchState, matchProfile, profileComplete);
 
   const centroid = CENTROIDS[profile.location.slug] ?? CENTROIDS.praha!;
   const asking =

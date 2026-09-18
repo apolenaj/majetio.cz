@@ -52,7 +52,8 @@ export default async function NemovitostiPage({ searchParams }: Props) {
   const state = parsePropertySearchParams(params);
   const { isAuthenticated, matchProfile, profileComplete, rejectedPropertyIds } =
     await resolveMatchProfile();
-  const { cards, sortLabel, relaxedCount, showPassportCta } = buildDiscoveryCards(
+  const { cards, sortLabel, relaxedCount, showPassportCta, hasLiveListings, hasDemoListings } =
+    await buildDiscoveryCards(
     state,
     matchProfile,
     profileComplete,
@@ -97,6 +98,8 @@ export default async function NemovitostiPage({ searchParams }: Props) {
       isAuthenticated={isAuthenticated}
       showPassportCta={showPassportCta}
       sponsoredCards={sponsoredCards}
+      hasLiveListings={hasLiveListings}
+      hasDemoListings={hasDemoListings}
     />
   );
 }

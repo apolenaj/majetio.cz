@@ -45,6 +45,11 @@ const PRIVATE_URL_HINTS = [
 
 export function isPubliclySafeMediaUrl(url: string | null | undefined): boolean {
   if (!url) return false;
+  // Same-origin public paths (local listing uploads, static assets).
+  if (url.startsWith("/") && !url.startsWith("//")) {
+    if (url.includes("..")) return false;
+    return !PRIVATE_URL_HINTS.some((re) => re.test(url));
+  }
   let parsed: URL;
   try {
     parsed = new URL(url);

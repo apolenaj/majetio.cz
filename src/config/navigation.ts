@@ -1,21 +1,22 @@
 /**
  * Central navigation & IA config for Majetio.cz
- * Only list routes that exist with real content or an honest "Připravujeme" page.
+ * Platform + analysis journeys — complex options grouped under hubs.
  */
 
-/** Public marketing navigation — only complete customer journeys. */
+/** Public primary navigation — grouped, not twelve equal CTAs. */
 export const NAV_PRIMARY = [
-  { href: "/ukazky", label: "Ukázky analýz", hasMega: false },
-  { href: "/#co-ziskate", label: "Co získáte", hasMega: false },
-  { href: "/#jak-to-funguje", label: "Jak to funguje", hasMega: false },
-  { href: "/cenik", label: "Cena", hasMega: false },
-  { href: "/kontakt", label: "Kontakt", hasMega: false },
+  { href: "/nemovitosti", label: "Nemovitosti", hasMega: false },
+  { href: "/moznosti", label: "Možnosti bydlení", hasMega: false },
+  { href: "/pro-inzerenty", label: "Pro inzerenty", hasMega: false },
+  { href: "/analyzy-a-kalkulacky", label: "Analýzy a kalkulačky", hasMega: false },
+  { href: "/cenik", label: "Ceník", hasMega: false },
+  { href: "/ucet", label: "Můj účet", hasMega: false },
 ] as const;
 
 /** Primary conversion CTA in header. */
 export const NAV_PRIMARY_CTA = {
-  href: "/#posoudit",
-  label: "Posoudit nemovitost",
+  href: "/pridat-nemovitost",
+  label: "Přidat nemovitost",
 } as const;
 
 export const MEGA_NEMOVITOSTI = {
@@ -57,21 +58,21 @@ export const MEGA_KALKULACKY = [
 
 export const FOOTER_GROUPS = [
   {
-    title: "Produkt",
+    title: "Nabídky",
     links: [
-      { href: "/ukazky", label: "Ukázky analýz" },
-      { href: "/#posoudit", label: "Posoudit nemovitost" },
-      { href: "/cenik", label: "Ceník" },
-      { href: "/metodika", label: "Metodika" },
+      { href: "/nemovitosti", label: "Nemovitosti" },
+      { href: "/pridat-nemovitost", label: "Přidat nemovitost" },
+      { href: "/pro-inzerenty", label: "Pro inzerenty" },
+      { href: "/moznosti", label: "Možnosti bydlení a investování" },
     ],
   },
   {
-    title: "Orientace",
+    title: "Analýzy a nástroje",
     links: [
-      { href: "/#jak-to-funguje", label: "Jak to funguje" },
-      { href: "/#co-ziskate", label: "Co získáte" },
-      { href: "/pruvodce", label: "Průvodce" },
-      { href: "/slovnik", label: "Slovník" },
+      { href: "/analyzy-a-kalkulacky", label: "Analýzy a kalkulačky" },
+      { href: "/ukazky", label: "Modelové studie" },
+      { href: "/cenik", label: "Ceník" },
+      { href: "/metodika", label: "Metodika" },
     ],
   },
   {
@@ -105,6 +106,8 @@ export const BROKER_NAV = [
 
 export const ACCOUNT_NAV = [
   { href: "/ucet", label: "Rozhodování" },
+  { href: "/ucet/nabidky", label: "Moje nabídky" },
+  { href: "/ucet/poptavky", label: "Přijaté poptávky" },
   { href: "/ucet/financni-profil", label: "Finanční pas" },
   { href: "/ucet/financovani", label: "Financování" },
   { href: "/ucet/oblibene", label: "Oblíbené" },

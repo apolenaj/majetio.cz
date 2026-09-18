@@ -60,6 +60,7 @@ import { mortgageLeadService } from "@/domains/leads";
 import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import { auth } from "@/lib/auth";
 import { resolveLocationIntelligenceForProperty } from "@/domains/locations/integration";
+import { PropertyInquiryForm } from "@/components/listings/property-inquiry-form";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -428,7 +429,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             ) : null}
           </div>
 
-          <aside className="lg:sticky lg:top-28 lg:self-start">
+          <aside className="lg:sticky lg:top-28 lg:self-start space-y-6">
             <PropertyDecisionActions
               property={{
                 id: property.id,
@@ -445,6 +446,28 @@ export default async function PropertyDetailPage({ params }: Props) {
               }}
               activeFinancingLead={activeFinancingLead}
             />
+            {!property.isDemo && property.status === "ACTIVE" ? (
+              <section
+                aria-labelledby="inquiry-heading"
+                className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-primary)] p-4"
+              >
+                <h2
+                  id="inquiry-heading"
+                  className="font-display text-lg text-[var(--text-primary)]"
+                >
+                  Kontaktovat inzerenta
+                </h2>
+                <p className="mt-1 mb-4 text-sm text-[var(--text-muted)]">
+                  Nezávazná poptávka — neznamená uzavření obchodu ani automatickou
+                  odměnu.
+                </p>
+                <PropertyInquiryForm
+                  propertyId={property.id}
+                  defaultName={session?.user?.name}
+                  defaultEmail={session?.user?.email}
+                />
+              </section>
+            ) : null}
           </aside>
         </div>
       </Container>

@@ -10,8 +10,6 @@ import type { PropertyCardData } from "@/components/property/property-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
-import { listDemoPublicProperties } from "@/content/demo-canonical-properties";
-import { isDemoPropertyContentAllowed } from "@/lib/demo-content-gate";
 import { mapPublicDtoToPropertyCard } from "@/domains/properties/service/card-mapper";
 import {
   applyUrlFiltersToListings,
@@ -38,41 +36,34 @@ import {
   listRejectedPropertyIdsForUser,
 } from "@/domains/favourites/service/recommendation-exclusion";
 import { SPONSORED_FIREWALL_DISCLAIMER_CS } from "@/components/property/sponsored-listing-badge";
+import { listDiscoveryPropertyRecords } from "@/domains/properties/service/prisma-property-repository";
+import { toPublicPropertyListItemDto } from "@/domains/properties/service/dto";
 
-export function demoListings(): SearchableListing[] {
-  if (!isDemoPropertyContentAllowed()) {
-    return [];
-  }
-  return listDemoPublicProperties().map((dto) => {
-    const extra: SearchableListing = { ...dto };
-    if (dto.slug.includes("vinohrady")) {
-      extra.energyRating = "C";
-      extra.condition = "GOOD";
-      extra.ownershipType = "PERSONAL";
-      extra.strategySlugs = ["dlouhodoby-pronajem"];
-      extra.freshness = "FRESH";
-    } else if (dto.slug.includes("rekonstrukce")) {
-      extra.energyRating = "G";
-      extra.condition = "NEEDS_RENOVATION";
-      extra.ownershipType = "PERSONAL";
-      extra.strategySlugs = ["rekonstrukce"];
-      extra.landArea = 420;
-      extra.freshness = "STALE";
-    } else if (dto.slug.includes("brno")) {
-      extra.energyRating = "B";
-      extra.condition = "EXCELLENT";
-      extra.ownershipType = "PERSONAL";
-      extra.strategySlugs = ["dlouhodoby-pronajem", "vlastni-bydleni"];
-      extra.freshness = "FRESH";
-    } else if (dto.slug.includes("nizka")) {
-      extra.energyRating = "E";
-      extra.condition = "AVERAGE";
-      extra.ownershipType = "COOPERATIVE";
-      extra.strategySlugs = ["flip"];
-      extra.freshness = "STALE";
-    }
+export async function loadDiscoveryListings(): Promise<SearchableListing[]> {
+  const records = await listDiscoveryPropertyRecords(250);
+  return records.map((record) => {
+    const dto = toPublicPropertyListItemDto(record);
+    const extra: SearchableListing = {
+      ...dto,
+      energyRating: record.energyRating,
+      condition: record.condition,
+      ownershipType: record.ownershipType,
+      freshness: record.freshness,
+      status: record.status,
+      description: record.description,
+      publishedAt:
+        typeof record.publishedAt === "string"
+          ? record.publishedAt
+          : record.publishedAt?.toISOString() ?? null,
+      completenessScore: record.completenessScore,
+    };
     return extra;
   });
+}
+
+/** @deprecated Prefer loadDiscoveryListings — kept for sync tests. */
+export function demoListings(): SearchableListing[] {
+  return [];
 }
 
 export async function resolveMatchProfile(): Promise<{
@@ -113,18 +104,20 @@ export async function resolveMatchProfile(): Promise<{
   };
 }
 
-export function buildDiscoveryCards(
+export async function buildDiscoveryCards(
   state: PropertyUrlFilterState,
   matchProfile: MatchProfile | null,
   profileComplete: boolean,
   options?: { rejectedPropertyIds?: ReadonlySet<string> },
-): {
+): Promise<{
   cards: PropertyCardData[];
   sortLabel: string;
   relaxedCount: number | null;
   showPassportCta: boolean;
-} {
-  const all = demoListings();
+  hasLiveListings: boolean;
+  hasDemoListings: boolean;
+}> {
+  const all = await loadDiscoveryListings();
   let filtered = applyUrlFiltersToListings(all, state);
   const wantsRecommended = state.razeni === "recommended";
 
@@ -182,6 +175,8 @@ export function buildDiscoveryCards(
     sortLabel,
     relaxedCount,
     showPassportCta: wantsRecommended && !profileComplete,
+    hasLiveListings: all.some((l) => !l.isDemo),
+    hasDemoListings: all.some((l) => l.isDemo),
   };
 }
 
@@ -196,6 +191,8 @@ export function DiscoveryListingShell({
   isAuthenticated,
   showPassportCta,
   sponsoredCards = [],
+  hasLiveListings = false,
+  hasDemoListings = false,
 }: {
   title: string;
   description: string;
@@ -208,6 +205,8 @@ export function DiscoveryListingShell({
   showPassportCta: boolean;
   /** Paid slots — rendered separately; never merged into organic sort. */
   sponsoredCards?: PropertyCardData[];
+  hasLiveListings?: boolean;
+  hasDemoListings?: boolean;
 }) {
   return (
     <Container className="overflow-x-hidden py-10 sm:py-14 pb-28">
@@ -215,19 +214,31 @@ export function DiscoveryListingShell({
         title={title}
         description={description}
         breadcrumbs={breadcrumbs}
-        badge={<Badge tone="premium">Demo data</Badge>}
+        badge={
+          hasLiveListings ? (
+            <Badge tone="success">Živé nabídky</Badge>
+          ) : hasDemoListings ? (
+            <Badge tone="premium">Modelové ukázky</Badge>
+          ) : undefined
+        }
         actions={
-          <ButtonLink href="/analyza" size="sm">
-            Analyzovat nemovitost
+          <ButtonLink href="/pridat-nemovitost" size="sm">
+            Přidat nemovitost
           </ButtonLink>
         }
       />
 
-      <InlineAlert tone="warning" title="Demonstrační nabídky" className="mb-8">
-        Zobrazené nemovitosti slouží k ověření filtrů, karet a UX stavů. Nejsou aktuální
-        inzeráty z trhu. Sponzorované umístění (pokud je) neovlivňuje Majetio Score ani
-        organické řazení.
-      </InlineAlert>
+      {hasDemoListings && !hasLiveListings ? (
+        <InlineAlert tone="warning" title="Modelové ukázky" className="mb-8">
+          Zatím nejsou publikované reálné inzeráty. Zobrazené položky jsou modelové studie
+          pro ověření filtrů — nejsou aktuální nabídky z trhu.
+        </InlineAlert>
+      ) : hasDemoListings ? (
+        <InlineAlert tone="info" title="Oddělení modelových ukázek" className="mb-8">
+          Katalog obsahuje publikované nabídky. Položky označené jako demo nejsou reálné
+          inzeráty.
+        </InlineAlert>
+      ) : null}
 
       <PropertySearchFilters state={state} resultCount={cards.length} />
 
