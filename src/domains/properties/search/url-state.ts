@@ -48,6 +48,8 @@ export type PropertyUrlFilterState = {
   razeni?: SearchSortPreset;
   energie: string[];
   strategie: string[];
+  /** Investor preset labels matched against mock/catalog `stitky`. */
+  stitky: string[];
   kvalita: string[];
   /** Min. očekávaná roční návratnost (ROI) v %. */
   roiOd?: number;
@@ -133,6 +135,7 @@ export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
   vlastnictvi: [],
   energie: [],
   strategie: [],
+  stitky: [],
   kvalita: [],
   kraje: [],
   typStavby: [],
@@ -317,6 +320,7 @@ export function parsePropertySearchParams(
     razeni,
     energie: list(params.energie).map((e) => e.toUpperCase()),
     strategie: list(params.strategie),
+    stitky: list(params.stitek),
     kvalita: list(params.kvalita),
     roiOd: num(first(params["roi-od"])),
     rekonstrukceOd: num(first(params["rekonstrukce-od"])),
@@ -458,6 +462,7 @@ export function serializePropertySearchParams(
   if (state.razeni) out.razeni = SORT_TO_URL[state.razeni] ?? state.razeni;
   if (state.energie.length) out.energie = state.energie.join(",");
   if (state.strategie.length) out.strategie = state.strategie.join(",");
+  if (state.stitky.length) out.stitek = state.stitky.join(",");
   if (state.kvalita.length) out.kvalita = state.kvalita.join(",");
   if (state.roiOd != null) out["roi-od"] = String(state.roiOd);
   if (state.cashflowOd != null) out["cashflow-od"] = String(state.cashflowOd);
@@ -557,6 +562,7 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   n += state.vlastnictvi.length;
   n += state.energie.length;
   n += state.strategie.length;
+  n += state.stitky.length;
   n += state.kvalita.length;
   if (state.roiOd != null) n += 1;
   if (state.cashflowOd != null) n += 1;
@@ -715,6 +721,13 @@ export function getActiveFilterChips(
       id: `en-${e}`,
       label: `PENB ${e}`,
       clear: { energie: state.energie.filter((x) => x !== e) },
+    });
+  }
+  for (const tag of state.stitky) {
+    chips.push({
+      id: `stitek-${tag}`,
+      label: tag,
+      clear: { stitky: state.stitky.filter((item) => item !== tag) },
     });
   }
   for (const s of state.strategie) {

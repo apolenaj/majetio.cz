@@ -193,9 +193,11 @@ export function DiscoveryFilterBar({
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
   const cta = resultCta(resultCount, dirty);
 
-  function applyPreset(patch: Partial<PropertyUrlFilterState>) {
-    const next = { ...draft, ...patch, stranka: 1 };
-    onChange(patch);
+  function applyPreset(label: string) {
+    const selected = draft.stitky ?? [];
+    const stitky = selected.includes(label) ? [] : [label];
+    const next = { ...draft, stitky, stranka: 1 };
+    onChange({ stitky });
     onCommit(next);
   }
 
@@ -885,17 +887,26 @@ export function DiscoveryFilterBar({
           </Button>
         </form>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {INVESTOR_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              title={preset.description}
-              onClick={() => applyPreset(preset.patch)}
-              className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--action-accent)_40%,var(--border-default))] bg-[var(--surface-primary)] px-3 py-1.5 text-xs font-medium"
-            >
-              {preset.label}
-            </button>
-          ))}
+          {INVESTOR_PRESETS.map((preset) => {
+            const active = (draft.stitky ?? []).includes(preset.label);
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                title={preset.description}
+                aria-pressed={active}
+                onClick={() => applyPreset(preset.label)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium",
+                  active
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-[color-mix(in_srgb,var(--action-accent)_40%,var(--border-default))] bg-[var(--surface-primary)]",
+                )}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
         </div>
         <ActiveFilterChips state={applied} className="mt-2" />
       </div>

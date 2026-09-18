@@ -38,6 +38,8 @@ import {
 import { SPONSORED_FIREWALL_DISCLAIMER_CS } from "@/components/property/sponsored-listing-badge";
 import { listDiscoveryPropertyRecords } from "@/domains/properties/service/prisma-property-repository";
 import { toPublicPropertyListItemDto } from "@/domains/properties/service/dto";
+import { MockPropertyGrid } from "@/components/property/search/mock-property-grid";
+import { filterProperties, mockProperties } from "@/lib/mock-properties";
 
 export async function loadDiscoveryListings(): Promise<SearchableListing[]> {
   const records = await listDiscoveryPropertyRecords(250);
@@ -230,6 +232,9 @@ export function DiscoveryListingShell({
   hasLiveListings?: boolean;
   hasDemoListings?: boolean;
 }) {
+  const catalog =
+    cards.length === 0 ? filterProperties(mockProperties, state) : null;
+
   return (
     <Container className="overflow-x-hidden py-10 sm:py-14 pb-28">
       <PageHeader
@@ -262,7 +267,10 @@ export function DiscoveryListingShell({
         </InlineAlert>
       ) : null}
 
-      <PropertySearchFilters state={state} resultCount={cards.length} />
+      <PropertySearchFilters
+        state={state}
+        resultCount={catalog ? catalog.length : cards.length}
+      />
 
       {sponsoredCards.length > 0 ? (
         <section
@@ -292,14 +300,18 @@ export function DiscoveryListingShell({
         </section>
       ) : null}
 
-      <PropertySearchResults
-        properties={cards}
-        state={state}
-        sortLabel={sortLabel}
-        relaxedCount={relaxedCount}
-        isAuthenticated={isAuthenticated}
-        showPassportCta={showPassportCta}
-      />
+      {catalog ? (
+        <MockPropertyGrid properties={catalog} state={state} sortLabel={sortLabel} />
+      ) : (
+        <PropertySearchResults
+          properties={cards}
+          state={state}
+          sortLabel={sortLabel}
+          relaxedCount={relaxedCount}
+          isAuthenticated={isAuthenticated}
+          showPassportCta={showPassportCta}
+        />
+      )}
     </Container>
   );
 }
