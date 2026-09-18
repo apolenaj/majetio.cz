@@ -32,6 +32,8 @@ export type SearchableListing = PublicPropertyListItemDto & {
   fieldConflicts?: PublicPropertyDto["fieldConflicts"];
   lastSeenAt?: string | null;
   visibility?: string;
+  /** Optional capex estimate for renovation-range filters. */
+  estimatedRenovationCostCzk?: number | null;
 };
 
 export function applyUrlFiltersToListings(
@@ -163,6 +165,35 @@ export function applyUrlFiltersToListings(
     }
     items = items.filter(
       (p) => p.dataQuality != null && qualities.has(p.dataQuality),
+    );
+  }
+
+  if (state.roiOd != null) {
+    items = items.filter(
+      (p) => p.grossYieldPct != null && p.grossYieldPct >= state.roiOd!,
+    );
+  }
+
+  if (state.cashflowOd != null) {
+    items = items.filter(
+      (p) =>
+        p.cashFlowMonthlyCzk != null &&
+        p.cashFlowMonthlyCzk >= state.cashflowOd!,
+    );
+  }
+
+  if (state.rekonstrukceOd != null) {
+    items = items.filter(
+      (p) =>
+        p.estimatedRenovationCostCzk != null &&
+        p.estimatedRenovationCostCzk >= state.rekonstrukceOd!,
+    );
+  }
+  if (state.rekonstrukceDo != null) {
+    items = items.filter(
+      (p) =>
+        p.estimatedRenovationCostCzk == null ||
+        p.estimatedRenovationCostCzk <= state.rekonstrukceDo!,
     );
   }
 

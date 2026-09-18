@@ -22,6 +22,13 @@ export type PropertyUrlFilterState = {
   energie: string[];
   strategie: string[];
   kvalita: string[];
+  /** Min. očekávaná roční návratnost (ROI) v %. */
+  roiOd?: number;
+  /** Min. odhadovaný měsíční cashflow v Kč. */
+  cashflowOd?: number;
+  /** Odhadovaná cena rekonstrukce — rozsah Od/Do v Kč. */
+  rekonstrukceOd?: number;
+  rekonstrukceDo?: number;
   stranka: number;
   /** Market filters — shown only when coverage >= 40 % */
   cenovaHladina?: string;
@@ -165,6 +172,10 @@ export function parsePropertySearchParams(
     energie: list(params.energie).map((e) => e.toUpperCase()),
     strategie: list(params.strategie),
     kvalita: list(params.kvalita),
+    roiOd: num(first(params["roi-od"])),
+    cashflowOd: num(first(params["cashflow-od"])),
+    rekonstrukceOd: num(first(params["rekonstrukce-od"])),
+    rekonstrukceDo: num(first(params["rekonstrukce-do"])),
     stranka: page,
     cenovaHladina: first(params["cenova-hladina"]),
     vynosVsBenchmark: first(params["vynos-benchmark"]),
@@ -200,6 +211,14 @@ export function serializePropertySearchParams(
   if (state.energie.length) out.energie = state.energie.join(",");
   if (state.strategie.length) out.strategie = state.strategie.join(",");
   if (state.kvalita.length) out.kvalita = state.kvalita.join(",");
+  if (state.roiOd != null) out["roi-od"] = String(state.roiOd);
+  if (state.cashflowOd != null) out["cashflow-od"] = String(state.cashflowOd);
+  if (state.rekonstrukceOd != null) {
+    out["rekonstrukce-od"] = String(state.rekonstrukceOd);
+  }
+  if (state.rekonstrukceDo != null) {
+    out["rekonstrukce-do"] = String(state.rekonstrukceDo);
+  }
   if (state.cenovaHladina) out["cenova-hladina"] = state.cenovaHladina;
   if (state.vynosVsBenchmark) out["vynos-benchmark"] = state.vynosVsBenchmark;
   if (state.cenovyTrend) out["cenovy-trend"] = state.cenovyTrend;
@@ -230,6 +249,9 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   n += state.energie.length;
   n += state.strategie.length;
   n += state.kvalita.length;
+  if (state.roiOd != null) n += 1;
+  if (state.cashflowOd != null) n += 1;
+  if (state.rekonstrukceOd != null || state.rekonstrukceDo != null) n += 1;
   if (state.cenovaHladina) n += 1;
   if (state.vynosVsBenchmark) n += 1;
   if (state.cenovyTrend) n += 1;
@@ -332,6 +354,33 @@ export function getActiveFilterChips(
       clear: { kvalita: state.kvalita.filter((x) => x !== k) },
     });
   }
+  if (state.roiOd != null) {
+    chips.push({
+      id: "roi",
+      label: `ROI od ${formatPct(state.roiOd)}`,
+      clear: { roiOd: undefined },
+    });
+  }
+  if (state.cashflowOd != null) {
+    chips.push({
+      id: "cashflow",
+      label: `Cashflow od ${formatCzk(state.cashflowOd)}/měs.`,
+      clear: { cashflowOd: undefined },
+    });
+  }
+  if (state.rekonstrukceOd != null || state.rekonstrukceDo != null) {
+    const label =
+      state.rekonstrukceOd != null && state.rekonstrukceDo != null
+        ? `Rekonstrukce ${formatCzk(state.rekonstrukceOd)}–${formatCzk(state.rekonstrukceDo)}`
+        : state.rekonstrukceDo != null
+          ? `Rekonstrukce do ${formatCzk(state.rekonstrukceDo)}`
+          : `Rekonstrukce od ${formatCzk(state.rekonstrukceOd!)}`;
+    chips.push({
+      id: "rekonstrukce",
+      label,
+      clear: { rekonstrukceOd: undefined, rekonstrukceDo: undefined },
+    });
+  }
   return chips;
 }
 
@@ -341,6 +390,16 @@ function formatMil(czk: number): string {
     return `${Number.isInteger(mil) ? mil : mil.toFixed(1)} mil.`;
   }
   return new Intl.NumberFormat("cs-CZ").format(czk);
+}
+
+function formatCzk(czk: number): string {
+  return `${new Intl.NumberFormat("cs-CZ").format(czk)} Kč`;
+}
+
+function formatPct(value: number): string {
+  return `${new Intl.NumberFormat("cs-CZ", {
+    maximumFractionDigits: 2,
+  }).format(value)} %`;
 }
 
 /** Map URL state → backend PropertySearchInput (extended UI fields stay client-side). */

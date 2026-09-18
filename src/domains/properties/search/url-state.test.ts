@@ -55,6 +55,31 @@ describe("url-state", () => {
     expect(chips.some((c) => /mil/i.test(c.label))).toBe(true);
     expect(serializePropertySearchParams(state)["cena-do"]).toBe("5000000");
   });
+
+  it("round-trips investment filters (ROI, cashflow, rekonstrukce)", () => {
+    const state = parsePropertySearchParams({
+      "roi-od": "5.5",
+      "cashflow-od": "8000",
+      "rekonstrukce-od": "100000",
+      "rekonstrukce-do": "500000",
+    });
+    expect(state.roiOd).toBe(5.5);
+    expect(state.cashflowOd).toBe(8000);
+    expect(state.rekonstrukceOd).toBe(100_000);
+    expect(state.rekonstrukceDo).toBe(500_000);
+
+    const href = buildPropertySearchHref(state);
+    expect(href).toContain("roi-od=5.5");
+    expect(href).toContain("cashflow-od=8000");
+    expect(href).toContain("rekonstrukce-od=100000");
+    expect(href).toContain("rekonstrukce-do=500000");
+
+    const chips = getActiveFilterChips(state);
+    expect(chips.some((c) => c.id === "roi")).toBe(true);
+    expect(chips.some((c) => c.id === "cashflow")).toBe(true);
+    expect(chips.some((c) => c.id === "rekonstrukce")).toBe(true);
+    expect(countActiveFilters(state)).toBe(3);
+  });
 });
 
 describe("text-match", () => {
@@ -122,6 +147,34 @@ describe("applyUrlFiltersToListings", () => {
     expect(applyUrlFiltersToListings(sample, state)).toHaveLength(1);
     const none = parsePropertySearchParams({ "cena-do": "1000000" });
     expect(applyUrlFiltersToListings(sample, none)).toHaveLength(0);
+  });
+
+  it("filters by ROI, cashflow and renovation range", () => {
+    const withMetrics: SearchableListing[] = [
+      {
+        ...sample[0]!,
+        id: "high",
+        grossYieldPct: 7.2,
+        cashFlowMonthlyCzk: 12_000,
+        estimatedRenovationCostCzk: 250_000,
+      },
+      {
+        ...sample[0]!,
+        id: "low",
+        grossYieldPct: 3.1,
+        cashFlowMonthlyCzk: 1_500,
+        estimatedRenovationCostCzk: 900_000,
+      },
+    ];
+    const state = parsePropertySearchParams({
+      "roi-od": "5",
+      "cashflow-od": "5000",
+      "rekonstrukce-od": "100000",
+      "rekonstrukce-do": "400000",
+    });
+    const hits = applyUrlFiltersToListings(withMetrics, state);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.id).toBe("high");
   });
 });
 

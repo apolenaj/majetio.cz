@@ -6,6 +6,7 @@ import * as React from "react";
 
 import { PropertySearchInput } from "@/components/property/search/property-search-input";
 import { ActiveFilterChips } from "@/components/property/search/active-filter-chips";
+import { InfoTooltip } from "@/components/overlays/tooltip";
 import { Label } from "@/components/forms/field";
 import { Select } from "@/components/forms/controls";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,40 @@ import {
 import { aggregateSearchFilters } from "@/domains/properties/search/analytics-aggregates";
 import { track } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
+
+const ROI_TOOLTIP =
+  "Očekávaná roční návratnost investice vypočítaná z poměru čistého ročního nájmu a celkové pořizovací ceny nemovitosti (včetně případné rekonstrukce).";
+
+const CASHFLOW_TOOLTIP =
+  "Odhadovaný čistý měsíční zisk z pronájmu po odečtení předpokládané splátky hypotéky, příspěvků do fondu oprav a dalších provozních nákladů.";
+
+const inputClassName =
+  "h-11 w-full min-w-0 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]";
+
+function LabelWithInfo({
+  htmlFor,
+  children,
+  infoLabel,
+  info,
+}: {
+  htmlFor?: string;
+  children: React.ReactNode;
+  infoLabel: string;
+  info: string;
+}) {
+  return (
+    <div className="mb-1.5 flex min-w-0 items-center gap-0.5">
+      <Label htmlFor={htmlFor} className="mb-0">
+        {children}
+      </Label>
+      <InfoTooltip
+        label={infoLabel}
+        content={info}
+        className="size-7 shrink-0 text-[var(--text-muted)]"
+      />
+    </div>
+  );
+}
 
 function readStateFromRoot(root: ParentNode): PropertyUrlFilterState {
   const get = (name: string) => {
@@ -66,6 +101,10 @@ function readStateFromRoot(root: ParentNode): PropertyUrlFilterState {
     energie: multi("energie"),
     strategie: multi("strategie"),
     kvalita: multi("kvalita"),
+    roiOd: num("roi-od"),
+    cashflowOd: num("cashflow-od"),
+    rekonstrukceOd: num("rekonstrukce-od"),
+    rekonstrukceDo: num("rekonstrukce-do"),
     stranka: 1,
   };
 }
@@ -106,6 +145,17 @@ function QuickFilters({ state }: { state: PropertyUrlFilterState }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div className="min-w-0">
+        <Label htmlFor="lokalita-quick">Lokalita</Label>
+        <input
+          id="lokalita-quick"
+          name="lokalita"
+          defaultValue={state.lokalita ?? ""}
+          placeholder="např. Praha, Brno…"
+          className={inputClassName}
+          autoComplete="address-level2"
+        />
+      </div>
+      <div className="min-w-0">
         <Label htmlFor="cena-do">Cena do</Label>
         <Select
           id="cena-do"
@@ -141,6 +191,13 @@ function QuickFilters({ state }: { state: PropertyUrlFilterState }) {
           columns={2}
         />
       </div>
+    </div>
+  );
+}
+
+function AdvancedFiltersFields({ state }: { state: PropertyUrlFilterState }) {
+  return (
+    <div className="space-y-5">
       <div className="min-w-0">
         <Label htmlFor="razeni">Řazení</Label>
         <Select
@@ -159,13 +216,7 @@ function QuickFilters({ state }: { state: PropertyUrlFilterState }) {
           ))}
         </Select>
       </div>
-    </div>
-  );
-}
 
-function AdvancedFiltersFields({ state }: { state: PropertyUrlFilterState }) {
-  return (
-    <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="min-w-0">
           <Label htmlFor="cena-od">Cena od</Label>
@@ -175,7 +226,7 @@ function AdvancedFiltersFields({ state }: { state: PropertyUrlFilterState }) {
             inputMode="numeric"
             defaultValue={state.cenaOd ?? ""}
             placeholder="např. 2000000"
-            className="h-11 w-full min-w-0 rounded-[var(--radius-md)] border border-[var(--border-default)] px-3 text-sm"
+            className={inputClassName}
           />
         </div>
         <div className="min-w-0">
@@ -186,14 +237,16 @@ function AdvancedFiltersFields({ state }: { state: PropertyUrlFilterState }) {
               inputMode="numeric"
               defaultValue={state.plochaOd ?? ""}
               placeholder="Od"
-              className="h-11 w-full min-w-0 rounded-[var(--radius-md)] border border-[var(--border-default)] px-3 text-sm"
+              aria-label="Užitná plocha od"
+              className={inputClassName}
             />
             <input
               name="plocha-do"
               inputMode="numeric"
               defaultValue={state.plochaDo ?? ""}
               placeholder="Do"
-              className="h-11 w-full min-w-0 rounded-[var(--radius-md)] border border-[var(--border-default)] px-3 text-sm"
+              aria-label="Užitná plocha do"
+              className={inputClassName}
             />
           </div>
         </div>
@@ -221,6 +274,91 @@ function AdvancedFiltersFields({ state }: { state: PropertyUrlFilterState }) {
           columns={2}
         />
       </div>
+
+      <fieldset className="space-y-4 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--background-secondary)]/40 p-3">
+        <legend className="px-1 font-display text-sm text-[var(--text-primary)]">
+          Investiční parametry
+        </legend>
+
+        <div className="min-w-0">
+          <LabelWithInfo
+            htmlFor="roi-od"
+            infoLabel="Vysvětlení ROI"
+            info={ROI_TOOLTIP}
+          >
+            ROI (%)
+          </LabelWithInfo>
+          <input
+            id="roi-od"
+            name="roi-od"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="0.1"
+            defaultValue={state.roiOd ?? ""}
+            placeholder="např. 5"
+            className={inputClassName}
+          />
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            Minimální požadovaná roční návratnost
+          </p>
+        </div>
+
+        <div className="min-w-0">
+          <LabelWithInfo
+            htmlFor="cashflow-od"
+            infoLabel="Vysvětlení cashflow"
+            info={CASHFLOW_TOOLTIP}
+          >
+            Cashflow (Kč/měsíc)
+          </LabelWithInfo>
+          <input
+            id="cashflow-od"
+            name="cashflow-od"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1000}
+            defaultValue={state.cashflowOd ?? ""}
+            placeholder="např. 5000"
+            className={inputClassName}
+          />
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            Minimální měsíční cashflow
+          </p>
+        </div>
+
+        <div className="min-w-0">
+          <Label>Cena rekonstrukce (Kč)</Label>
+          <div className="flex min-w-0 items-center gap-2">
+            <input
+              name="rekonstrukce-od"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={10000}
+              defaultValue={state.rekonstrukceOd ?? ""}
+              placeholder="Od"
+              aria-label="Cena rekonstrukce od"
+              className={inputClassName}
+            />
+            <span className="shrink-0 text-sm text-[var(--text-muted)]" aria-hidden>
+              –
+            </span>
+            <input
+              name="rekonstrukce-do"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={10000}
+              defaultValue={state.rekonstrukceDo ?? ""}
+              placeholder="Do"
+              aria-label="Cena rekonstrukce do"
+              className={inputClassName}
+            />
+          </div>
+        </div>
+      </fieldset>
 
       <div>
         <Label>Energetická náročnost (PENB)</Label>
@@ -253,17 +391,6 @@ function AdvancedFiltersFields({ state }: { state: PropertyUrlFilterState }) {
             value: o.value,
             label: o.label,
           }))}
-        />
-      </div>
-
-      <div className="min-w-0">
-        <Label htmlFor="lokalita-adv">Lokalita (přesněji)</Label>
-        <input
-          id="lokalita-adv"
-          name="lokalita"
-          defaultValue={state.lokalita ?? ""}
-          placeholder="např. Praha"
-          className="h-11 w-full min-w-0 rounded-[var(--radius-md)] border border-[var(--border-default)] px-3 text-sm"
         />
       </div>
     </div>
@@ -395,7 +522,7 @@ export function PropertySearchFilters({
             Pokročilé filtry
           </h2>
           <p className="mt-1 text-xs text-[var(--text-muted)]">
-            PENB, strategie a kvalita dat — v postranním panelu, ne všech 30 naráz nahoře.
+            Stav, vlastnictví, ROI, cashflow a další — v postranním panelu.
           </p>
           <div className="mt-4 max-h-[32rem] overflow-y-auto overflow-x-hidden pr-1">
             <AdvancedFiltersFields state={state} />
