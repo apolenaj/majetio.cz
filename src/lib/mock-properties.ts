@@ -10,6 +10,17 @@ export type PropertyTransaction = "prodej" | "pronajem";
 export type PropertyKind = "byt" | "dum" | "pozemek" | "komerce";
 export type ListingPresentation = "premium" | "klasicky";
 
+export interface PropertyImages {
+  /** Jedna hlavní fotka klasického inzerátu. */
+  hlavni?: string;
+  /** Premium: stav před úpravou. */
+  pred_rekonstrukci?: string;
+  /** Premium: stav po homestagingu / rekonstrukci. */
+  po_rekonstrukci?: string;
+  /** Premium: počet dalších upravených fotek v galerii. */
+  pocet_wow_fotek?: number;
+}
+
 export interface Property {
   id: number;
   nazev: string;
@@ -20,6 +31,7 @@ export interface Property {
   cena: number;
   plocha_m2: number;
   stav_inzeratu: ListingPresentation;
+  obrazky: PropertyImages;
   stitky: string[];
   popis_upravy: string;
 }
@@ -44,6 +56,13 @@ export const mockProperties: Property[] = [
     cena: 6500000,
     plocha_m2: 54,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 5,
+    },
     stitky: ["Vysoký výnos", "Bez rekonstrukce"],
     popis_upravy:
       "Premium: Profesionální fotky, homestaging, 3D scan a optimalizovaný copywriting pro maximální dosah.",
@@ -58,6 +77,10 @@ export const mockProperties: Property[] = [
     cena: 2100000,
     plocha_m2: 72,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Pod tržním odhadem", "Fix & Rent"],
     popis_upravy: "Klasika: Fotky z mobilu, stručný popis od majitele, bez přípravy.",
   },
@@ -71,6 +94,13 @@ export const mockProperties: Property[] = [
     cena: 12000,
     plocha_m2: 28,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 4,
+    },
     stitky: ["Stabilní pronájem", "Pozitivní cashflow"],
     popis_upravy:
       "Premium: Vyladěný inzerát cílící na studenty a mladé profíky, profi svícení fotek.",
@@ -85,6 +115,10 @@ export const mockProperties: Property[] = [
     cena: 14500,
     plocha_m2: 61,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Stabilní pronájem"],
     popis_upravy: "Klasika: Běžný inzerát, prázdné místnosti s horším světlem.",
   },
@@ -98,6 +132,13 @@ export const mockProperties: Property[] = [
     cena: 5200000,
     plocha_m2: 145,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 6,
+    },
     stitky: ["Bez rekonstrukce"],
     popis_upravy: "Premium: Dronové záběry okolí, vyčištěná zahrada, virtuální prohlídka.",
   },
@@ -111,6 +152,10 @@ export const mockProperties: Property[] = [
     cena: 3800000,
     plocha_m2: 180,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Pod tržním odhadem"],
     popis_upravy: "Klasika: Pouze venkovní fotky a pár tmavých fotek interiéru.",
   },
@@ -124,6 +169,13 @@ export const mockProperties: Property[] = [
     cena: 18500000,
     plocha_m2: 130,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 8,
+    },
     stitky: ["Bez rekonstrukce"],
     popis_upravy:
       "Premium: Video prohlídka, prémiový copywriting zdůrazňující lokalitu a materiály.",
@@ -138,6 +190,13 @@ export const mockProperties: Property[] = [
     cena: 45000,
     plocha_m2: 160,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdbc?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 5,
+    },
     stitky: ["Stabilní pronájem"],
     popis_upravy: "Premium: Zaměření na expaty, anglický překlad, perfektní fotky detailů.",
   },
@@ -151,6 +210,10 @@ export const mockProperties: Property[] = [
     cena: 2800000,
     plocha_m2: 41,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Fix & Rent", "Pod tržním odhadem"],
     popis_upravy: "Klasika: Neuklizený byt, osobní věci majitele na fotkách.",
   },
@@ -164,6 +227,13 @@ export const mockProperties: Property[] = [
     cena: 8900000,
     plocha_m2: 82,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 3,
+    },
     stitky: ["Bez rekonstrukce"],
     popis_upravy: "Premium: Vizualizace možného zařízení pro prázdné novostavby.",
   },
@@ -177,6 +247,13 @@ export const mockProperties: Property[] = [
     cena: 4200000,
     plocha_m2: 1100,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 7,
+    },
     stitky: [],
     popis_upravy:
       "Premium: Zakreslení inženýrských sítí do fotky z dronu, vizualizace možného domu.",
@@ -191,6 +268,10 @@ export const mockProperties: Property[] = [
     cena: 25000,
     plocha_m2: 85,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Vysoký výnos"],
     popis_upravy: "Klasika: Strohý text, fotky prázdného zaprášeného prostoru.",
   },
@@ -204,6 +285,10 @@ export const mockProperties: Property[] = [
     cena: 22000,
     plocha_m2: 95,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Stabilní pronájem"],
     popis_upravy: "Klasika: Běžný popis, fotky za špatného počasí.",
   },
@@ -217,6 +302,13 @@ export const mockProperties: Property[] = [
     cena: 11500000,
     plocha_m2: 52,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 6,
+    },
     stitky: ["Vysoký výnos", "Pozitivní cashflow", "Bez rekonstrukce"],
     popis_upravy:
       "Premium: Lifestyle fotky, detailní kalkulace ROI pro krátkodobé pronájmy v textu.",
@@ -231,6 +323,13 @@ export const mockProperties: Property[] = [
     cena: 6800000,
     plocha_m2: 70,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 4,
+    },
     stitky: ["Vysoký výnos"],
     popis_upravy:
       "Premium: Dron s ukázkou vzdálenosti k vodě, zútulnění interiéru před focením.",
@@ -245,6 +344,10 @@ export const mockProperties: Property[] = [
     cena: 8000,
     plocha_m2: 15,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Stabilní pronájem"],
     popis_upravy: "Klasika: Rychlá fotka na mobil, inzerát formou inzerce na Facebooku.",
   },
@@ -258,6 +361,13 @@ export const mockProperties: Property[] = [
     cena: 85000,
     plocha_m2: 450,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 5,
+    },
     stitky: ["Stabilní pronájem"],
     popis_upravy: "Premium: 3D model haly, přesně kótovaný plánek, logistická dostupnost v textu.",
   },
@@ -271,6 +381,10 @@ export const mockProperties: Property[] = [
     cena: 1500000,
     plocha_m2: 25000,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: [],
     popis_upravy: "Klasika: Jen screen z katastrální mapy.",
   },
@@ -284,6 +398,13 @@ export const mockProperties: Property[] = [
     cena: 24000,
     plocha_m2: 88,
     stav_inzeratu: "premium",
+    obrazky: {
+      pred_rekonstrukci:
+        "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=900&q=70",
+      po_rekonstrukci:
+        "https://images.unsplash.com/photo-1600607687644-c7171b42498b?auto=format&fit=crop&w=900&q=70",
+      pocet_wow_fotek: 7,
+    },
     stitky: ["Vysoký výnos", "Pozitivní cashflow"],
     popis_upravy: "Premium: Natočené Reels/TikTok video pro cílovou skupinu studentů.",
   },
@@ -297,6 +418,10 @@ export const mockProperties: Property[] = [
     cena: 2900000,
     plocha_m2: 110,
     stav_inzeratu: "klasicky",
+    obrazky: {
+      hlavni:
+        "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=900&q=70",
+    },
     stitky: ["Pod tržním odhadem", "Fix & Rent"],
     popis_upravy: "Klasika: Těžko čitelné fotky, strohé právní informace.",
   },

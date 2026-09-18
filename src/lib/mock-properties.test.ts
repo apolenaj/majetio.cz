@@ -19,6 +19,19 @@ describe("filterProperties", () => {
     expect(hits.some((item) => item.id === 2)).toBe(false);
   });
 
+  it("gives classic listings one photo and premium a before/after pair", () => {
+    for (const item of mockProperties) {
+      if (item.stav_inzeratu === "klasicky") {
+        expect(item.obrazky.hlavni).toBeTruthy();
+        expect(item.obrazky.pred_rekonstrukci).toBeUndefined();
+      } else {
+        expect(item.obrazky.pred_rekonstrukci).toBeTruthy();
+        expect(item.obrazky.po_rekonstrukci).toBeTruthy();
+        expect(item.obrazky.pocet_wow_fotek).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
   it("filters type, layout and locality together", () => {
     const hits = filterProperties(mockProperties, {
       ...EMPTY_PROPERTY_URL_STATE,
