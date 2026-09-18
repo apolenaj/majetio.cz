@@ -51,9 +51,27 @@ export const PROPERTY_SORT_FIELDS = [
 export type PropertySortField = (typeof PROPERTY_SORT_FIELDS)[number];
 export type SortDirection = "asc" | "desc";
 
+export const SNAPSHOT_SORT_FIELDS = [
+  "estimatedRentMonthlyCzk",
+  "grossYieldPct",
+  "netYieldPct",
+  "monthlyCashflowCzk",
+  "cashOnCashPct",
+  "paybackYears",
+  "tenantDemandScore",
+  "estimatedOccupancyMinPct",
+  "renovationCostMinCzk",
+  "discountToEstimatedValuePct",
+  "majetioScore",
+] as const;
+
+export type SnapshotSortField = (typeof SNAPSHOT_SORT_FIELDS)[number];
+
 export type PropertySort = {
   field: PropertySortField;
   direction: SortDirection;
+  /** When set, Prisma orders by the cached snapshot. Null metrics sort last. */
+  snapshot?: { field: SnapshotSortField; direction: SortDirection };
 };
 
 export function clampPageSize(size: number | undefined): number {

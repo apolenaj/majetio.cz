@@ -15,6 +15,28 @@ import {
   type PropertyUrlFilterState,
 } from "./url-state";
 import { listingMatchesRegions } from "./regions";
+import { hasComputedInvestmentData, metricInRange } from "./metric-filter";
+
+const CONSTRUCTION_TO_ENUM: Record<string, string> = {
+  cihla: "BRICK",
+  panel: "PANEL",
+  drevo: "WOOD",
+  skelet: "STEEL",
+  smisena: "MIXED",
+  ostatni: "OTHER",
+};
+
+const AMENITY_TO_FIELD: Record<string, string> = {
+  balkon: "balcony",
+  lodzie: "loggia",
+  terasa: "terrace",
+  zahrada: "garden",
+  sklep: "cellar",
+  garaz: "garage",
+  parkovani: "parking",
+  vytah: "elevator",
+  bezbarierovy: "barrierFree",
+};
 
 export type SearchableListing = PublicPropertyListItemDto & {
   energyRating?: string | null;
@@ -35,6 +57,38 @@ export type SearchableListing = PublicPropertyListItemDto & {
   visibility?: string;
   /** Optional capex estimate for renovation-range filters. */
   estimatedRenovationCostCzk?: number | null;
+  transactionType?: string | null;
+  floorArea?: number | null;
+  floor?: number | null;
+  floorsTotal?: number | null;
+  yearBuilt?: number | null;
+  yearRenovated?: number | null;
+  constructionType?: string | null;
+  hasElevator?: boolean | null;
+  isOffPlan?: boolean | null;
+  listingOwnerKind?: string | null;
+  organizationId?: string | null;
+  originalAskingPrice?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  netYieldPct?: number | null;
+  estimatedRentMonthlyCzk?: number | null;
+  rentPerSqm?: number | null;
+  cashOnCashPct?: number | null;
+  paybackYears?: number | null;
+  tenantDemandScore?: number | null;
+  estimatedOccupancyMinPct?: number | null;
+  estimatedOccupancyMaxPct?: number | null;
+  discountToEstimatedValuePct?: number | null;
+  dataConfidencePct?: number | null;
+  yieldAfterRenovationPct?: number | null;
+  allInCostCzk?: number | null;
+  renovationLevel?: string | null;
+  investmentRisk?: string | null;
+  hasInvestmentSnapshot?: boolean | null;
+  renovationCostMinCzk?: number | null;
+  renovationCostMaxCzk?: number | null;
+  features?: Record<string, boolean> | null;
 };
 
 export function applyUrlFiltersToListings(
@@ -169,32 +223,136 @@ export function applyUrlFiltersToListings(
     );
   }
 
-  if (state.roiOd != null) {
+  if (state.nabidka === "prodej") {
+    items = items.filter((p) => !p.transactionType || p.transactionType === "SALE");
+  } else if (state.nabidka === "pronajem") {
+    items = items.filter((p) => p.transactionType === "RENT");
+  }
+
+  if (state.cenaM2Od != null) {
     items = items.filter(
-      (p) => p.grossYieldPct != null && p.grossYieldPct >= state.roiOd!,
+      (p) => p.pricePerSqm != null && p.pricePerSqm >= state.cenaM2Od!,
+    );
+  }
+  if (state.cenaM2Do != null) {
+    items = items.filter(
+      (p) => p.pricePerSqm == null || p.pricePerSqm <= state.cenaM2Do!,
+    );
+  }
+  if (state.plochaCelkovaOd != null) {
+    items = items.filter(
+      (p) => p.floorArea != null && p.floorArea >= state.plochaCelkovaOd!,
+    );
+  }
+  if (state.plochaCelkovaDo != null) {
+    items = items.filter(
+      (p) => p.floorArea == null || p.floorArea <= state.plochaCelkovaDo!,
     );
   }
 
-  if (state.cashflowOd != null) {
-    items = items.filter(
-      (p) =>
-        p.cashFlowMonthlyCzk != null &&
-        p.cashFlowMonthlyCzk >= state.cashflowOd!,
+  if (state.typStavby.length) {
+    const types = new Set(
+      state.typStavby
+        .map((value) => CONSTRUCTION_TO_ENUM[value])
+        .filter(Boolean),
     );
+    items = items.filter((p) => !p.constructionType || types.has(p.constructionType));
   }
 
-  if (state.rekonstrukceOd != null) {
+  if (state.prislusenstvi.length) {
+    const fields = state.prislusenstvi
+      .map((value) => AMENITY_TO_FIELD[value])
+      .filter((field): field is string => Boolean(field));
+    items = items.filter((p) => {
+      if (!p.features) return true;
+      return fields.every((field) => p.features?.[field] === true);
+    });
+  }
+
+  if (state.patroOd != null) {
+    items = items.filter((p) => p.floor == null || p.floor >= state.patroOd!);
+  }
+  if (state.patroDo != null) {
+    items = items.filter((p) => p.floor == null || p.floor <= state.patroDo!);
+  }
+  if (state.prizemi) {
+    items = items.filter((p) => p.floor == null || p.floor === 0);
+  }
+  if (state.rokOd != null) {
+    items = items.filter((p) => p.yearBuilt == null || p.yearBuilt >= state.rokOd!);
+  }
+  if (state.rokDo != null) {
+    items = items.filter((p) => p.yearBuilt == null || p.yearBuilt <= state.rokDo!);
+  }
+  if (state.bezCenyNaVyzadani) {
+    items = items.filter((p) => p.askingPrice != null);
+  }
+  if (state.bezRezervovanych) {
+    items = items.filter((p) => p.status !== "RESERVED");
+  }
+  if (state.pouzeZlevnene) {
     items = items.filter(
       (p) =>
-        p.estimatedRenovationCostCzk != null &&
-        p.estimatedRenovationCostCzk >= state.rekonstrukceOd!,
+        p.originalAskingPrice == null ||
+        (p.askingPrice != null && p.originalAskingPrice > p.askingPrice),
     );
   }
-  if (state.rekonstrukceDo != null) {
+  if (state.prodejce.includes("soukromnik")) {
+    items = items.filter((p) => !p.listingOwnerKind && !p.organizationId);
+  }
+  if (state.typ.includes("projekty")) {
+    items = items.filter((p) => p.isOffPlan !== false);
+  }
+
+  const only = state.jenVypoctene === true;
+  if (only) {
+    items = items.filter((p) => hasComputedInvestmentData(p));
+  }
+
+  items = items.filter(
+    (p) =>
+      metricInRange(p.grossYieldPct, state.roiOd, state.vynosDo, only) &&
+      metricInRange(p.netYieldPct, state.cistyVynosOd, state.cistyVynosDo, only) &&
+      metricInRange(p.cashFlowMonthlyCzk, state.cashflowOd, state.cashflowDo, only) &&
+      metricInRange(p.cashOnCashPct, state.cocOd, state.cocDo, only) &&
+      metricInRange(p.paybackYears, state.navratnostOd, state.navratnostDo, only) &&
+      metricInRange(p.estimatedRentMonthlyCzk, state.najemOd, state.najemDo, only) &&
+      metricInRange(p.rentPerSqm, state.najemM2Od, state.najemM2Do, only) &&
+      metricInRange(
+        p.renovationCostMinCzk ?? p.estimatedRenovationCostCzk,
+        state.rekonstrukceOd,
+        state.rekonstrukceDo,
+        only,
+      ) &&
+      metricInRange(p.allInCostCzk, state.allInOd, state.allInDo, only) &&
+      metricInRange(p.discountToEstimatedValuePct, state.diskontOd, undefined, only) &&
+      metricInRange(p.tenantDemandScore, state.poptavkaOd, state.poptavkaDo, only) &&
+      metricInRange(
+        p.estimatedOccupancyMinPct,
+        state.obsazenostOd,
+        state.obsazenostDo,
+        only,
+      ) &&
+      metricInRange(p.majetioScore, state.scoreOd, state.scoreDo, only) &&
+      metricInRange(p.dataConfidencePct, state.duveraOd, undefined, only) &&
+      metricInRange(
+        p.yieldAfterRenovationPct,
+        state.vynosPoRekonstrukci,
+        undefined,
+        only,
+      ),
+  );
+
+  if (state.urovenRekonstrukce.length) {
+    const levels = new Set(state.urovenRekonstrukce);
     items = items.filter(
-      (p) =>
-        p.estimatedRenovationCostCzk == null ||
-        p.estimatedRenovationCostCzk <= state.rekonstrukceDo!,
+      (p) => p.renovationLevel == null || levels.has(p.renovationLevel),
+    );
+  }
+  if (state.riziko.length) {
+    const risks = new Set(state.riziko);
+    items = items.filter(
+      (p) => p.investmentRisk == null || risks.has(p.investmentRisk),
     );
   }
 
@@ -205,6 +363,17 @@ export function applyUrlFiltersToListings(
   items = sortListings(items, state.razeni);
 
   return items;
+}
+
+function compareNullable(
+  a: number | null | undefined,
+  b: number | null | undefined,
+  direction: "asc" | "desc",
+): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return direction === "asc" ? a - b : b - a;
 }
 
 function sortListings(
@@ -227,6 +396,55 @@ function sortListings(
       break;
     case "area_desc":
       sorted.sort((a, b) => (b.usableArea ?? 0) - (a.usableArea ?? 0));
+      break;
+    case "rent_desc":
+      sorted.sort((a, b) =>
+        compareNullable(a.estimatedRentMonthlyCzk, b.estimatedRentMonthlyCzk, "desc"),
+      );
+      break;
+    case "gross_yield_desc":
+      sorted.sort((a, b) => compareNullable(a.grossYieldPct, b.grossYieldPct, "desc"));
+      break;
+    case "net_yield_desc":
+      sorted.sort((a, b) => compareNullable(a.netYieldPct, b.netYieldPct, "desc"));
+      break;
+    case "cashflow_desc":
+      sorted.sort((a, b) =>
+        compareNullable(a.cashFlowMonthlyCzk, b.cashFlowMonthlyCzk, "desc"),
+      );
+      break;
+    case "cash_on_cash_desc":
+      sorted.sort((a, b) => compareNullable(a.cashOnCashPct, b.cashOnCashPct, "desc"));
+      break;
+    case "payback_asc":
+      sorted.sort((a, b) => compareNullable(a.paybackYears, b.paybackYears, "asc"));
+      break;
+    case "tenant_demand_desc":
+      sorted.sort((a, b) =>
+        compareNullable(a.tenantDemandScore, b.tenantDemandScore, "desc"),
+      );
+      break;
+    case "occupancy_desc":
+      sorted.sort((a, b) =>
+        compareNullable(a.estimatedOccupancyMinPct, b.estimatedOccupancyMinPct, "desc"),
+      );
+      break;
+    case "renovation_asc":
+      sorted.sort((a, b) =>
+        compareNullable(
+          a.renovationCostMinCzk ?? a.estimatedRenovationCostCzk,
+          b.renovationCostMinCzk ?? b.estimatedRenovationCostCzk,
+          "asc",
+        ),
+      );
+      break;
+    case "discount_desc":
+      sorted.sort((a, b) =>
+        compareNullable(a.discountToEstimatedValuePct, b.discountToEstimatedValuePct, "desc"),
+      );
+      break;
+    case "majetio_score_desc":
+      sorted.sort((a, b) => compareNullable(a.majetioScore, b.majetioScore, "desc"));
       break;
     case "recommended":
       // Match score sort is applied by the discovery page (needs Finanční pas).

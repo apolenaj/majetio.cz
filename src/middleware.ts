@@ -242,7 +242,7 @@ export async function middleware(request: NextRequest) {
       return finalize(
         request,
         NextResponse.redirect(
-          new URL(buildLoginUrl(pathname + request.nextUrl.search), request.url),
+        new URL(buildLoginUrl(pathname + request.nextUrl.search), request.url),
         ),
         pathname,
         nonce,

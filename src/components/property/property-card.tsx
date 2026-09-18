@@ -15,7 +15,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { AspectRatio } from "@/components/ui/layout-primitives";
 import { MetricValue } from "@/components/data-display/metric-card";
 import { PropertyListingImage } from "@/components/property/property-listing-image";
-import { formatCzk, formatCzkPerSqm, formatPercentPoints } from "@/lib/format";
+import { formatCzk, formatCzkPerSqm } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { saveSearchScrollPosition } from "@/domains/properties/search/scroll-restore";
 import { SponsoredListingBadge } from "@/components/property/sponsored-listing-badge";
@@ -35,7 +35,14 @@ export type PropertyCardData = {
   priceCzk?: number;
   pricePerSqmCzk?: number;
   grossYieldPct?: number;
+  netYieldPct?: number;
   cashFlowMonthlyCzk?: number;
+  estimatedRentMonthlyCzk?: number;
+  renovationCostMinCzk?: number;
+  renovationCostMaxCzk?: number;
+  tenantDemandScore?: number;
+  estimatedOccupancyMinPct?: number;
+  estimatedOccupancyMaxPct?: number;
   majetioScore?: number | null;
   imageUrl?: string;
   dataQuality?: DataQuality;
@@ -228,7 +235,7 @@ export function PropertyCard({
                     ? "Nedostupné"
                     : property.priceCzk != null
                       ? formatCzk(property.priceCzk)
-                      : "—"
+                      : "Cena na vyžádání"
                 }
               />
             </dd>
@@ -236,14 +243,12 @@ export function PropertyCard({
           <div>
             <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">Kč/m²</dt>
             <dd className="font-metric font-medium">
-              {unavailable
+              {unavailable || property.pricePerSqmCzk == null
                 ? "—"
-                : property.pricePerSqmCzk != null
-                  ? formatCzkPerSqm(property.pricePerSqmCzk)
-                  : "—"}
+                : formatCzkPerSqm(property.pricePerSqmCzk)}
             </dd>
           </div>
-          <div>
+          <div className="col-span-2">
             <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">
               Dispozice / plocha
             </dt>
@@ -254,50 +259,108 @@ export function PropertyCard({
                   (property.areaSqm != null ? `${property.areaSqm} m²` : null),
               ]
                 .filter(Boolean)
-                .join(" · ") || "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">Výnos (hrubý)</dt>
-            <dd>
-              <MetricValue
-                size="s"
-                tone={
-                  property.grossYieldPct == null || unavailable
-                    ? "neutral"
-                    : property.grossYieldPct >= 0
-                      ? "positive"
-                      : "negative"
-                }
-                value={
-                  unavailable
-                    ? "—"
-                    : property.grossYieldPct != null
-                      ? formatPercentPoints(property.grossYieldPct, { signed: true })
-                      : "—"
-                }
-              />
+                .join(" · ") || "Plocha neuvedena"}
             </dd>
           </div>
         </dl>
 
-        {(property.cashFlowMonthlyCzk != null || property.majetioScore != null) &&
-        !unavailable ? (
-          <div className="flex items-center justify-between border-t border-[var(--border-default)] pt-3 text-sm">
-            <span className="text-[var(--text-muted)]">
-              Cash flow:{" "}
-              <span className="font-metric font-medium text-[var(--text-primary)]">
-                {property.cashFlowMonthlyCzk != null
-                  ? formatCzk(property.cashFlowMonthlyCzk, { signed: true })
-                  : "—"}
-              </span>
-            </span>
-            <span className="font-metric font-semibold">
-              {property.majetioScore != null ? `${property.majetioScore}/100` : "—"}
-            </span>
-          </div>
-        ) : null}
+        <InvestmentSnapshot property={property} hidden={unavailable} />
       </div>
     </Card>
+  );
+}
+
+function pct(value: number): string {
+  return `${new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 1 }).format(value)} %`;
+}
+
+function renovationLabel(min?: number, max?: number): string | null {
+  const lo = min ?? max;
+  const hi = max ?? min;
+  if (lo == null) return null;
+  const thousands = (value: number) =>
+    new Intl.NumberFormat("cs-CZ").format(Math.round(value / 1000));
+  if (hi != null && hi !== lo) return `~${thousands(lo)}–${thousands(hi)} tis. Kč`;
+  return `~${thousands(lo)} tis. Kč`;
+}
+
+function InvestmentSnapshot({
+  property,
+  hidden,
+}: {
+  property: PropertyCardData;
+  hidden: boolean;
+}) {
+  if (hidden) return null;
+  const renovation = renovationLabel(
+    property.renovationCostMinCzk,
+    property.renovationCostMaxCzk,
+  );
+  const occupancy =
+    property.estimatedOccupancyMinPct != null &&
+    property.estimatedOccupancyMaxPct != null &&
+    property.estimatedOccupancyMaxPct !== property.estimatedOccupancyMinPct
+      ? `${new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(property.estimatedOccupancyMinPct)}–${new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(property.estimatedOccupancyMaxPct)} %`
+      : property.estimatedOccupancyMinPct != null
+        ? `${new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(property.estimatedOccupancyMinPct)} %`
+        : null;
+
+  const rows: Array<{ label: string; value: string; estimate?: boolean }> = [];
+  if (property.estimatedRentMonthlyCzk != null) {
+    rows.push({
+      label: "Odhad nájmu",
+      value: `${formatCzk(property.estimatedRentMonthlyCzk)}/měs.`,
+      estimate: true,
+    });
+  }
+  if (property.grossYieldPct != null) {
+    rows.push({ label: "Hrubý výnos", value: pct(property.grossYieldPct), estimate: true });
+  }
+  if (property.netYieldPct != null) {
+    rows.push({ label: "Čistý výnos", value: pct(property.netYieldPct), estimate: true });
+  }
+  if (property.cashFlowMonthlyCzk != null) {
+    rows.push({
+      label: "Cashflow",
+      value: `${formatCzk(property.cashFlowMonthlyCzk, { signed: true })}/měs.`,
+    });
+  }
+  if (renovation) {
+    rows.push({ label: "Rekonstrukce", value: renovation, estimate: true });
+  }
+  if (property.tenantDemandScore != null) {
+    rows.push({ label: "Poptávka", value: `${property.tenantDemandScore}/100` });
+  }
+  if (occupancy) {
+    rows.push({ label: "Odhad obsazenosti", value: occupancy, estimate: true });
+  }
+  if (property.majetioScore != null) {
+    rows.push({ label: "Majetio Score", value: `${property.majetioScore}/100` });
+  }
+
+  if (rows.length === 0) {
+    return (
+      <p className="border-t border-[var(--border-default)] pt-3 text-xs text-[var(--text-muted)]">
+        Investiční data nejsou k dispozici
+      </p>
+    );
+  }
+
+  return (
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-[var(--border-default)] pt-3 text-sm">
+      {rows.map((row) => (
+        <div key={row.label}>
+          <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">
+            {row.label}
+            {row.estimate ? (
+              <span className="ml-1 rounded bg-amber-100 px-1 py-px text-[0.6rem] font-semibold uppercase text-amber-900">
+                Odhad
+              </span>
+            ) : null}
+          </dt>
+          <dd className="font-metric font-medium text-[var(--text-primary)]">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

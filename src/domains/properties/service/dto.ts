@@ -96,7 +96,15 @@ export type PropertyRecord = {
   tags?: string[];
   completenessScore?: number | null;
   grossYieldPct?: number | null;
+  netYieldPct?: number | null;
   cashFlowMonthlyCzk?: number | null;
+  estimatedRentMonthlyCzk?: number | null;
+  renovationCostMinCzk?: number | null;
+  renovationCostMaxCzk?: number | null;
+  tenantDemandScore?: number | null;
+  estimatedOccupancyMinPct?: number | null;
+  estimatedOccupancyMaxPct?: number | null;
+  hasInvestmentSnapshot?: boolean | null;
   majetioScore?: number | null;
   risk?: "low" | "medium" | "high" | "critical" | "unknown" | null;
   priceHistory?: PublicPriceHistoryPoint[];

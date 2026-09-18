@@ -34,6 +34,11 @@ export function buildSavedSearchFilters(
       strategie: [...state.strategie],
       kvalita: [...state.kvalita],
       kraje: [...(state.kraje ?? [])],
+      typStavby: [...(state.typStavby ?? [])],
+      prislusenstvi: [...(state.prislusenstvi ?? [])],
+      prodejce: [...(state.prodejce ?? [])],
+      urovenRekonstrukce: [...(state.urovenRekonstrukce ?? [])],
+      riziko: [...(state.riziko ?? [])],
       stranka: 1,
     },
   };
@@ -67,6 +72,13 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
       strategie: Array.isArray(s.strategie) ? s.strategie.map(String) : [],
       kvalita: Array.isArray(s.kvalita) ? s.kvalita.map(String) : [],
       kraje: Array.isArray(s.kraje) ? s.kraje.map(String) : [],
+      typStavby: Array.isArray(s.typStavby) ? s.typStavby.map(String) : [],
+      prislusenstvi: Array.isArray(s.prislusenstvi) ? s.prislusenstvi.map(String) : [],
+      prodejce: Array.isArray(s.prodejce) ? s.prodejce.map(String) : [],
+      urovenRekonstrukce: Array.isArray(s.urovenRekonstrukce)
+        ? s.urovenRekonstrukce.map(String)
+        : [],
+      riziko: Array.isArray(s.riziko) ? s.riziko.map(String) : [],
       stranka: 1,
     });
   }
@@ -93,6 +105,15 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
     strategie: Array.isArray(obj.strategie) ? (obj.strategie as string[]) : [],
     kvalita: Array.isArray(obj.kvalita) ? (obj.kvalita as string[]) : [],
     kraje: Array.isArray(obj.kraje) ? (obj.kraje as string[]) : [],
+    typStavby: Array.isArray(obj.typStavby) ? (obj.typStavby as string[]) : [],
+    prislusenstvi: Array.isArray(obj.prislusenstvi)
+      ? (obj.prislusenstvi as string[])
+      : [],
+    prodejce: Array.isArray(obj.prodejce) ? (obj.prodejce as string[]) : [],
+    urovenRekonstrukce: Array.isArray(obj.urovenRekonstrukce)
+      ? (obj.urovenRekonstrukce as string[])
+      : [],
+    riziko: Array.isArray(obj.riziko) ? (obj.riziko as string[]) : [],
     stranka: 1,
   });
 }

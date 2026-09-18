@@ -139,14 +139,26 @@ export function createPrismaPropertyRepository(): PropertyRepository {
 export async function listDiscoveryPropertyRecords(limit = 200): Promise<PropertyRecord[]> {
   const dbItems: PropertyRecord[] = [];
   try {
-    const rows = await prisma.property.findMany({
-      where: publicDiscoveryWhere({
-        includeDemo: isDemoPropertyContentAllowed(),
-      }),
-      include: propertyDetailInclude,
-      orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
-      take: limit,
-    });
+    let rows;
+    try {
+      rows = await prisma.property.findMany({
+        where: publicDiscoveryWhere({
+          includeDemo: isDemoPropertyContentAllowed(),
+        }),
+        include: { ...propertyDetailInclude, investmentSnapshot: true },
+        orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+        take: limit,
+      });
+    } catch {
+      rows = await prisma.property.findMany({
+        where: publicDiscoveryWhere({
+          includeDemo: isDemoPropertyContentAllowed(),
+        }),
+        include: propertyDetailInclude,
+        orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+        take: limit,
+      });
+    }
     for (const row of rows) {
       dbItems.push(mapPrismaPropertyToRecord(row));
     }

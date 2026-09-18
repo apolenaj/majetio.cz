@@ -25,7 +25,7 @@ import { toSearchHitDto, type PropertySearchPageDto } from "./search-dto";
 export type PropertySearchRepository = {
   search(input: {
     where: Record<string, unknown>;
-    orderBy: Record<string, "asc" | "desc">;
+    orderBy: Record<string, unknown>;
     skip?: number;
     take: number;
     /** Fetch take+1 to detect hasMore without expensive count when possible. */
@@ -40,7 +40,7 @@ export type PropertySearchService = {
     | {
         ok: true;
         where: Record<string, unknown>;
-        orderBy: Record<string, "asc" | "desc">;
+        orderBy: Record<string, unknown>;
         pagination: ResolvedPagination;
         warnings: string[];
         appliedFilters: Record<string, unknown>;

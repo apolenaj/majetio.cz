@@ -3,7 +3,11 @@
  */
 
 import {
+  SEARCH_AMENITIES,
   SEARCH_CONDITIONS,
+  SEARCH_CONSTRUCTION_TYPES,
+  SEARCH_ENERGY_RATINGS,
+  SEARCH_OWNER_KINDS,
   SEARCH_OWNERSHIP_TYPES,
   SEARCH_PROPERTY_TYPES,
   type PropertySearchInput,
@@ -25,6 +29,59 @@ export type NormalizedSearchFilters = {
   condition?: string[];
   ownershipType?: string[];
   transactionType?: "SALE" | "RENT";
+  floorAreaMin?: number;
+  floorAreaMax?: number;
+  pricePerSqmMin?: number;
+  pricePerSqmMax?: number;
+  energyRating?: string[];
+  constructionType?: string[];
+  listingOwnerKind?: string[];
+  amenities?: string[];
+  floorMin?: number;
+  floorMax?: number;
+  yearBuiltMin?: number;
+  yearBuiltMax?: number;
+  yearRenovatedMin?: number;
+  yearRenovatedMax?: number;
+  groundFloor?: boolean;
+  topFloor?: boolean;
+  isOffPlan?: boolean;
+  immediateMoveIn?: boolean;
+  onlyNew?: boolean;
+  onlyDiscounted?: boolean;
+  excludeReserved?: boolean;
+  requirePrice?: boolean;
+  privateSeller?: boolean;
+  grossYieldMin?: number;
+  grossYieldMax?: number;
+  netYieldMin?: number;
+  netYieldMax?: number;
+  cashflowMin?: number;
+  cashflowMax?: number;
+  cashOnCashMin?: number;
+  cashOnCashMax?: number;
+  paybackYearsMin?: number;
+  paybackYearsMax?: number;
+  rentEstimateMin?: number;
+  rentEstimateMax?: number;
+  rentPerSqmMin?: number;
+  rentPerSqmMax?: number;
+  renovationCostMin?: number;
+  renovationCostMax?: number;
+  renovationLevel?: string[];
+  yieldAfterRenovationMin?: number;
+  allInCostMin?: number;
+  allInCostMax?: number;
+  discountMin?: number;
+  tenantDemandMin?: number;
+  tenantDemandMax?: number;
+  occupancyMin?: number;
+  occupancyMax?: number;
+  investmentRisk?: string[];
+  majetioScoreMin?: number;
+  majetioScoreMax?: number;
+  dataConfidenceMin?: number;
+  onlyComputedInvestment?: boolean;
   /** Always enforced for public discovery — prevents broad PRIVATE scans. */
   status: "ACTIVE";
   visibility: "PUBLIC";
@@ -50,6 +107,16 @@ function sanitizeText(value: string | undefined, max = 80): string | undefined {
     .trim()
     .slice(0, max);
   return cleaned || undefined;
+}
+
+function pickExact(
+  values: string[] | undefined,
+  allowed: readonly string[],
+): string[] | undefined {
+  if (!values?.length) return undefined;
+  const allowedSet = new Set(allowed);
+  const picked = values.filter((v) => allowedSet.has(v)).slice(0, 20);
+  return picked.length > 0 ? [...new Set(picked)] : undefined;
 }
 
 function pickEnumList(
@@ -153,6 +220,59 @@ export function normalizeSearchFilters(
     condition: pickEnumList(input.condition, SEARCH_CONDITIONS),
     ownershipType: pickEnumList(input.ownershipType, SEARCH_OWNERSHIP_TYPES),
     transactionType: input.transactionType,
+    energyRating: pickEnumList(input.energyRating, SEARCH_ENERGY_RATINGS),
+    constructionType: pickEnumList(input.constructionType, SEARCH_CONSTRUCTION_TYPES),
+    listingOwnerKind: pickEnumList(input.listingOwnerKind, SEARCH_OWNER_KINDS),
+    amenities: pickExact(input.amenities, SEARCH_AMENITIES),
+    floorAreaMin: input.floorAreaMin,
+    floorAreaMax: input.floorAreaMax,
+    pricePerSqmMin: input.pricePerSqmMin,
+    pricePerSqmMax: input.pricePerSqmMax,
+    floorMin: input.floorMin,
+    floorMax: input.floorMax,
+    yearBuiltMin: input.yearBuiltMin,
+    yearBuiltMax: input.yearBuiltMax,
+    yearRenovatedMin: input.yearRenovatedMin,
+    yearRenovatedMax: input.yearRenovatedMax,
+    groundFloor: input.groundFloor,
+    topFloor: input.topFloor,
+    isOffPlan: input.isOffPlan,
+    immediateMoveIn: input.immediateMoveIn,
+    onlyNew: input.onlyNew,
+    onlyDiscounted: input.onlyDiscounted,
+    excludeReserved: input.excludeReserved,
+    requirePrice: input.requirePrice,
+    privateSeller: input.privateSeller,
+    grossYieldMin: input.grossYieldMin,
+    grossYieldMax: input.grossYieldMax,
+    netYieldMin: input.netYieldMin,
+    netYieldMax: input.netYieldMax,
+    cashflowMin: input.cashflowMin,
+    cashflowMax: input.cashflowMax,
+    cashOnCashMin: input.cashOnCashMin,
+    cashOnCashMax: input.cashOnCashMax,
+    paybackYearsMin: input.paybackYearsMin,
+    paybackYearsMax: input.paybackYearsMax,
+    rentEstimateMin: input.rentEstimateMin,
+    rentEstimateMax: input.rentEstimateMax,
+    rentPerSqmMin: input.rentPerSqmMin,
+    rentPerSqmMax: input.rentPerSqmMax,
+    renovationCostMin: input.renovationCostMin,
+    renovationCostMax: input.renovationCostMax,
+    renovationLevel: input.renovationLevel,
+    yieldAfterRenovationMin: input.yieldAfterRenovationMin,
+    allInCostMin: input.allInCostMin,
+    allInCostMax: input.allInCostMax,
+    discountMin: input.discountMin,
+    tenantDemandMin: input.tenantDemandMin,
+    tenantDemandMax: input.tenantDemandMax,
+    occupancyMin: input.occupancyMin,
+    occupancyMax: input.occupancyMax,
+    investmentRisk: input.investmentRisk,
+    majetioScoreMin: input.majetioScoreMin,
+    majetioScoreMax: input.majetioScoreMax,
+    dataConfidenceMin: input.dataConfidenceMin,
+    onlyComputedInvestment: input.onlyComputedInvestment,
     status: "ACTIVE",
     visibility: "PUBLIC",
   };
@@ -269,5 +389,220 @@ export function buildSearchWhere(
     }
   }
 
+  appendStandardColumns(where, filters);
+  appendInvestmentClauses(where, filters);
+
   return where;
+}
+
+function appendAnd(where: Record<string, unknown>, clause: Record<string, unknown>) {
+  if (where.AND) {
+    (where.AND as unknown[]).push(clause);
+    return;
+  }
+  if (where.OR) {
+    where.AND = [{ OR: where.OR }, clause];
+    delete where.OR;
+    return;
+  }
+  where.AND = [clause];
+}
+
+function range(min?: number, max?: number): Record<string, number> | undefined {
+  if (min == null && max == null) return undefined;
+  return {
+    ...(min != null ? { gte: min } : {}),
+    ...(max != null ? { lte: max } : {}),
+  };
+}
+
+function appendStandardColumns(
+  where: Record<string, unknown>,
+  filters: NormalizedSearchFilters,
+) {
+  const floorArea = range(filters.floorAreaMin, filters.floorAreaMax);
+  if (floorArea) where.floorArea = floorArea;
+  const pricePerSqm = range(filters.pricePerSqmMin, filters.pricePerSqmMax);
+  if (pricePerSqm) where.pricePerSqm = pricePerSqm;
+  const floor = range(filters.floorMin, filters.floorMax);
+  if (floor) where.floor = floor;
+  const yearBuilt = range(filters.yearBuiltMin, filters.yearBuiltMax);
+  if (yearBuilt) where.yearBuilt = yearBuilt;
+  const yearRenovated = range(filters.yearRenovatedMin, filters.yearRenovatedMax);
+  if (yearRenovated) where.yearRenovated = yearRenovated;
+
+  if (filters.energyRating?.length) {
+    where.energyRating =
+      filters.energyRating.length === 1
+        ? filters.energyRating[0]
+        : { in: filters.energyRating };
+  }
+  if (filters.constructionType?.length) {
+    where.constructionType =
+      filters.constructionType.length === 1
+        ? filters.constructionType[0]
+        : { in: filters.constructionType };
+  }
+  if (filters.listingOwnerKind?.length) {
+    where.listingOwnerKind =
+      filters.listingOwnerKind.length === 1
+        ? filters.listingOwnerKind[0]
+        : { in: filters.listingOwnerKind };
+  }
+  if (filters.privateSeller) {
+    appendAnd(where, {
+      listingOwnerKind: null,
+      organizationId: null,
+    });
+  }
+  if (filters.isOffPlan) where.isOffPlan = true;
+  if (filters.requirePrice) {
+    const current =
+      where.askingPrice && typeof where.askingPrice === "object"
+        ? (where.askingPrice as Record<string, unknown>)
+        : {};
+    where.askingPrice = { ...current, not: null };
+  }
+
+  if (filters.amenities?.length) {
+    const is: Record<string, boolean> = {};
+    for (const amenity of filters.amenities) is[amenity] = true;
+    where.features = { is };
+  }
+}
+
+const SNAPSHOT_RANGES: Array<{
+  field: string;
+  min: keyof NormalizedSearchFilters;
+  max: keyof NormalizedSearchFilters;
+}> = [
+  { field: "grossYieldPct", min: "grossYieldMin", max: "grossYieldMax" },
+  { field: "netYieldPct", min: "netYieldMin", max: "netYieldMax" },
+  { field: "monthlyCashflowCzk", min: "cashflowMin", max: "cashflowMax" },
+  { field: "cashOnCashPct", min: "cashOnCashMin", max: "cashOnCashMax" },
+  { field: "paybackYears", min: "paybackYearsMin", max: "paybackYearsMax" },
+  { field: "estimatedRentMonthlyCzk", min: "rentEstimateMin", max: "rentEstimateMax" },
+  { field: "rentPerSqm", min: "rentPerSqmMin", max: "rentPerSqmMax" },
+  { field: "renovationCostMinCzk", min: "renovationCostMin", max: "renovationCostMax" },
+  { field: "allInCostCzk", min: "allInCostMin", max: "allInCostMax" },
+  { field: "tenantDemandScore", min: "tenantDemandMin", max: "tenantDemandMax" },
+  { field: "estimatedOccupancyMinPct", min: "occupancyMin", max: "occupancyMax" },
+  { field: "majetioScore", min: "majetioScoreMin", max: "majetioScoreMax" },
+];
+
+function appendInvestmentClauses(
+  where: Record<string, unknown>,
+  filters: NormalizedSearchFilters,
+) {
+  const only = filters.onlyComputedInvestment === true;
+  for (const spec of SNAPSHOT_RANGES) {
+    const bounds = range(
+      filters[spec.min] as number | undefined,
+      filters[spec.max] as number | undefined,
+    );
+    if (!bounds) continue;
+    appendAnd(where, snapshotRangeClause(spec.field, bounds, only));
+  }
+  if (filters.discountMin != null) {
+    appendAnd(
+      where,
+      snapshotRangeClause(
+        "discountToEstimatedValuePct",
+        { gte: filters.discountMin },
+        only,
+      ),
+    );
+  }
+  if (filters.yieldAfterRenovationMin != null) {
+    appendAnd(
+      where,
+      snapshotRangeClause(
+        "yieldAfterRenovationPct",
+        { gte: filters.yieldAfterRenovationMin },
+        only,
+      ),
+    );
+  }
+  if (filters.dataConfidenceMin != null) {
+    appendAnd(
+      where,
+      snapshotRangeClause(
+        "dataConfidencePct",
+        { gte: filters.dataConfidenceMin },
+        only,
+      ),
+    );
+  }
+  if (filters.renovationLevel?.length) {
+    appendAnd(where, {
+      OR: only
+        ? [
+            {
+              investmentSnapshot: {
+                is: { renovationLevel: { in: filters.renovationLevel } },
+              },
+            },
+          ]
+        : [
+            { investmentSnapshot: { is: null } },
+            { investmentSnapshot: { is: { renovationLevel: null } } },
+            {
+              investmentSnapshot: {
+                is: { renovationLevel: { in: filters.renovationLevel } },
+              },
+            },
+          ],
+    });
+  }
+  if (filters.investmentRisk?.length) {
+    appendAnd(where, {
+      OR: only
+        ? [
+            {
+              investmentSnapshot: {
+                is: { investmentRisk: { in: filters.investmentRisk } },
+              },
+            },
+          ]
+        : [
+            { investmentSnapshot: { is: null } },
+            { investmentSnapshot: { is: { investmentRisk: null } } },
+            {
+              investmentSnapshot: {
+                is: { investmentRisk: { in: filters.investmentRisk } },
+              },
+            },
+          ],
+    });
+  }
+  if (only) {
+    appendAnd(where, {
+      investmentSnapshot: { is: { calculatedAt: { not: null } } },
+    });
+  }
+}
+
+/**
+ * Explicit investment bounds must not drop listings whose metric was never calculated,
+ * unless the caller asked for computed rows only.
+ */
+function snapshotRangeClause(
+  field: string,
+  bounds: Record<string, number>,
+  onlyComputed: boolean,
+): Record<string, unknown> {
+  if (onlyComputed) {
+    return {
+      investmentSnapshot: {
+        is: { [field]: bounds, calculatedAt: { not: null } },
+      },
+    };
+  }
+  return {
+    OR: [
+      { investmentSnapshot: { is: null } },
+      { investmentSnapshot: { is: { [field]: null } } },
+      { investmentSnapshot: { is: { [field]: bounds } } },
+    ],
+  };
 }

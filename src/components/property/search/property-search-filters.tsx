@@ -3,14 +3,8 @@
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-import { ActiveFilterChips } from "@/components/property/search/active-filter-chips";
-import { CategoryGrid, type CategorySubSelection } from "@/components/property/search/category-grid";
+import { DiscoveryFilterBar } from "@/components/property/search/discovery-filter-bar";
 import { FilterTabs } from "@/components/property/search/filter-tabs";
-import { InvestmentMetrics } from "@/components/property/search/investment-metrics";
-import { MapFilter } from "@/components/property/search/map-filter";
-import { PriceFilter } from "@/components/property/search/price-filter";
-import { PropertySearchInput } from "@/components/property/search/property-search-input";
-import { Button } from "@/components/ui/button";
 import {
   buildPropertySearchHref,
   type PropertyUrlFilterState,
@@ -20,10 +14,8 @@ import { aggregateSearchFilters } from "@/domains/properties/search/analytics-ag
 import { track } from "@/lib/analytics/events";
 
 /**
- * Main discovery search hub:
- * 1) Nabídka + Poptávka category grids (separate state)
- * 2) context tabs
- * 3) locality / price / investment filters
+ * Discovery filters stay in the URL.
+ * The bar is the primary surface; advanced and investment filters open in the drawer.
  */
 export function PropertySearchFilters({
   state,
@@ -35,78 +27,21 @@ export function PropertySearchFilters({
   categoryCounts?: Partial<Record<string, number>>;
 }) {
   const router = useRouter();
-
-  const [selectedOfferCategories, setSelectedOfferCategories] = React.useState<
-    string[]
-  >(() => [...(state.typ ?? [])]);
-  const [selectedDemandCategories, setSelectedDemandCategories] = React.useState<
-    string[]
-  >(() => [...(state.typPoptavka ?? [])]);
-  const [selectedOfferSubs, setSelectedOfferSubs] =
-    React.useState<CategorySubSelection>(() => ({
-      byt: [...(state.dispozice ?? [])],
-      dum: [...(state.typDomu ?? [])],
-    }));
-  const [selectedDemandSubs, setSelectedDemandSubs] =
-    React.useState<CategorySubSelection>(() => ({
-      byt: [...(state.dispozicePoptavka ?? [])],
-      dum: [...(state.typDomuPoptavka ?? [])],
-    }));
-  const [selectedRegions, setSelectedRegions] = React.useState<string[]>(() => [
-    ...(state.kraje ?? []),
-  ]);
-
-  const [draft, setDraft] = React.useState<PropertyUrlFilterState>(() => ({
-    ...state,
-    typ: state.typ ?? [],
-    typPoptavka: state.typPoptavka ?? [],
-    kraje: state.kraje ?? [],
-    kontext: state.kontext ?? "doporucene",
-  }));
-
-  React.useEffect(() => {
-    setSelectedOfferCategories([...(state.typ ?? [])]);
-    setSelectedDemandCategories([...(state.typPoptavka ?? [])]);
-    setSelectedOfferSubs({
-      byt: [...(state.dispozice ?? [])],
-      dum: [...(state.typDomu ?? [])],
-    });
-    setSelectedDemandSubs({
-      byt: [...(state.dispozicePoptavka ?? [])],
-      dum: [...(state.typDomuPoptavka ?? [])],
-    });
-    setSelectedRegions([...(state.kraje ?? [])]);
-    setDraft({
-      ...state,
-      typ: state.typ ?? [],
-      typPoptavka: state.typPoptavka ?? [],
-      kraje: state.kraje ?? [],
-      kontext: state.kontext ?? "doporucene",
-    });
-  }, [state]);
+  const stateKey = JSON.stringify(state);
+  const [draft, setDraft] = React.useState(state);
+  const [syncedKey, setSyncedKey] = React.useState(stateKey);
+  if (syncedKey !== stateKey) {
+    setSyncedKey(stateKey);
+    setDraft(state);
+  }
 
   function patch(partial: Partial<PropertyUrlFilterState>) {
     setDraft((prev) => ({ ...prev, ...partial, stranka: 1 }));
   }
 
-  function commit(
-    nextDraft: PropertyUrlFilterState = draft,
-    nextOffer: string[] = selectedOfferCategories,
-    nextDemand: string[] = selectedDemandCategories,
-    nextOfferSubs: CategorySubSelection = selectedOfferSubs,
-    nextDemandSubs: CategorySubSelection = selectedDemandSubs,
-    nextRegions: string[] = selectedRegions,
-  ) {
+  function commit(next?: PropertyUrlFilterState) {
     const payload: PropertyUrlFilterState = {
-      ...nextDraft,
-      typ: nextOffer,
-      typPoptavka: nextDemand,
-      dispozice: nextOfferSubs.byt,
-      dispozicePoptavka: nextDemandSubs.byt,
-      typDomu: nextOfferSubs.dum,
-      typDomuPoptavka: nextDemandSubs.dum,
-      kraje: nextRegions,
-      kontext: nextDraft.kontext ?? "doporucene",
+      ...(next ?? draft),
       stranka: 1,
     };
     const agg = aggregateSearchFilters(payload);
@@ -139,137 +74,27 @@ export function PropertySearchFilters({
     router.push(buildPropertySearchHref(payload));
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    commit();
-  }
-
   function onTabChange(tab: SearchContextTab) {
-    const next = {
+    const next: PropertyUrlFilterState = {
       ...draft,
       kontext: tab,
-      razeni: tab === "doporucene" ? ("recommended" as const) : draft.razeni,
+      razeni: tab === "doporucene" ? "recommended" : draft.razeni,
       stranka: 1,
     };
     setDraft(next);
     commit(next);
   }
 
-  const resultLabel =
-    resultCount === 1
-      ? "výsledek"
-      : resultCount >= 2 && resultCount <= 4
-        ? "výsledky"
-        : "výsledků";
-
   return (
-    <form onSubmit={onSubmit} className="space-y-10 sm:space-y-12">
-      {/* ——— Block 1: Nabídka / Poptávka ——— */}
-      <div className="space-y-10">
-        <CategoryGrid
-          title="Nabídka"
-          description="Co se aktuálně prodává nebo pronajímá"
-          selected={selectedOfferCategories}
-          onChange={setSelectedOfferCategories}
-          subcategories={selectedOfferSubs}
-          onSubChange={setSelectedOfferSubs}
-        />
-
-        <div className="border-t border-[var(--border-default)] pt-10">
-          <CategoryGrid
-            title="Poptávka"
-            description="Co klienti aktivně hledají"
-            selected={selectedDemandCategories}
-            onChange={setSelectedDemandCategories}
-            subcategories={selectedDemandSubs}
-            onSubChange={setSelectedDemandSubs}
-          />
-        </div>
-      </div>
-
-      {/* ——— Block 2: Context tabs ——— */}
-      <FilterTabs
-        value={draft.kontext ?? "doporucene"}
-        onChange={onTabChange}
+    <div className="space-y-4">
+      <DiscoveryFilterBar
+        draft={draft}
+        applied={state}
+        onChange={patch}
+        onCommit={commit}
+        resultCount={resultCount}
       />
-
-      {/* Search query + CTA */}
-      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="min-w-0 flex-1">
-            <PropertySearchInput
-              defaultValue={draft.q ?? ""}
-              label="Hledaný výraz"
-              placeholder="Město, čtvrť nebo název nabídky…"
-              onChangeValue={(q) => patch({ q: q.trim() || undefined })}
-            />
-          </div>
-          <Button type="submit" className="min-w-[10rem] shrink-0 sm:mb-0.5">
-            Hledat
-            {resultCount > 0 ? (
-              <span className="opacity-80">
-                · {resultCount} {resultLabel}
-              </span>
-            ) : null}
-          </Button>
-        </div>
-      </div>
-
-      {/* ——— Block 3: Advanced + investment filters ——— */}
-      <div className="space-y-3">
-        <div>
-          <h2 className="font-display text-xl text-[var(--text-primary)]">
-            Pokročilé a investiční filtry
-          </h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Lokalita, cena a výnosové metriky — každý filtr ve vlastní kartě
-          </p>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-          <div className="space-y-5 lg:col-span-2">
-            <MapFilter
-              selectedRegions={selectedRegions}
-              onChange={setSelectedRegions}
-              collapsible={false}
-            />
-          </div>
-
-          <PriceFilter
-            cenaOd={draft.cenaOd}
-            cenaDo={draft.cenaDo}
-            onChange={(next) => patch(next)}
-            collapsible={false}
-          />
-
-          <InvestmentMetrics
-            roiOd={draft.roiOd}
-            cashflowOd={draft.cashflowOd}
-            rekonstrukceOd={draft.rekonstrukceOd}
-            rekonstrukceDo={draft.rekonstrukceDo}
-            onChange={(next) => patch(next)}
-          />
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button type="submit" variant="secondary">
-            Použít filtry
-          </Button>
-        </div>
-      </div>
-
-      <ActiveFilterChips
-        state={{
-          ...state,
-          typ: selectedOfferCategories,
-          typPoptavka: selectedDemandCategories,
-          dispozice: selectedOfferSubs.byt,
-          dispozicePoptavka: selectedDemandSubs.byt,
-          typDomu: selectedOfferSubs.dum,
-          typDomuPoptavka: selectedDemandSubs.dum,
-          kraje: selectedRegions,
-        }}
-      />
-    </form>
+      <FilterTabs value={draft.kontext ?? "doporucene"} onChange={onTabChange} />
+    </div>
   );
 }

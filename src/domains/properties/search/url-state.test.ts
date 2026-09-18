@@ -187,6 +187,16 @@ describe("applyUrlFiltersToListings", () => {
     expect(hits).toHaveLength(1);
     expect(hits[0]?.id).toBe("high");
   });
+
+  it("keeps listings without a calculated yield unless only computed data is requested", () => {
+    const state = parsePropertySearchParams({ "roi-od": "5" });
+    expect(applyUrlFiltersToListings(sample, state)).toHaveLength(1);
+    const only = parsePropertySearchParams({
+      "roi-od": "5",
+      "jen-vypoctene": "1",
+    });
+    expect(applyUrlFiltersToListings(sample, only)).toHaveLength(0);
+  });
 });
 
 describe("recommended sort URL", () => {

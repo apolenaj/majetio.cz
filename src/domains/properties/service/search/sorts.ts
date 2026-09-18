@@ -16,7 +16,29 @@ const PRESET_MAP: Record<SearchSortPreset, PropertySort> = {
   price_per_sqm: { field: "pricePerSqm", direction: "desc" },
   price_per_sqm_asc: { field: "pricePerSqm", direction: "asc" },
   area_desc: { field: "usableArea", direction: "desc" },
+  rent_desc: snapshotSort("estimatedRentMonthlyCzk", "desc"),
+  gross_yield_desc: snapshotSort("grossYieldPct", "desc"),
+  net_yield_desc: snapshotSort("netYieldPct", "desc"),
+  cashflow_desc: snapshotSort("monthlyCashflowCzk", "desc"),
+  cash_on_cash_desc: snapshotSort("cashOnCashPct", "desc"),
+  payback_asc: snapshotSort("paybackYears", "asc"),
+  tenant_demand_desc: snapshotSort("tenantDemandScore", "desc"),
+  occupancy_desc: snapshotSort("estimatedOccupancyMinPct", "desc"),
+  renovation_asc: snapshotSort("renovationCostMinCzk", "asc"),
+  discount_desc: snapshotSort("discountToEstimatedValuePct", "desc"),
+  majetio_score_desc: snapshotSort("majetioScore", "desc"),
 };
+
+function snapshotSort(
+  field: NonNullable<PropertySort["snapshot"]>["field"],
+  direction: SortDirection,
+): PropertySort {
+  return {
+    field: "publishedAt",
+    direction: "desc",
+    snapshot: { field, direction },
+  };
+}
 
 const FIELD_WHITELIST = new Set<PropertySortField>([
   "askingPrice",
@@ -55,8 +77,16 @@ export function resolveSearchSort(input: {
   return { field, direction };
 }
 
-/** Prisma orderBy object — keys only from whitelist. */
-export function toPrismaOrderBy(sort: PropertySort): Record<string, "asc" | "desc"> {
+/** Prisma orderBy — property columns or a nested snapshot. Never raw SQL. */
+export function toPrismaOrderBy(sort: PropertySort): Record<string, unknown> {
+  if (sort.snapshot) {
+    return {
+      investmentSnapshot: {
+        [sort.snapshot.field]: { sort: sort.snapshot.direction, nulls: "last" },
+      },
+      publishedAt: "desc",
+    };
+  }
   if (!FIELD_WHITELIST.has(sort.field)) {
     return { publishedAt: "desc" };
   }

@@ -102,8 +102,8 @@ export default function MetodikaHubPage() {
               >
                 AI a vysvětlitelnost
               </Link>
-              .
-            </p>
+          .
+        </p>
             <p className="mt-2 flex flex-wrap gap-3">
               <MethodologyLink topic="data-sources" />
               <MethodologyLink topic="valuation" />

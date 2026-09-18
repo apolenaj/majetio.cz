@@ -56,6 +56,17 @@ export async function loadDiscoveryListings(): Promise<SearchableListing[]> {
           ? record.publishedAt
           : record.publishedAt?.toISOString() ?? null,
       completenessScore: record.completenessScore,
+      netYieldPct: record.netYieldPct ?? null,
+      estimatedRentMonthlyCzk: record.estimatedRentMonthlyCzk ?? null,
+      renovationCostMinCzk: record.renovationCostMinCzk ?? null,
+      renovationCostMaxCzk: record.renovationCostMaxCzk ?? null,
+      tenantDemandScore: record.tenantDemandScore ?? null,
+      estimatedOccupancyMinPct: record.estimatedOccupancyMinPct ?? null,
+      estimatedOccupancyMaxPct: record.estimatedOccupancyMaxPct ?? null,
+      hasInvestmentSnapshot: record.hasInvestmentSnapshot ?? null,
+      cashFlowMonthlyCzk: record.cashFlowMonthlyCzk ?? null,
+      grossYieldPct: record.grossYieldPct ?? null,
+      majetioScore: record.majetioScore ?? null,
     };
     return extra;
   });
@@ -147,6 +158,17 @@ export async function buildDiscoveryCards(
 
   const cards: PropertyCardData[] = filtered.map((listing) => {
     const card = mapPublicDtoToPropertyCard(listing);
+    card.netYieldPct = listing.netYieldPct ?? undefined;
+    card.estimatedRentMonthlyCzk = listing.estimatedRentMonthlyCzk ?? undefined;
+    card.renovationCostMinCzk =
+      listing.renovationCostMinCzk ?? listing.estimatedRenovationCostCzk ?? undefined;
+    card.renovationCostMaxCzk = listing.renovationCostMaxCzk ?? undefined;
+    card.tenantDemandScore = listing.tenantDemandScore ?? undefined;
+    card.estimatedOccupancyMinPct = listing.estimatedOccupancyMinPct ?? undefined;
+    card.estimatedOccupancyMaxPct = listing.estimatedOccupancyMaxPct ?? undefined;
+    if (listing.grossYieldPct != null) card.grossYieldPct = listing.grossYieldPct;
+    if (listing.cashFlowMonthlyCzk != null) card.cashFlowMonthlyCzk = listing.cashFlowMonthlyCzk;
+    if (listing.majetioScore != null) card.majetioScore = listing.majetioScore;
     const match = scoreMap.get(listing.id);
     if (wantsRecommended && match?.profileComplete) {
       card.matchScore = match.score;

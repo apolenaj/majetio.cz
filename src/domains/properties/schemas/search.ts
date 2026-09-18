@@ -4,6 +4,8 @@ import { z } from "zod";
 export const SEARCH_PROPERTY_TYPES = [
   "APARTMENT",
   "HOUSE",
+  "VILLA",
+  "TOWNHOUSE",
   "LAND",
   "COMMERCIAL",
   "OTHER",
@@ -30,6 +32,31 @@ export const SEARCH_OWNERSHIP_TYPES = [
 
 export const SEARCH_TRANSACTION_TYPES = ["SALE", "RENT"] as const;
 
+export const SEARCH_ENERGY_RATINGS = ["A", "B", "C", "D", "E", "F", "G"] as const;
+
+export const SEARCH_CONSTRUCTION_TYPES = [
+  "BRICK",
+  "PANEL",
+  "WOOD",
+  "STEEL",
+  "MIXED",
+  "OTHER",
+] as const;
+
+export const SEARCH_OWNER_KINDS = ["AGENT", "AGENCY", "DEVELOPER", "PARTNER"] as const;
+
+export const SEARCH_AMENITIES = [
+  "balcony",
+  "loggia",
+  "terrace",
+  "garden",
+  "cellar",
+  "garage",
+  "parking",
+  "elevator",
+  "barrierFree",
+] as const;
+
 /** Named sort presets — mapped server-side; never interpolated into SQL. */
 export const SEARCH_SORT_PRESETS = [
   "recommended",
@@ -39,6 +66,17 @@ export const SEARCH_SORT_PRESETS = [
   "price_per_sqm",
   "price_per_sqm_asc",
   "area_desc",
+  "rent_desc",
+  "gross_yield_desc",
+  "net_yield_desc",
+  "cashflow_desc",
+  "cash_on_cash_desc",
+  "payback_asc",
+  "tenant_demand_desc",
+  "occupancy_desc",
+  "renovation_asc",
+  "discount_desc",
+  "majetio_score_desc",
 ] as const;
 
 export type SearchSortPreset = (typeof SEARCH_SORT_PRESETS)[number];
@@ -80,10 +118,64 @@ export const propertySearchInputSchema = z.object({
   usableAreaMax: nonNegFloat.optional(),
   landAreaMin: nonNegFloat.optional(),
   landAreaMax: nonNegFloat.optional(),
+  floorAreaMin: nonNegFloat.optional(),
+  floorAreaMax: nonNegFloat.optional(),
+  pricePerSqmMin: nonNegFloat.optional(),
+  pricePerSqmMax: nonNegFloat.optional(),
 
   condition: stringList,
   ownershipType: stringList,
+  energyRating: stringList,
+  constructionType: stringList,
+  listingOwnerKind: stringList,
+  amenities: stringList,
   transactionType: z.enum(SEARCH_TRANSACTION_TYPES).optional(),
+  floorMin: z.coerce.number().int().min(-5).max(200).optional(),
+  floorMax: z.coerce.number().int().min(-5).max(200).optional(),
+  yearBuiltMin: z.coerce.number().int().min(1800).max(2100).optional(),
+  yearBuiltMax: z.coerce.number().int().min(1800).max(2100).optional(),
+  yearRenovatedMin: z.coerce.number().int().min(1800).max(2100).optional(),
+  yearRenovatedMax: z.coerce.number().int().min(1800).max(2100).optional(),
+  groundFloor: z.boolean().optional(),
+  topFloor: z.boolean().optional(),
+  isOffPlan: z.boolean().optional(),
+  immediateMoveIn: z.boolean().optional(),
+  onlyNew: z.boolean().optional(),
+  onlyDiscounted: z.boolean().optional(),
+  excludeReserved: z.boolean().optional(),
+  requirePrice: z.boolean().optional(),
+  privateSeller: z.boolean().optional(),
+
+  grossYieldMin: nonNegFloat.optional(),
+  grossYieldMax: nonNegFloat.optional(),
+  netYieldMin: nonNegFloat.optional(),
+  netYieldMax: nonNegFloat.optional(),
+  cashflowMin: z.coerce.number().min(-1_000_000_000).max(1_000_000_000).optional(),
+  cashflowMax: z.coerce.number().min(-1_000_000_000).max(1_000_000_000).optional(),
+  cashOnCashMin: nonNegFloat.optional(),
+  cashOnCashMax: nonNegFloat.optional(),
+  paybackYearsMin: nonNegFloat.optional(),
+  paybackYearsMax: nonNegFloat.optional(),
+  rentEstimateMin: nonNegInt.optional(),
+  rentEstimateMax: nonNegInt.optional(),
+  rentPerSqmMin: nonNegFloat.optional(),
+  rentPerSqmMax: nonNegFloat.optional(),
+  renovationCostMin: nonNegInt.optional(),
+  renovationCostMax: nonNegInt.optional(),
+  renovationLevel: stringList,
+  yieldAfterRenovationMin: nonNegFloat.optional(),
+  allInCostMin: nonNegInt.optional(),
+  allInCostMax: nonNegInt.optional(),
+  discountMin: nonNegFloat.optional(),
+  tenantDemandMin: z.coerce.number().min(0).max(100).optional(),
+  tenantDemandMax: z.coerce.number().min(0).max(100).optional(),
+  occupancyMin: z.coerce.number().min(0).max(100).optional(),
+  occupancyMax: z.coerce.number().min(0).max(100).optional(),
+  investmentRisk: stringList,
+  majetioScoreMin: z.coerce.number().min(0).max(100).optional(),
+  majetioScoreMax: z.coerce.number().min(0).max(100).optional(),
+  dataConfidenceMin: z.coerce.number().min(0).max(100).optional(),
+  onlyComputedInvestment: z.boolean().optional(),
 
   /**
    * Named sort preset. Prefer this over raw field names.

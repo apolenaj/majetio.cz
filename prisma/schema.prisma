@@ -1923,6 +1923,7 @@ model Property {
   listingReports  ListingReport[]
   marketplaceModeInterests MarketplaceModeInterest[]
   auctionConfigs  AuctionConfig[]
+  investmentSnapshot PropertyInvestmentSnapshot?
 
   @@index([status, visibility])
   @@index([propertyType, transactionType])
@@ -1959,6 +1960,64 @@ model Property {
   @@index([layout])
   @@index([usableArea])
   @@index([landArea])
+  @@index([energyRating])
+  @@index([constructionType])
+  @@index([yearBuilt])
+  @@index([floor])
+  @@index([listingOwnerKind])
+}
+
+/**
+ * Cached investment metrics for discovery filters.
+ * Every metric is nullable — a missing calculation stays NULL, never a placeholder.
+ */
+model PropertyInvestmentSnapshot {
+  id                            String    @id @default(cuid())
+  propertyId                    String    @unique
+  grossYieldPct                 Float?
+  netYieldPct                   Float?
+  estimatedRentMonthlyCzk       Int?
+  rentPerSqm                    Float?
+  monthlyCashflowCzk            Int?
+  cashOnCashPct                 Float?
+  paybackYears                  Float?
+  renovationCostMinCzk          Int?
+  renovationCostMaxCzk          Int?
+  renovationLevel               String?
+  yieldAfterRenovationPct       Float?
+  allInCostCzk                  Int?
+  estimatedValueMinCzk          Int?
+  estimatedValueMaxCzk          Int?
+  discountToEstimatedValuePct   Float?
+  tenantDemandScore             Int?
+  estimatedOccupancyMinPct      Float?
+  estimatedOccupancyMaxPct      Float?
+  estimatedVacancyDaysPerYear   Int?
+  investmentRisk                String?
+  locationRisk                  String?
+  tenantRisk                    String?
+  renovationRisk                String?
+  financialRisk                 String?
+  dataRisk                      String?
+  majetioScore                  Float?
+  dataConfidencePct             Float?
+  methodVersion                 String    @default("1.3.0")
+  calculatedAt                  DateTime?
+  createdAt                     DateTime  @default(now())
+  updatedAt                     DateTime  @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([grossYieldPct])
+  @@index([netYieldPct])
+  @@index([monthlyCashflowCzk])
+  @@index([cashOnCashPct])
+  @@index([paybackYears])
+  @@index([majetioScore])
+  @@index([dataConfidencePct])
+  @@index([tenantDemandScore])
+  @@index([discountToEstimatedValuePct])
+  @@index([calculatedAt])
 }
 
 /** Fixed boolean / count feature flags (1:1). */

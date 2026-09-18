@@ -9,6 +9,19 @@ import type { PropertyRecord } from "@/domains/properties/service/dto";
 export type PrismaPropertyWithMedia = Property & {
   media?: PropertyMedia[];
   completeness?: { score: number } | null;
+  investmentSnapshot?: {
+    grossYieldPct: number | null;
+    netYieldPct: number | null;
+    estimatedRentMonthlyCzk: number | null;
+    monthlyCashflowCzk: number | null;
+    renovationCostMinCzk: number | null;
+    renovationCostMaxCzk: number | null;
+    tenantDemandScore: number | null;
+    estimatedOccupancyMinPct: number | null;
+    estimatedOccupancyMaxPct: number | null;
+    majetioScore: number | null;
+    calculatedAt: Date | null;
+  } | null;
 };
 
 export function mapPrismaPropertyToRecord(
@@ -72,6 +85,17 @@ export function mapPrismaPropertyToRecord(
     ownerUserId: row.ownerUserId,
     completenessScore: row.completeness?.score ?? null,
     canonicalKey: row.canonicalKey,
+    grossYieldPct: row.investmentSnapshot?.grossYieldPct ?? null,
+    netYieldPct: row.investmentSnapshot?.netYieldPct ?? null,
+    cashFlowMonthlyCzk: row.investmentSnapshot?.monthlyCashflowCzk ?? null,
+    estimatedRentMonthlyCzk: row.investmentSnapshot?.estimatedRentMonthlyCzk ?? null,
+    renovationCostMinCzk: row.investmentSnapshot?.renovationCostMinCzk ?? null,
+    renovationCostMaxCzk: row.investmentSnapshot?.renovationCostMaxCzk ?? null,
+    tenantDemandScore: row.investmentSnapshot?.tenantDemandScore ?? null,
+    estimatedOccupancyMinPct: row.investmentSnapshot?.estimatedOccupancyMinPct ?? null,
+    estimatedOccupancyMaxPct: row.investmentSnapshot?.estimatedOccupancyMaxPct ?? null,
+    majetioScore: row.investmentSnapshot?.majetioScore ?? null,
+    hasInvestmentSnapshot: row.investmentSnapshot?.calculatedAt != null,
     media,
   };
 }
