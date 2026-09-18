@@ -23,6 +23,7 @@ export function buildSavedSearchFilters(
       ...EMPTY_PROPERTY_URL_STATE,
       ...state,
       typ: [...state.typ],
+      typPoptavka: [...(state.typPoptavka ?? [])],
       dispozice: [...state.dispozice],
       stav: [...state.stav],
       vlastnictvi: [...state.vlastnictvi],
@@ -48,6 +49,7 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
       ...EMPTY_PROPERTY_URL_STATE,
       ...s,
       typ: Array.isArray(s.typ) ? s.typ.map(String) : [],
+      typPoptavka: Array.isArray(s.typPoptavka) ? s.typPoptavka.map(String) : [],
       dispozice: Array.isArray(s.dispozice) ? s.dispozice.map(String) : [],
       stav: Array.isArray(s.stav) ? s.stav.map(String) : [],
       vlastnictvi: Array.isArray(s.vlastnictvi) ? s.vlastnictvi.map(String) : [],
@@ -64,6 +66,9 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
     ...EMPTY_PROPERTY_URL_STATE,
     ...(obj as Partial<PropertyUrlFilterState>),
     typ: Array.isArray(obj.typ) ? (obj.typ as string[]) : [],
+    typPoptavka: Array.isArray(obj.typPoptavka)
+      ? (obj.typPoptavka as string[])
+      : [],
     dispozice: Array.isArray(obj.dispozice) ? (obj.dispozice as string[]) : [],
     stav: Array.isArray(obj.stav) ? (obj.stav as string[]) : [],
     vlastnictvi: Array.isArray(obj.vlastnictvi) ? (obj.vlastnictvi as string[]) : [],

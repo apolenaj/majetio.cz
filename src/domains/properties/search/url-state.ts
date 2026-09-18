@@ -27,7 +27,10 @@ export type PropertyUrlFilterState = {
   lokalita?: string;
   cenaOd?: number;
   cenaDo?: number;
+  /** Kategorie v sekci Nabídka (prodej / nabídky). */
   typ: string[];
+  /** Kategorie v sekci Poptávka (oddělený state od nabídky). */
+  typPoptavka: string[];
   dispozice: string[];
   plochaOd?: number;
   plochaDo?: number;
@@ -62,6 +65,7 @@ export type PropertyUrlFilterState = {
 
 export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
   typ: [],
+  typPoptavka: [],
   dispozice: [],
   stav: [],
   vlastnictvi: [],
@@ -189,6 +193,7 @@ export function parsePropertySearchParams(
     cenaOd: num(first(params["cena-od"])),
     cenaDo: num(first(params["cena-do"])),
     typ: list(params.typ),
+    typPoptavka: list(params["typ-poptavka"]),
     dispozice: list(params.dispozice).map(normalizeDisposition),
     plochaOd: num(first(params["plocha-od"])),
     plochaDo: num(first(params["plocha-do"])),
@@ -242,6 +247,7 @@ export function serializePropertySearchParams(
   if (state.cenaOd != null) out["cena-od"] = String(state.cenaOd);
   if (state.cenaDo != null) out["cena-do"] = String(state.cenaDo);
   if (state.typ.length) out.typ = state.typ.join(",");
+  if (state.typPoptavka.length) out["typ-poptavka"] = state.typPoptavka.join(",");
   if (state.dispozice.length) out.dispozice = state.dispozice.join(",");
   if (state.plochaOd != null) out["plocha-od"] = String(state.plochaOd);
   if (state.plochaDo != null) out["plocha-do"] = String(state.plochaDo);
@@ -287,6 +293,7 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   if (state.lokalita) n += 1;
   if (state.cenaOd != null || state.cenaDo != null) n += 1;
   n += state.typ.length;
+  n += state.typPoptavka.length;
   n += state.dispozice.length;
   if (state.plochaOd != null || state.plochaDo != null) n += 1;
   if (state.pozemekOd != null || state.pozemekDo != null) n += 1;
@@ -344,8 +351,16 @@ export function getActiveFilterChips(
     const opt = TYP_OPTIONS.find((o) => o.value === t);
     chips.push({
       id: `typ-${t}`,
-      label: opt?.label ?? t,
+      label: `Nabídka: ${opt?.label ?? t}`,
       clear: { typ: state.typ.filter((x) => x !== t) },
+    });
+  }
+  for (const t of state.typPoptavka) {
+    const opt = TYP_OPTIONS.find((o) => o.value === t);
+    chips.push({
+      id: `typ-p-${t}`,
+      label: `Poptávka: ${opt?.label ?? t}`,
+      clear: { typPoptavka: state.typPoptavka.filter((x) => x !== t) },
     });
   }
   for (const d of state.dispozice) {

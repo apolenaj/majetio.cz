@@ -24,18 +24,17 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   ostatni: MoreHorizontal,
 };
 
-export type CategoryCounts = Partial<Record<string, number>>;
-
 export function CategoryGrid({
+  title,
+  description,
   selected,
   onChange,
-  counts,
   className,
 }: {
+  title: string;
+  description?: string;
   selected: string[];
   onChange: (typ: string[]) => void;
-  /** Optional offer counts per category slug. */
-  counts?: CategoryCounts;
   className?: string;
 }) {
   function toggle(value: string) {
@@ -47,21 +46,20 @@ export function CategoryGrid({
   }
 
   return (
-    <section className={cn("space-y-4", className)} aria-label="Kategorie nemovitostí">
+    <section className={cn("space-y-4", className)} aria-label={title}>
       <div>
         <h2 className="font-display text-xl text-[var(--text-primary)] sm:text-2xl">
-          Co hledáte?
+          {title}
         </h2>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Vyberte jednu nebo více kategorií — filtry se dají kombinovat
-        </p>
+        {description ? (
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{description}</p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {TYP_OPTIONS.map((cat) => {
           const active = selected.includes(cat.value);
           const Icon = CATEGORY_ICONS[cat.value] ?? MoreHorizontal;
-          const count = counts?.[cat.value];
 
           return (
             <button
@@ -70,7 +68,7 @@ export function CategoryGrid({
               aria-pressed={active}
               onClick={() => toggle(cat.value)}
               className={cn(
-                "group flex min-h-[7.5rem] flex-col items-start justify-between gap-3 rounded-2xl border p-4 text-left shadow-sm transition-all duration-200",
+                "group flex min-h-[6.75rem] flex-col items-start justify-between gap-3 rounded-2xl border p-4 text-left shadow-sm transition-all duration-200",
                 "hover:-translate-y-0.5 hover:shadow-md",
                 active
                   ? "border-[var(--action-accent)] bg-[var(--action-accent)]/8 ring-1 ring-[var(--action-accent)]/40"
@@ -87,15 +85,8 @@ export function CategoryGrid({
               >
                 <Icon className="size-5" aria-hidden />
               </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-[var(--text-primary)]">
-                  {cat.label}
-                </span>
-                <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
-                  {count != null
-                    ? `${new Intl.NumberFormat("cs-CZ").format(count)} nabídek`
-                    : "— nabídek"}
-                </span>
+              <span className="block truncate text-sm font-medium text-[var(--text-primary)]">
+                {cat.label}
               </span>
             </button>
           );

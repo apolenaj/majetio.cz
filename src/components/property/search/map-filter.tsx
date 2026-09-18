@@ -4,7 +4,9 @@ import * as React from "react";
 
 import { FilterAccordion } from "@/components/property/search/filter-accordion";
 import {
+  CZ_MAP_VIEWBOX,
   SEARCH_REGIONS,
+  SK_MAP_OFFSET_X,
   type SearchRegion,
   type SearchRegionCountry,
 } from "@/domains/properties/search/regions";
@@ -14,24 +16,28 @@ function RegionPath({
   region,
   selected,
   onToggle,
+  transform,
 }: {
   region: SearchRegion;
   selected: boolean;
   onToggle: (id: string) => void;
+  transform?: string;
 }) {
   return (
     <path
       d={region.path}
+      transform={transform}
       role="button"
       tabIndex={0}
       aria-pressed={selected}
       aria-label={region.label}
       data-region={region.id}
       className={cn(
-        "cursor-pointer stroke-[var(--surface-primary)] stroke-[1.5] transition-all duration-200 outline-none",
+        "cursor-pointer transition-all duration-200 outline-none",
+        "stroke-[color-mix(in_srgb,var(--brand-ink-950)_55%,transparent)] stroke-[1.1]",
         selected
           ? "fill-[var(--action-accent)] opacity-95"
-          : "fill-[color-mix(in_srgb,var(--border-default)_85%,var(--action-accent)_15%)] hover:fill-[color-mix(in_srgb,var(--action-accent)_35%,var(--border-default))]",
+          : "fill-[color-mix(in_srgb,var(--border-default)_70%,var(--action-accent)_18%)] hover:fill-[color-mix(in_srgb,var(--action-accent)_40%,var(--border-default))]",
         "focus-visible:stroke-[var(--action-accent)] focus-visible:stroke-2",
       )}
       onClick={() => onToggle(region.id)}
@@ -44,6 +50,34 @@ function RegionPath({
     >
       <title>{region.label}</title>
     </path>
+  );
+}
+
+function RegionLabel({
+  region,
+  selected,
+  offsetX = 0,
+}: {
+  region: SearchRegion;
+  selected: boolean;
+  offsetX?: number;
+}) {
+  return (
+    <text
+      x={region.labelX + offsetX}
+      y={region.labelY}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      className={cn(
+        "pointer-events-none select-none text-[9px] font-medium sm:text-[10px]",
+        selected
+          ? "fill-[var(--text-inverse)]"
+          : "fill-[var(--text-primary)] opacity-80",
+      )}
+      style={{ fontFamily: "inherit" }}
+    >
+      {region.mapLabel}
+    </text>
   );
 }
 
@@ -74,8 +108,7 @@ function RegionPills({
                 : "border-[var(--border-default)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:border-[var(--action-accent)]/40 hover:text-[var(--text-primary)]",
             )}
           >
-            {region.short}
-            <span className="sr-only"> — {region.label}</span>
+            {region.label}
           </button>
         );
       })}
@@ -102,6 +135,7 @@ export function MapFilter({
 
   const cz = SEARCH_REGIONS.filter((r) => r.country === "CZ");
   const sk = SEARCH_REGIONS.filter((r) => r.country === "SK");
+  const combinedViewBox = `0 0 ${1000 + SK_MAP_OFFSET_X} 570`;
 
   return (
     <FilterAccordion
@@ -120,46 +154,66 @@ export function MapFilter({
       <div className="space-y-5">
         <div className="hidden overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[linear-gradient(160deg,var(--background-secondary),var(--surface-primary))] p-3 shadow-inner sm:block">
           <svg
-            viewBox="0 0 720 340"
-            className="mx-auto h-auto w-full max-w-3xl"
+            viewBox={combinedViewBox}
+            className="mx-auto h-auto w-full max-w-5xl"
             role="img"
             aria-label="Interaktivní mapa krajů Česka a Slovenska"
           >
             <text
-              x="180"
+              x="420"
               y="28"
-              className="fill-[var(--text-muted)] text-[11px]"
+              className="fill-[var(--text-muted)] text-[14px] font-medium"
               style={{ fontFamily: "inherit" }}
             >
               Česko
             </text>
             <text
-              x="560"
+              x={1000 + SK_MAP_OFFSET_X / 2 + 80}
               y="28"
-              className="fill-[var(--text-muted)] text-[11px]"
+              className="fill-[var(--text-muted)] text-[14px] font-medium"
               style={{ fontFamily: "inherit" }}
             >
               Slovensko
             </text>
-            {cz.map((region) => (
-              <RegionPath
-                key={region.id}
-                region={region}
-                selected={selected.includes(region.id)}
-                onToggle={toggle}
-              />
-            ))}
-            {sk.map((region) => (
-              <RegionPath
-                key={region.id}
-                region={region}
-                selected={selected.includes(region.id)}
-                onToggle={toggle}
-              />
-            ))}
+
+            <g aria-label={CZ_MAP_VIEWBOX}>
+              {cz.map((region) => (
+                <RegionPath
+                  key={region.id}
+                  region={region}
+                  selected={selected.includes(region.id)}
+                  onToggle={toggle}
+                />
+              ))}
+              {cz.map((region) => (
+                <RegionLabel
+                  key={`lbl-${region.id}`}
+                  region={region}
+                  selected={selected.includes(region.id)}
+                />
+              ))}
+            </g>
+
+            <g transform={`translate(${SK_MAP_OFFSET_X} 0)`}>
+              {sk.map((region) => (
+                <RegionPath
+                  key={region.id}
+                  region={region}
+                  selected={selected.includes(region.id)}
+                  onToggle={toggle}
+                />
+              ))}
+              {sk.map((region) => (
+                <RegionLabel
+                  key={`lbl-${region.id}`}
+                  region={region}
+                  selected={selected.includes(region.id)}
+                />
+              ))}
+            </g>
           </svg>
           <p className="mt-2 text-center text-[0.7rem] text-[var(--text-muted)]">
-            Schématická mapa — kliknutím vyberete kraj
+            Mapa krajů — kliknutím vyberete region · podklad Simplemaps
           </p>
         </div>
 
@@ -187,11 +241,6 @@ export function MapFilter({
             Zrušit výběr krajů
           </button>
         ) : null}
-
-        {/* Hidden inputs for progressive-enhancement / form readers */}
-        {selected.map((id) => (
-          <input key={id} type="hidden" name="kraje" value={id} />
-        ))}
       </div>
     </FilterAccordion>
   );

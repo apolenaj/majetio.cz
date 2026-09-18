@@ -20,28 +20,45 @@ import { aggregateSearchFilters } from "@/domains/properties/search/analytics-ag
 import { track } from "@/lib/analytics/events";
 
 /**
- * Main discovery search hub — three clear visual blocks:
- * 1) category cards, 2) context tabs, 3) locality / price / investment filters.
+ * Main discovery search hub:
+ * 1) Nabídka + Poptávka category grids (separate state)
+ * 2) context tabs
+ * 3) locality / price / investment filters
  */
 export function PropertySearchFilters({
   state,
   resultCount,
-  categoryCounts,
 }: {
   state: PropertyUrlFilterState;
   resultCount: number;
+  /** @deprecated Counts removed from category cards — kept for API compat. */
   categoryCounts?: Partial<Record<string, number>>;
 }) {
   const router = useRouter();
+
+  /** Separate state for offer vs demand category selection. */
+  const [offerTyp, setOfferTyp] = React.useState<string[]>(() => [
+    ...(state.typ ?? []),
+  ]);
+  const [demandTyp, setDemandTyp] = React.useState<string[]>(() => [
+    ...(state.typPoptavka ?? []),
+  ]);
+
   const [draft, setDraft] = React.useState<PropertyUrlFilterState>(() => ({
     ...state,
+    typ: state.typ ?? [],
+    typPoptavka: state.typPoptavka ?? [],
     kraje: state.kraje ?? [],
     kontext: state.kontext ?? "doporucene",
   }));
 
   React.useEffect(() => {
+    setOfferTyp([...(state.typ ?? [])]);
+    setDemandTyp([...(state.typPoptavka ?? [])]);
     setDraft({
       ...state,
+      typ: state.typ ?? [],
+      typPoptavka: state.typPoptavka ?? [],
       kraje: state.kraje ?? [],
       kontext: state.kontext ?? "doporucene",
     });
@@ -51,11 +68,17 @@ export function PropertySearchFilters({
     setDraft((prev) => ({ ...prev, ...partial, stranka: 1 }));
   }
 
-  function commit(next: PropertyUrlFilterState = draft) {
+  function commit(
+    nextDraft: PropertyUrlFilterState = draft,
+    nextOffer: string[] = offerTyp,
+    nextDemand: string[] = demandTyp,
+  ) {
     const payload: PropertyUrlFilterState = {
-      ...next,
-      kraje: next.kraje ?? [],
-      kontext: next.kontext ?? "doporucene",
+      ...nextDraft,
+      typ: nextOffer,
+      typPoptavka: nextDemand,
+      kraje: nextDraft.kraje ?? [],
+      kontext: nextDraft.kontext ?? "doporucene",
       stranka: 1,
     };
     const agg = aggregateSearchFilters(payload);
@@ -113,12 +136,27 @@ export function PropertySearchFilters({
 
   return (
     <form onSubmit={onSubmit} className="space-y-10 sm:space-y-12">
-      {/* ——— Block 1: Categories ——— */}
-      <CategoryGrid
-        selected={draft.typ}
-        onChange={(typ) => patch({ typ })}
-        counts={categoryCounts}
-      />
+      {/* ——— Block 1: Nabídka / Poptávka ——— */}
+      <div className="space-y-10">
+        <CategoryGrid
+          title="Nabídka"
+          description="Co se aktuálně prodává nebo pronajímá"
+          selected={offerTyp}
+          onChange={setOfferTyp}
+        />
+
+        <div
+          className="border-t border-[var(--border-default)] pt-10"
+          aria-hidden={false}
+        >
+          <CategoryGrid
+            title="Poptávka"
+            description="Co klienti aktivně hledají"
+            selected={demandTyp}
+            onChange={setDemandTyp}
+          />
+        </div>
+      </div>
 
       {/* ——— Block 2: Context tabs ——— */}
       <FilterTabs
@@ -191,7 +229,13 @@ export function PropertySearchFilters({
         </div>
       </div>
 
-      <ActiveFilterChips state={state} />
+      <ActiveFilterChips
+        state={{
+          ...state,
+          typ: offerTyp,
+          typPoptavka: demandTyp,
+        }}
+      />
     </form>
   );
 }
