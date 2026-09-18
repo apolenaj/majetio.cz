@@ -31,7 +31,14 @@ export type PropertyUrlFilterState = {
   typ: string[];
   /** Kategorie v sekci Poptávka (oddělený state od nabídky). */
   typPoptavka: string[];
+  /** Dispozice bytů v sekci Nabídka. */
   dispozice: string[];
+  /** Dispozice bytů v sekci Poptávka. */
+  dispozicePoptavka: string[];
+  /** Typ domu v sekci Nabídka. */
+  typDomu: string[];
+  /** Typ domu v sekci Poptávka. */
+  typDomuPoptavka: string[];
   plochaOd?: number;
   plochaDo?: number;
   pozemekOd?: number;
@@ -67,6 +74,9 @@ export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
   typ: [],
   typPoptavka: [],
   dispozice: [],
+  dispozicePoptavka: [],
+  typDomu: [],
+  typDomuPoptavka: [],
   stav: [],
   vlastnictvi: [],
   energie: [],
@@ -195,6 +205,11 @@ export function parsePropertySearchParams(
     typ: list(params.typ),
     typPoptavka: list(params["typ-poptavka"]),
     dispozice: list(params.dispozice).map(normalizeDisposition),
+    dispozicePoptavka: list(params["dispozice-poptavka"]).map(normalizeDisposition),
+    typDomu: list(params["typ-domu"]).filter((id) => DUM_TYPE_IDS.has(id)),
+    typDomuPoptavka: list(params["typ-domu-poptavka"]).filter((id) =>
+      DUM_TYPE_IDS.has(id),
+    ),
     plochaOd: num(first(params["plocha-od"])),
     plochaDo: num(first(params["plocha-do"])),
     pozemekOd: num(first(params["pozemek-od"])),
@@ -220,11 +235,25 @@ export function parsePropertySearchParams(
   };
 }
 
+const DUM_TYPE_IDS = new Set([
+  "rodinny",
+  "vila",
+  "chalupa",
+  "chata",
+  "pamatka",
+]);
+
 function normalizeDisposition(value: string): string {
-  const v = value.toLowerCase().replace(/\s+/g, "");
-  if (/^\d\+kk$/.test(v) || /^\d\+\d$/.test(v)) return v;
-  if (/^\dkk$/.test(v)) return `${v[0]}+kk`;
-  return v;
+  const folded = value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "");
+  if (folded === "5+" || folded === "5plus" || folded === "5avice") return "5plus";
+  if (folded === "atypicky") return "atypicky";
+  if (/^\d\+kk$/.test(folded) || /^\d\+\d$/.test(folded)) return folded;
+  if (/^\dkk$/.test(folded)) return `${folded[0]}+kk`;
+  return folded;
 }
 
 function parseContextTab(
@@ -249,6 +278,13 @@ export function serializePropertySearchParams(
   if (state.typ.length) out.typ = state.typ.join(",");
   if (state.typPoptavka.length) out["typ-poptavka"] = state.typPoptavka.join(",");
   if (state.dispozice.length) out.dispozice = state.dispozice.join(",");
+  if (state.dispozicePoptavka.length) {
+    out["dispozice-poptavka"] = state.dispozicePoptavka.join(",");
+  }
+  if (state.typDomu.length) out["typ-domu"] = state.typDomu.join(",");
+  if (state.typDomuPoptavka.length) {
+    out["typ-domu-poptavka"] = state.typDomuPoptavka.join(",");
+  }
   if (state.plochaOd != null) out["plocha-od"] = String(state.plochaOd);
   if (state.plochaDo != null) out["plocha-do"] = String(state.plochaDo);
   if (state.pozemekOd != null) out["pozemek-od"] = String(state.pozemekOd);
@@ -295,6 +331,9 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   n += state.typ.length;
   n += state.typPoptavka.length;
   n += state.dispozice.length;
+  n += state.dispozicePoptavka.length;
+  n += state.typDomu.length;
+  n += state.typDomuPoptavka.length;
   if (state.plochaOd != null || state.plochaDo != null) n += 1;
   if (state.pozemekOd != null || state.pozemekDo != null) n += 1;
   n += state.stav.length;
@@ -366,8 +405,31 @@ export function getActiveFilterChips(
   for (const d of state.dispozice) {
     chips.push({
       id: `disp-${d}`,
-      label: d,
+      label: `Byt: ${layoutLabel(d)}`,
       clear: { dispozice: state.dispozice.filter((x) => x !== d) },
+    });
+  }
+  for (const d of state.dispozicePoptavka) {
+    chips.push({
+      id: `disp-p-${d}`,
+      label: `Poptávka byt: ${layoutLabel(d)}`,
+      clear: {
+        dispozicePoptavka: state.dispozicePoptavka.filter((x) => x !== d),
+      },
+    });
+  }
+  for (const d of state.typDomu) {
+    chips.push({
+      id: `dum-${d}`,
+      label: `Dům: ${houseLabel(d)}`,
+      clear: { typDomu: state.typDomu.filter((x) => x !== d) },
+    });
+  }
+  for (const d of state.typDomuPoptavka) {
+    chips.push({
+      id: `dum-p-${d}`,
+      label: `Poptávka dům: ${houseLabel(d)}`,
+      clear: { typDomuPoptavka: state.typDomuPoptavka.filter((x) => x !== d) },
     });
   }
   if (state.plochaOd != null || state.plochaDo != null) {
@@ -461,6 +523,23 @@ export function getActiveFilterChips(
     });
   }
   return chips;
+}
+
+function layoutLabel(value: string): string {
+  if (value === "5plus") return "5+ a více";
+  if (value === "atypicky") return "Atypický";
+  return value;
+}
+
+function houseLabel(value: string): string {
+  const labels: Record<string, string> = {
+    rodinny: "Rodinný",
+    vila: "Vila",
+    chalupa: "Chalupa",
+    chata: "Chata",
+    pamatka: "Památka",
+  };
+  return labels[value] ?? value;
 }
 
 function formatMil(czk: number): string {

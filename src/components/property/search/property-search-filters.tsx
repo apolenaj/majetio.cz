@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { ActiveFilterChips } from "@/components/property/search/active-filter-chips";
-import { CategoryGrid } from "@/components/property/search/category-grid";
+import { CategoryGrid, type CategorySubSelection } from "@/components/property/search/category-grid";
 import { FilterTabs } from "@/components/property/search/filter-tabs";
 import { InvestmentMetrics } from "@/components/property/search/investment-metrics";
 import { MapFilter } from "@/components/property/search/map-filter";
@@ -36,12 +36,24 @@ export function PropertySearchFilters({
 }) {
   const router = useRouter();
 
-  /** Separate state for offer vs demand category selection. */
-  const [offerTyp, setOfferTyp] = React.useState<string[]>(() => [
-    ...(state.typ ?? []),
-  ]);
-  const [demandTyp, setDemandTyp] = React.useState<string[]>(() => [
-    ...(state.typPoptavka ?? []),
+  const [selectedOfferCategories, setSelectedOfferCategories] = React.useState<
+    string[]
+  >(() => [...(state.typ ?? [])]);
+  const [selectedDemandCategories, setSelectedDemandCategories] = React.useState<
+    string[]
+  >(() => [...(state.typPoptavka ?? [])]);
+  const [selectedOfferSubs, setSelectedOfferSubs] =
+    React.useState<CategorySubSelection>(() => ({
+      byt: [...(state.dispozice ?? [])],
+      dum: [...(state.typDomu ?? [])],
+    }));
+  const [selectedDemandSubs, setSelectedDemandSubs] =
+    React.useState<CategorySubSelection>(() => ({
+      byt: [...(state.dispozicePoptavka ?? [])],
+      dum: [...(state.typDomuPoptavka ?? [])],
+    }));
+  const [selectedRegions, setSelectedRegions] = React.useState<string[]>(() => [
+    ...(state.kraje ?? []),
   ]);
 
   const [draft, setDraft] = React.useState<PropertyUrlFilterState>(() => ({
@@ -53,8 +65,17 @@ export function PropertySearchFilters({
   }));
 
   React.useEffect(() => {
-    setOfferTyp([...(state.typ ?? [])]);
-    setDemandTyp([...(state.typPoptavka ?? [])]);
+    setSelectedOfferCategories([...(state.typ ?? [])]);
+    setSelectedDemandCategories([...(state.typPoptavka ?? [])]);
+    setSelectedOfferSubs({
+      byt: [...(state.dispozice ?? [])],
+      dum: [...(state.typDomu ?? [])],
+    });
+    setSelectedDemandSubs({
+      byt: [...(state.dispozicePoptavka ?? [])],
+      dum: [...(state.typDomuPoptavka ?? [])],
+    });
+    setSelectedRegions([...(state.kraje ?? [])]);
     setDraft({
       ...state,
       typ: state.typ ?? [],
@@ -70,14 +91,21 @@ export function PropertySearchFilters({
 
   function commit(
     nextDraft: PropertyUrlFilterState = draft,
-    nextOffer: string[] = offerTyp,
-    nextDemand: string[] = demandTyp,
+    nextOffer: string[] = selectedOfferCategories,
+    nextDemand: string[] = selectedDemandCategories,
+    nextOfferSubs: CategorySubSelection = selectedOfferSubs,
+    nextDemandSubs: CategorySubSelection = selectedDemandSubs,
+    nextRegions: string[] = selectedRegions,
   ) {
     const payload: PropertyUrlFilterState = {
       ...nextDraft,
       typ: nextOffer,
       typPoptavka: nextDemand,
-      kraje: nextDraft.kraje ?? [],
+      dispozice: nextOfferSubs.byt,
+      dispozicePoptavka: nextDemandSubs.byt,
+      typDomu: nextOfferSubs.dum,
+      typDomuPoptavka: nextDemandSubs.dum,
+      kraje: nextRegions,
       kontext: nextDraft.kontext ?? "doporucene",
       stranka: 1,
     };
@@ -141,19 +169,20 @@ export function PropertySearchFilters({
         <CategoryGrid
           title="Nabídka"
           description="Co se aktuálně prodává nebo pronajímá"
-          selected={offerTyp}
-          onChange={setOfferTyp}
+          selected={selectedOfferCategories}
+          onChange={setSelectedOfferCategories}
+          subcategories={selectedOfferSubs}
+          onSubChange={setSelectedOfferSubs}
         />
 
-        <div
-          className="border-t border-[var(--border-default)] pt-10"
-          aria-hidden={false}
-        >
+        <div className="border-t border-[var(--border-default)] pt-10">
           <CategoryGrid
             title="Poptávka"
             description="Co klienti aktivně hledají"
-            selected={demandTyp}
-            onChange={setDemandTyp}
+            selected={selectedDemandCategories}
+            onChange={setSelectedDemandCategories}
+            subcategories={selectedDemandSubs}
+            onSubChange={setSelectedDemandSubs}
           />
         </div>
       </div>
@@ -200,8 +229,8 @@ export function PropertySearchFilters({
         <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
           <div className="space-y-5 lg:col-span-2">
             <MapFilter
-              selected={draft.kraje}
-              onChange={(kraje) => patch({ kraje })}
+              selectedRegions={selectedRegions}
+              onChange={setSelectedRegions}
               collapsible={false}
             />
           </div>
@@ -232,8 +261,13 @@ export function PropertySearchFilters({
       <ActiveFilterChips
         state={{
           ...state,
-          typ: offerTyp,
-          typPoptavka: demandTyp,
+          typ: selectedOfferCategories,
+          typPoptavka: selectedDemandCategories,
+          dispozice: selectedOfferSubs.byt,
+          dispozicePoptavka: selectedDemandSubs.byt,
+          typDomu: selectedOfferSubs.dum,
+          typDomuPoptavka: selectedDemandSubs.dum,
+          kraje: selectedRegions,
         }}
       />
     </form>

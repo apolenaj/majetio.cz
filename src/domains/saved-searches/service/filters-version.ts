@@ -25,6 +25,9 @@ export function buildSavedSearchFilters(
       typ: [...state.typ],
       typPoptavka: [...(state.typPoptavka ?? [])],
       dispozice: [...state.dispozice],
+      dispozicePoptavka: [...(state.dispozicePoptavka ?? [])],
+      typDomu: [...(state.typDomu ?? [])],
+      typDomuPoptavka: [...(state.typDomuPoptavka ?? [])],
       stav: [...state.stav],
       vlastnictvi: [...state.vlastnictvi],
       energie: [...state.energie],
@@ -51,6 +54,13 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
       typ: Array.isArray(s.typ) ? s.typ.map(String) : [],
       typPoptavka: Array.isArray(s.typPoptavka) ? s.typPoptavka.map(String) : [],
       dispozice: Array.isArray(s.dispozice) ? s.dispozice.map(String) : [],
+      dispozicePoptavka: Array.isArray(s.dispozicePoptavka)
+        ? s.dispozicePoptavka.map(String)
+        : [],
+      typDomu: Array.isArray(s.typDomu) ? s.typDomu.map(String) : [],
+      typDomuPoptavka: Array.isArray(s.typDomuPoptavka)
+        ? s.typDomuPoptavka.map(String)
+        : [],
       stav: Array.isArray(s.stav) ? s.stav.map(String) : [],
       vlastnictvi: Array.isArray(s.vlastnictvi) ? s.vlastnictvi.map(String) : [],
       energie: Array.isArray(s.energie) ? s.energie.map(String) : [],
@@ -70,6 +80,13 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
       ? (obj.typPoptavka as string[])
       : [],
     dispozice: Array.isArray(obj.dispozice) ? (obj.dispozice as string[]) : [],
+    dispozicePoptavka: Array.isArray(obj.dispozicePoptavka)
+      ? (obj.dispozicePoptavka as string[])
+      : [],
+    typDomu: Array.isArray(obj.typDomu) ? (obj.typDomu as string[]) : [],
+    typDomuPoptavka: Array.isArray(obj.typDomuPoptavka)
+      ? (obj.typDomuPoptavka as string[])
+      : [],
     stav: Array.isArray(obj.stav) ? (obj.stav as string[]) : [],
     vlastnictvi: Array.isArray(obj.vlastnictvi) ? (obj.vlastnictvi as string[]) : [],
     energie: Array.isArray(obj.energie) ? (obj.energie as string[]) : [],
