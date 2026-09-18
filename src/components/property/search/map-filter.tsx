@@ -48,13 +48,11 @@ export function MapFilter({
   onChange,
   collapsible = false,
 }: {
-  /** @deprecated Prefer `selectedRegions`. */
-  selected?: string[];
   selectedRegions?: string[];
   onChange: (kraje: string[]) => void;
   collapsible?: boolean;
 }) {
-  const regions = selectedRegions ?? selected ?? [];
+  const regions = selectedRegions ?? [];
 
   function toggle(id: string) {
     onChange(
