@@ -27,6 +27,7 @@ export function PropertySearchInput({
   defaultValue = "",
   placeholder = "Např. Praha, Vinohrady, Brno…",
   className,
+  onChangeValue,
 }: {
   id?: string;
   name?: string;
@@ -34,10 +35,15 @@ export function PropertySearchInput({
   defaultValue?: string;
   placeholder?: string;
   className?: string;
+  onChangeValue?: (value: string) => void;
 }) {
   const [value, setValue] = React.useState(defaultValue);
   const [open, setOpen] = React.useState(false);
   const listId = `${id}-suggestions`;
+
+  React.useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
 
   const suggestions = React.useMemo(() => {
     const q = foldDiacritics(value).trim();
@@ -46,6 +52,11 @@ export function PropertySearchInput({
       foldDiacritics(s).includes(q),
     ).slice(0, 6);
   }, [value]);
+
+  function update(next: string) {
+    setValue(next);
+    onChangeValue?.(next);
+  }
 
   return (
     <div className={cn("relative min-w-0", className)}>
@@ -61,7 +72,7 @@ export function PropertySearchInput({
           type="search"
           value={value}
           onChange={(e) => {
-            setValue(e.target.value);
+            update(e.target.value);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
@@ -75,14 +86,14 @@ export function PropertySearchInput({
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
-          className="h-11 w-full min-w-0 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-primary)] pr-3 pl-10 text-sm text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+          className="h-11 w-full min-w-0 rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] pr-3 pl-10 text-sm text-[var(--text-primary)] shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
         />
       </div>
       {open && suggestions.length > 0 ? (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-primary)] py-1 shadow-[var(--shadow-raised)]"
+          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-primary)] py-1 shadow-[var(--shadow-raised)]"
         >
           {suggestions.map((s) => (
             <li key={s} role="option">
@@ -91,7 +102,7 @@ export function PropertySearchInput({
                 className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--background-secondary)]"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
-                  setValue(s);
+                  update(s);
                   setOpen(false);
                 }}
               >

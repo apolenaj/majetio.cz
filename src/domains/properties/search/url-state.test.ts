@@ -80,6 +80,17 @@ describe("url-state", () => {
     expect(chips.some((c) => c.id === "rekonstrukce")).toBe(true);
     expect(countActiveFilters(state)).toBe(3);
   });
+
+  it("parses and serializes kraje map selection", () => {
+    const state = parsePropertySearchParams({
+      kraje: "praha,bratislavsky,unknown",
+    });
+    expect(state.kraje).toEqual(["praha", "bratislavsky"]);
+    expect(buildPropertySearchHref(state)).toContain("kraje=praha%2Cbratislavsky");
+    expect(getActiveFilterChips(state).some((c) => c.id === "kraj-praha")).toBe(
+      true,
+    );
+  });
 });
 
 describe("text-match", () => {

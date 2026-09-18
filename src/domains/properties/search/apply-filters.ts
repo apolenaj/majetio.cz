@@ -14,6 +14,7 @@ import {
   VLASTNICTVI_OPTIONS,
   type PropertyUrlFilterState,
 } from "./url-state";
+import { listingMatchesRegions } from "./regions";
 
 export type SearchableListing = PublicPropertyListItemDto & {
   energyRating?: string | null;
@@ -195,6 +196,10 @@ export function applyUrlFiltersToListings(
         p.estimatedRenovationCostCzk == null ||
         p.estimatedRenovationCostCzk <= state.rekonstrukceDo!,
     );
+  }
+
+  if (state.kraje.length) {
+    items = items.filter((p) => listingMatchesRegions(p, state.kraje));
   }
 
   items = sortListings(items, state.razeni);

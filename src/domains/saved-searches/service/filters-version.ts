@@ -29,6 +29,7 @@ export function buildSavedSearchFilters(
       energie: [...state.energie],
       strategie: [...state.strategie],
       kvalita: [...state.kvalita],
+      kraje: [...(state.kraje ?? [])],
       stranka: 1,
     },
   };
@@ -53,6 +54,7 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
       energie: Array.isArray(s.energie) ? s.energie.map(String) : [],
       strategie: Array.isArray(s.strategie) ? s.strategie.map(String) : [],
       kvalita: Array.isArray(s.kvalita) ? s.kvalita.map(String) : [],
+      kraje: Array.isArray(s.kraje) ? s.kraje.map(String) : [],
       stranka: 1,
     });
   }
@@ -68,6 +70,7 @@ export function parseSavedSearchFilters(raw: unknown): SavedSearchFiltersV1 {
     energie: Array.isArray(obj.energie) ? (obj.energie as string[]) : [],
     strategie: Array.isArray(obj.strategie) ? (obj.strategie as string[]) : [],
     kvalita: Array.isArray(obj.kvalita) ? (obj.kvalita as string[]) : [],
+    kraje: Array.isArray(obj.kraje) ? (obj.kraje as string[]) : [],
     stranka: 1,
   });
 }

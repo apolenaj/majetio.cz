@@ -4,6 +4,10 @@
  */
 
 import type { SearchSortPreset } from "@/domains/properties/schemas/search";
+import {
+  getSearchRegion,
+  SEARCH_REGION_IDS,
+} from "@/domains/properties/search/regions";
 
 export type PropertyUrlFilterState = {
   q?: string;
@@ -29,6 +33,8 @@ export type PropertyUrlFilterState = {
   /** Odhadovaná cena rekonstrukce — rozsah Od/Do v Kč. */
   rekonstrukceOd?: number;
   rekonstrukceDo?: number;
+  /** Selected CZ/SK region slugs (`SEARCH_REGIONS`). */
+  kraje: string[];
   stranka: number;
   /** Market filters — shown only when coverage >= 40 % */
   cenovaHladina?: string;
@@ -44,6 +50,7 @@ export const EMPTY_PROPERTY_URL_STATE: PropertyUrlFilterState = {
   energie: [],
   strategie: [],
   kvalita: [],
+  kraje: [],
   stranka: 1,
 };
 
@@ -176,6 +183,9 @@ export function parsePropertySearchParams(
     cashflowOd: num(first(params["cashflow-od"])),
     rekonstrukceOd: num(first(params["rekonstrukce-od"])),
     rekonstrukceDo: num(first(params["rekonstrukce-do"])),
+    kraje: list(params.kraje).filter((id) =>
+      (SEARCH_REGION_IDS as readonly string[]).includes(id),
+    ),
     stranka: page,
     cenovaHladina: first(params["cenova-hladina"]),
     vynosVsBenchmark: first(params["vynos-benchmark"]),
@@ -219,6 +229,7 @@ export function serializePropertySearchParams(
   if (state.rekonstrukceDo != null) {
     out["rekonstrukce-do"] = String(state.rekonstrukceDo);
   }
+  if (state.kraje.length) out.kraje = state.kraje.join(",");
   if (state.cenovaHladina) out["cenova-hladina"] = state.cenovaHladina;
   if (state.vynosVsBenchmark) out["vynos-benchmark"] = state.vynosVsBenchmark;
   if (state.cenovyTrend) out["cenovy-trend"] = state.cenovyTrend;
@@ -252,6 +263,7 @@ export function countActiveFilters(state: PropertyUrlFilterState): number {
   if (state.roiOd != null) n += 1;
   if (state.cashflowOd != null) n += 1;
   if (state.rekonstrukceOd != null || state.rekonstrukceDo != null) n += 1;
+  n += state.kraje.length;
   if (state.cenovaHladina) n += 1;
   if (state.vynosVsBenchmark) n += 1;
   if (state.cenovyTrend) n += 1;
@@ -379,6 +391,14 @@ export function getActiveFilterChips(
       id: "rekonstrukce",
       label,
       clear: { rekonstrukceOd: undefined, rekonstrukceDo: undefined },
+    });
+  }
+  for (const k of state.kraje) {
+    const region = getSearchRegion(k);
+    chips.push({
+      id: `kraj-${k}`,
+      label: region?.short ?? k,
+      clear: { kraje: state.kraje.filter((x) => x !== k) },
     });
   }
   return chips;
