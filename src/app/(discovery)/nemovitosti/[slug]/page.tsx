@@ -61,11 +61,21 @@ import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import { auth } from "@/lib/auth";
 import { resolveLocationIntelligenceForProperty } from "@/domains/locations/integration";
 import { PropertyInquiryForm } from "@/components/listings/property-inquiry-form";
+import { CatalogPropertyDetail } from "@/components/property/search/catalog-property-detail";
+import { findCatalogPropertyBySlug } from "@/lib/mock-properties";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const catalog = findCatalogPropertyBySlug(slug);
+  if (catalog) {
+    return {
+      title: `${catalog.nazev} | Ukázkový inzerát`,
+      description: catalog.detail_popis.slice(0, 160),
+      robots: { index: false, follow: false },
+    };
+  }
   const property = await loadPropertyDetailBySlug(slug);
   if (!property) {
     return { title: "Nemovitost nenalezena", robots: { index: false } };
@@ -75,6 +85,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PropertyDetailPage({ params }: Props) {
   const { slug } = await params;
+  const catalog = findCatalogPropertyBySlug(slug);
+  if (catalog) {
+    return <CatalogPropertyDetail property={catalog} />;
+  }
   const property = await loadPropertyDetailBySlug(slug);
   if (!property) notFound();
 

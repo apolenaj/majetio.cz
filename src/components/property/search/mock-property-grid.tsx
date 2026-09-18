@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 import { PropertySearchEmptyState } from "@/components/property/search/property-search-empty";
 import { PropertySearchResultsHeader } from "@/components/property/search/property-search-results";
 import { PropertyCard } from "@/components/property/search/catalog-property-card";
-import type { Property } from "@/lib/mock-properties";
+import { catalogPropertyHref, type Property } from "@/lib/mock-properties";
 import type { PropertyUrlFilterState } from "@/domains/properties/search/url-state";
 
 export function MockPropertyGrid({
@@ -25,7 +27,14 @@ export function MockPropertyGrid({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+            <Link
+              key={property.id}
+              href={catalogPropertyHref(property.id)}
+              aria-label={`${property.nazev}, ${property.lokalita}`}
+              className="block h-full rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--action-accent)]"
+            >
+              <PropertyCard property={property} />
+            </Link>
           ))}
         </div>
       )}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EMPTY_PROPERTY_URL_STATE } from "@/domains/properties/search/url-state";
-import { filterProperties, mockProperties } from "@/lib/mock-properties";
+import { filterProperties, findCatalogPropertyBySlug, mockProperties } from "@/lib/mock-properties";
 
 describe("filterProperties", () => {
   it("returns the whole catalog without filters", () => {
@@ -29,7 +29,14 @@ describe("filterProperties", () => {
         expect(item.obrazky.po_rekonstrukci).toBeTruthy();
         expect(item.obrazky.pocet_wow_fotek).toBeGreaterThanOrEqual(3);
       }
+      expect(item.detail_popis.length).toBeGreaterThan(80);
+      expect(item.galerie.length).toBeGreaterThanOrEqual(3);
     }
+  });
+
+  it("resolves catalog detail slugs without touching real listing slugs", () => {
+    expect(findCatalogPropertyBySlug("ukazka-2")?.lokalita).toContain("Ostrava");
+    expect(findCatalogPropertyBySlug("byt-vinohrady")).toBeUndefined();
   });
 
   it("filters type, layout and locality together", () => {
