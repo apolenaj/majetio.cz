@@ -10,6 +10,15 @@ import { CATALOG_DETAIL } from "@/lib/catalog-listing-details";
 export type PropertyTransaction = "prodej" | "pronajem";
 export type PropertyKind = "byt" | "dum" | "pozemek" | "komerce";
 export type ListingPresentation = "premium" | "klasicky";
+export type TechnicalCondition =
+  | "novostavba"
+  | "velmi_dobry"
+  | "dobry"
+  | "pred_rekonstrukci"
+  | "v_rekonstrukci"
+  | "po_rekonstrukci"
+  | "k_demolici"
+  | "neuvedeno";
 export type AmenityCategory = "education" | "shopping" | "transport" | "health";
 
 export interface CivicAmenity {
@@ -26,11 +35,11 @@ export interface PropertyGps {
 export interface PropertyImages {
   /** Jedna hlavní fotka klasického inzerátu. */
   hlavni?: string;
-  /** Premium: stav před úpravou. */
+  /** Další ilustrační snímek (historický klíč; UI jej neštítkuje jako před/po). */
   pred_rekonstrukci?: string;
-  /** Premium: stav po homestagingu / rekonstrukci. */
+  /** Další ilustrační snímek (historický klíč; UI jej neštítkuje jako před/po). */
   po_rekonstrukci?: string;
-  /** Premium: počet dalších upravených fotek v galerii. */
+  /** Počet dalších fotek v galerii (metadata seedu). */
   pocet_wow_fotek?: number;
 }
 
@@ -45,12 +54,13 @@ export interface Property {
   plocha_m2: number;
   stav_inzeratu: ListingPresentation;
   obrazky: PropertyImages;
-  /** Delší text inzerátu: stav, okolí, potenciál. Není znalecký posudek. */
+  /** Delší text inzerátu. Není znalecký posudek. */
   detail_popis: string;
-  /** Další fotky mimo hlavní snímek / srovnání před–po. */
   galerie: string[];
   obcanska_vybavenost: CivicAmenity[];
   lokalita_gps: PropertyGps;
+  /** Technický stav stavby. Není to balíček prezentace. */
+  technicky_stav: TechnicalCondition;
   stitky: string[];
   popis_upravy: string;
 }
@@ -65,7 +75,10 @@ const TYPE_SLUG_TO_KIND: Record<string, PropertyKind> = {
 };
 
 const catalogSeed: Array<
-  Omit<Property, "detail_popis" | "galerie" | "obcanska_vybavenost" | "lokalita_gps">
+  Omit<
+    Property,
+    "detail_popis" | "galerie" | "obcanska_vybavenost" | "lokalita_gps" | "technicky_stav"
+  >
 > = [
   {
     id: 1,
@@ -448,13 +461,75 @@ const catalogSeed: Array<
   },
 ];
 
+const TECHNICAL_CONDITION: Record<number, TechnicalCondition> = {
+  1: "dobry",
+  2: "pred_rekonstrukci",
+  3: "dobry",
+  4: "dobry",
+  5: "pred_rekonstrukci",
+  6: "pred_rekonstrukci",
+  7: "dobry",
+  8: "velmi_dobry",
+  9: "pred_rekonstrukci",
+  10: "novostavba",
+  11: "neuvedeno",
+  12: "pred_rekonstrukci",
+  13: "dobry",
+  14: "dobry",
+  15: "dobry",
+  16: "dobry",
+  17: "dobry",
+  18: "neuvedeno",
+  19: "dobry",
+  20: "pred_rekonstrukci",
+};
+
 export const mockProperties: Property[] = catalogSeed.map((item) => {
   const extra = CATALOG_DETAIL[item.id];
-  if (!extra) {
+  const technicky_stav = TECHNICAL_CONDITION[item.id];
+  if (!extra || !technicky_stav) {
     throw new Error(`Chybí detail ukázkového inzerátu ${item.id}`);
   }
-  return { ...item, ...extra };
+  return {
+    ...item,
+    ...extra,
+    technicky_stav,
+    popis_upravy: "Ilustrační fotografie. Video, dron ani virtuální prohlídka u této ukázky nejsou.",
+  };
 });
+
+export const TECHNICAL_CONDITION_LABEL: Record<TechnicalCondition, string> = {
+  novostavba: "Novostavba",
+  velmi_dobry: "Velmi dobrý",
+  dobry: "Dobrý",
+  pred_rekonstrukci: "Před rekonstrukcí",
+  v_rekonstrukci: "V rekonstrukci",
+  po_rekonstrukci: "Po rekonstrukci",
+  k_demolici: "K demolici",
+  neuvedeno: "Neuvedeno",
+};
+
+export function catalogShots(property: Property): { src: string; alt: string; label: string }[] {
+  const urls = [
+    property.obrazky.hlavni,
+    property.obrazky.pred_rekonstrukci,
+    property.obrazky.po_rekonstrukci,
+    ...property.galerie,
+  ].filter((src): src is string => Boolean(src));
+  const seen = new Set<string>();
+  const shots = [];
+  for (const src of urls) {
+    const key = src.split("?")[0] ?? src;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    shots.push({
+      src,
+      alt: property.nazev,
+      label: "Ilustrační fotografie",
+    });
+  }
+  return shots;
+}
 
 const CATALOG_SLUG_PREFIX = "ukazka-";
 

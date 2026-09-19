@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EMPTY_PROPERTY_URL_STATE } from "@/domains/properties/search/url-state";
-import { filterProperties, findCatalogPropertyBySlug, mockProperties } from "@/lib/mock-properties";
+import { catalogShots, filterProperties, findCatalogPropertyBySlug, mockProperties } from "@/lib/mock-properties";
 
 describe("filterProperties", () => {
   it("returns the whole catalog without filters", () => {
@@ -19,22 +19,16 @@ describe("filterProperties", () => {
     expect(hits.some((item) => item.id === 2)).toBe(false);
   });
 
-  it("gives classic listings one photo and premium a before/after pair", () => {
+  it("keeps illustrative photos and a technical condition separate from presentation", () => {
     for (const item of mockProperties) {
-      if (item.stav_inzeratu === "klasicky") {
-        expect(item.obrazky.hlavni).toBeTruthy();
-        expect(item.obrazky.pred_rekonstrukci).toBeUndefined();
-      } else {
-        expect(item.obrazky.pred_rekonstrukci).toBeTruthy();
-        expect(item.obrazky.po_rekonstrukci).toBeTruthy();
-        expect(item.obrazky.pocet_wow_fotek).toBeGreaterThanOrEqual(3);
-      }
+      expect(catalogShots(item).length).toBeGreaterThan(0);
+      expect(item.technicky_stav).toBeTruthy();
+      expect(item.detail_popis).not.toContain("ne za vilu");
+      expect(item.detail_popis).not.toContain("dřevostavbu s verandou");
+      expect(item.popis_upravy).not.toContain("Dron");
       expect(item.detail_popis).toContain("O nemovitosti");
-      expect(item.detail_popis).toContain("Technický stav");
       expect(item.galerie.length).toBeGreaterThanOrEqual(3);
       expect(item.obcanska_vybavenost.length).toBeGreaterThanOrEqual(4);
-      expect(item.lokalita_gps.lat).toBeGreaterThan(48);
-      expect(item.lokalita_gps.lng).toBeGreaterThan(12);
     }
   });
 

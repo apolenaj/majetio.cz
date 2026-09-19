@@ -48,8 +48,8 @@ export const CATALOG_DETAIL: Record<
   1: {
     lokalita_gps: gps(50.1098, 14.5012),
     detail_popis: popis(
-      "Nabízíme byt 2+kk v cihlovém domě na Vysočanech, pět minut pěšky od metra B Kolbenova. Dispozice je běžná pražská: obývací pokoj s kuchyňským koutem, samostatná ložnice, koupelna a předsíň. Dům má výtah a klidný vnitroblok. Cena 6,5 milionu sedí na menší byt u metra, ne na Vinohrady ani na novostavbu u řeky.",
-      "Podlahy jsou původní, okna plastová zhruba z roku 2012, stoupačky funkční. Byt je po dílčí úpravě povrchů, ne po kompletní rekonstrukci jádra. Fotografie před úpravou ukazují obyčejný městský byt, snímky po úpravě jsou homestaging téhož měřítka.",
+      "Nabízíme byt 2+kk v cihlovém domě na Vysočanech, pět minut pěšky od metra B Kolbenova. Dispozice je běžná pražská: obývací pokoj s kuchyňským koutem, samostatná ložnice, koupelna a předsíň. Dům má výtah a klidný vnitroblok. Nabídková cena je 6,5 milionu.",
+      "Podlahy jsou původní, okna plastová zhruba z roku 2012, stoupačky funkční. Byt je po dílčí úpravě povrchů, ne po kompletní rekonstrukci jádra. Fotografie v galerii jsou ilustrační, ne dokumentace této jednotky.",
       "Lokalita dává smysl pro vlastní bydlení i pro dlouhodobý pronájem u metra. Výnos z inzerátu nepočítejte — text popisuje dispozici a stav, není to kalkulace ani znalecký posudek. Kdo chce byt dál upravovat, musí si rozpočet sehnat sám.",
     ),
     galerie: [photo.panel, photo.euro, photo.small, photo.old],
@@ -63,7 +63,7 @@ export const CATALOG_DETAIL: Record<
   2: {
     lokalita_gps: gps(49.8308, 18.1685),
     detail_popis: popis(
-      "Panelový byt 3+1 v Ostravě-Porubě, čtvrté patro bez výtahu. Tři pokoje, kuchyň, předsíň a umakartové jádro. Byt je vyklizený. Cena 2,1 milionu je za původní stav na sídlišti, ne za zařízený byt v centru a už vůbec ne za dům.",
+      "Panelový byt 3+1 v Ostravě-Porubě, čtvrté patro bez výtahu. Tři pokoje, kuchyň, předsíň a umakartové jádro. Byt je vyklizený. Cena 2,1 milionu je za původní stav na sídlišti.",
       "Jádro je stále umakartové, v koupelně vana a starší baterie, kuchyňská linka z devadesátých let. Okna jsou vyměněná, podlahy PVC a v obýváku staré parkety pod krytinou. Fotky jsou z domu a z neupraveného interiéru, bez homestagingu.",
       "Rekonstrukce jádra tu dává smysl, ale její cenu inzerát neobsahuje. MHD a obchod jsou dole v ulici. Pro kupujícího je to základ k bydlení nebo k postupné úpravě, ne hotový investiční produkt s dopočítaným výnosem.",
     ),
@@ -79,7 +79,7 @@ export const CATALOG_DETAIL: Record<
     lokalita_gps: gps(49.1952, 16.608),
     detail_popis: popis(
       "Garsonka 28 m² v činžovním domě u centra Brna. Jedna místnost s kuchyňským koutem, malá koupelna se sprchou, druhé patro bez výtahu. Nabídkový nájem je 12 000 Kč měsíčně. Hodí se pro jednoho člověka, ne pro pár do loftu.",
-      "Dům je starší, jádro po dílčí výměně obkladů, podlaha vinyl. Fotografie před úpravou ukazují běžný malý byt, snímky po úpravě jsou homestaging stejné místnosti. Není to open space s galerií ani novostavba.",
+      "Dům je starší, jádro po dílčí výměně obkladů, podlaha vinyl. Fotografie v galerii jsou ilustrační. Dispozice odpovídá malé garsonce, ne loftu.",
       "Pro majitele je to malá jednotka v docházkové vzdálenosti od centra. Text neslibuje obsazenost ani čistý výnos. Energie a služby je potřeba ověřit ve smlouvě, v ukázce je uvedena nabídková částka.",
     ),
     galerie: [photo.small, photo.old, photo.euro],
@@ -108,8 +108,8 @@ export const CATALOG_DETAIL: Record<
   5: {
     lokalita_gps: gps(50.0905, 17.7038),
     detail_popis: popis(
-      "Exkluzivně nabízíme k prodeji rodinný dům o dispozici 4+1 v klidné lokalitě Krnova. V přízemí se nachází prostorný obývací pokoj prosluněný okny do zahrady, kuchyň s jídelním koutem a koupelna. V patře jsou tři neprůchozí ložnice. K domu náleží rovinatá zahrada kolem 400 m². Cena 5,2 milionu je za dům v menším městě, ne za vilu u Prahy.",
-      "Dům je v udržovaném stavu před částečnou rekonstrukcí. Střecha prošla revizí, vytápění řeší plynový kotel, fasáda potřebuje nátěr a okna jsou mix novějších plastových a původních dřevěných. Stavba je zděná, se sedlovou střechou. Nejde o dřevostavbu s verandou, bazén ani mramor.",
+      "Exkluzivně nabízíme k prodeji rodinný dům o dispozici 4+1 v klidné lokalitě Krnova. V přízemí se nachází prostorný obývací pokoj prosluněný okny do zahrady, kuchyň s jídelním koutem a koupelna. V patře jsou tři neprůchozí ložnice. K domu náleží rovinatá zahrada kolem 400 m².",
+      "Dům je v udržovaném stavu před částečnou rekonstrukcí. Střecha prošla revizí, vytápění řeší plynový kotel, fasáda potřebuje nátěr a okna jsou mix novějších plastových a původních dřevěných. Stavba je zděná, se sedlovou střechou.",
       "Nemovitost dává smysl jako rodinné bydlení s možností úprav podle vlastních představ. Zahrada je v rámci prémiové prezentace uklizená. Další práce si kupující nacení sám — inzerát rozpočet rekonstrukce neobsahuje a neslibuje výnos z pronájmu.",
     ),
     galerie: [photo.brick, photo.row, photo.field, photo.old],
@@ -125,7 +125,7 @@ export const CATALOG_DETAIL: Record<
     lokalita_gps: gps(50.143, 14.105),
     detail_popis: popis(
       "Starší zděný dům v Kladně, na papíře 5+kk, ve skutečnosti velké místnosti v původním členění. Přízemí obývák, kuchyň a hygienické zázemí, v patře ložnice. Cena 3,8 milionu počítá s tím, že kupec bude rekonstruovat. Není to dům k nastěhování příští týden.",
-      "Elektroinstalace je stará, koupelna v přízemí v původním jádru, topení kotlem na tuhá paliva. Střecha nezatéká, krytina je na konci životnosti. Fasáda je cihlová se sedlovou střechou, bez nové zateplené obálky. Fotky ukazují dům a neupravený interiér, ne americkou verandu.",
+      "Elektroinstalace je stará, koupelna v přízemí v původním jádru, topení kotlem na tuhá paliva. Střecha nezatéká, krytina je na konci životnosti. Fasáda je cihlová se sedlovou střechou, bez nové zateplené obálky. Fotografie jsou ilustrační snímky domu a neupraveného interiéru.",
       "Smysl dává jako základ pro rodinu, která si dům upraví po svém. Okolí je zástavba rodinných domů a autobus do centra. Odhad nákladů na rekonstrukci v datech není a z inzerátu ho neodvozujte.",
     ),
     galerie: [photo.old, photo.brick, photo.row],
@@ -139,8 +139,8 @@ export const CATALOG_DETAIL: Record<
   7: {
     lokalita_gps: gps(50.0754, 14.441),
     detail_popis: popis(
-      "Mezonet 4+kk ve starším činžáku na Vinohradech, 130 m². Spodní podlaží je obývák s kuchyní, nahoře ložnice a pracovna. Stropy jsou vyšší než v paneláku, okna do vnitrobloku, v domě je výtah. Cena 18,5 milionu je pražská cena většího bytu v dobré čtvrti, ne cena paláce.",
-      "Podlahy v obytných místnostech jsou dubové parkety, koupelny po dílčí úpravě kolem roku 2015. Dům je zděný, fasáda ulice udržovaná. Prémiové fotografie po úpravě ukazují kuchyni a homestaging, snímky před úpravou běžný byt před focením. Materiály odpovídají činžáku, ne vile.",
+      "Mezonet 4+kk ve starším činžáku na Vinohradech, 130 m². Spodní podlaží je obývák s kuchyní, nahoře ložnice a pracovna. Stropy jsou vyšší než v paneláku, okna do vnitrobloku, v domě je výtah. Cena 18,5 milionu je nabídková cena tohoto bytu.",
+      "Podlahy v obytných místnostech jsou dubové parkety, koupelny po dílčí úpravě kolem roku 2015. Dům je zděný, fasáda ulice udržovaná. Fotografie jsou ilustrační; materiály v textu odpovídají činžáku.",
       "Kupující u téhle ceny porovnává lokalitu u náměstí Míru a stav domu, ne metráž samotnou. Text zdůrazňuje dispozici a materiály. Není to posudek a neobsahuje dopočítaný výnos z krátkodobého pronájmu.",
     ),
     galerie: [photo.euro, photo.staged, photo.kitchen, photo.old],
@@ -154,8 +154,8 @@ export const CATALOG_DETAIL: Record<
   8: {
     lokalita_gps: gps(49.9915, 14.654),
     detail_popis: popis(
-      "Pronájem rodinného domu 5+kk v Říčanech, 160 m², 45 000 Kč měsíčně. Dům je zděný, zhruba patnáct let starý, s garáží pro jedno auto a zahradou. Vhodné pro rodinu, která chce zůstat u Prahy a dojíždět. Nejde o vilu s bazénem.",
-      "Zateplená obálka, kuchyň na míru, ale ne ze showroomu, podlahy vinyl a dlažba. Topení plynový kotel. Fotografie před úpravou ukazují dům v běžném provozu, snímky po úpravě uklizený interiér pro nájemce. Žádné osobní věci, žádný mramor.",
+      "Pronájem rodinného domu 5+kk v Říčanech, 160 m², 45 000 Kč měsíčně. Dům je zděný, zhruba patnáct let starý, s garáží pro jedno auto a zahradou. Vhodné pro rodinu, která chce zůstat u Prahy a dojíždět.",
+      "Zateplená obálka, kuchyň na míru, podlahy vinyl a dlažba. Topení plynový kotel. Fotografie jsou ilustrační; interiér v textu je běžný rodinný dům bez luxusních materiálů.",
       "Částka je na horní hraně místního nájmu za dům této velikosti. V textu nejsou energie ani kauce. Pro pronajímatele je to stabilní rodinný nájem, ne krátkodobý apartmán s dopočítanou obsazeností.",
     ),
     galerie: [photo.brick, photo.row, photo.euro, photo.field],
@@ -185,7 +185,7 @@ export const CATALOG_DETAIL: Record<
     lokalita_gps: gps(49.228, 16.5955),
     detail_popis: popis(
       "Novostavba 3+kk v Brně-Králově Poli, 82 m², 8,9 milionu. Byt je ve stavu po kolaudaci v menší bytovce, ne v mrakodrapu. Obývák s kuchyní, dvě ložnice, koupelna, sklep. Parkování v ceně není.",
-      "Bílé stěny, podlaha vinyl, kuchyňská příprava bez linky, koupelna se světlým obkladem. Rozvody nové. Fotografie před úpravou ukazují prázdný byt, snímky po úpravě jsou homestaging, aby šlo odhadnout měřítko místností. Není to palácový interiér.",
+      "Bílé stěny, podlaha vinyl, kuchyňská příprava bez linky, koupelna se světlým obkladem. Rozvody nové. Fotografie jsou ilustrační a slouží jen k představě měřítka místností.",
       "Cena odpovídá novému bytu v Brně mimo historické centrum. Pro kupujícího je to bydlení bez rekonstrukce jádra. Výnos z pronájmu text nepočítá.",
     ),
     galerie: [photo.staged, photo.euro, photo.small, photo.kitchen],
@@ -199,9 +199,9 @@ export const CATALOG_DETAIL: Record<
   11: {
     lokalita_gps: gps(49.548, 18.33),
     detail_popis: popis(
-      "Stavební pozemek 1 100 m² na okraji Čeladné, 4,2 milionu. Svažitý, přístup ze zpevněné obecní cesty, okolo louka a les. Cena je za pozemek, ne za dům na klíč. Vizualizace na snímku po úpravě je měřítko zděného domu, ne skleněná vila.",
-      "Sítě na hranici pozemku je potřeba ověřit u obce — v ukázce je nebereme jako jisté. Na parcele dnes nestojí stavba. Fotografie před úpravou je louka, po úpravě orientační dům, aby šla číst svažitost a odstup od lesa.",
-      "Pro kupujícího, který chce stavět v Beskydech, je podstatný územní plán a přístup, ne render bazénu. Inzerát stavební povolení nepředjímá a náklady na dům neuvádí.",
+      "Stavební pozemek 1 100 m² na okraji Čeladné, 4,2 milionu. Svažitý, přístup ze zpevněné obecní cesty, okolo louka a les. Cena je za pozemek, ne za dům na klíč.",
+      "Sítě na hranici pozemku je potřeba ověřit u obce — v ukázce je nebereme jako jisté. Na parcele dnes nestojí stavba. Fotografie jsou ilustrační snímky okolí a terénu.",
+      "Pro kupujícího je podstatný územní plán a přístup. Inzerát stavební povolení nepředjímá a náklady na dům neuvádí.",
     ),
     galerie: [photo.forest, photo.field, photo.brick],
     obcanska_vybavenost: nearby([
@@ -245,8 +245,8 @@ export const CATALOG_DETAIL: Record<
     lokalita_gps: gps(50.7255, 15.608),
     detail_popis: popis(
       "Apartmán 2+kk ve Špindlerově Mlýně, 52 m², 11,5 milionu. Cena je vysoká kvůli horám, ne kvůli metráži: jde o menší byt v apartmánovém domě, ne o hotel ani o chatu na samotě. Obývák s kuchyňským koutem, ložnice, sprcha.",
-      "Dům je zděný, byt po úpravě povrchů, podlahy vinyl, koupelna se sprchovým koutem. Společná recepce v domě není. Fotografie před úpravou ukazují horské okolí, snímky po úpravě evropský bytový interiér v měřítku 52 m², ne lobby hotelu.",
-      "Krátkodobý pronájem je možnost, ne slíbený výnos. Sezónnost, poplatky obci a správa se řeší mimo tento text. Kupující platí za lokaci v Krkonoších, ne za metry navíc.",
+      "Dům je zděný, byt po úpravě povrchů, podlahy vinyl, koupelna se sprchovým koutem. Společná recepce v domě není. Fotografie jsou ilustrační snímky okolí a interiéru v měřítku asi 52 m².",
+      "Krátkodobý pronájem je možnost, ne slíbený výnos. Sezónnost, poplatky obci a správa se řeší mimo tento text. Kupní cena odráží lokalitu v Krkonoších.",
     ),
     galerie: [photo.mountain, photo.small, photo.euro, photo.forest],
     obcanska_vybavenost: nearby([
@@ -259,8 +259,8 @@ export const CATALOG_DETAIL: Record<
   15: {
     lokalita_gps: gps(48.6394, 14.2286),
     detail_popis: popis(
-      "Chata 2+1 u Lipna, 70 m², 6,8 milionu. Jednoduchý rekreační objekt se sedlovou střechou a verandou v českém měřítku, ne srub s wellness. K vodě je to pěšky, ne vlastní pláž. Cena je za chatu v turistické obci.",
-      "Konstrukce dřevěná na zděné podezdívce, sociální zázemí jednoduché, vytápění lokální. Na celoroční bydlení by byla potřeba další investice mimo kupní cenu. Fotografie před úpravou jsou okolí přehrady, po úpravě uklizený menší interiér, ne hotelový apartmán.",
+      "Chata 2+1 u Lipna, 70 m², 6,8 milionu. Jednoduchý rekreační objekt se sedlovou střechou a verandou. K vodě je to pěšky, ne vlastní pláž. Cena je za chatu v turistické obci.",
+      "Konstrukce dřevěná na zděné podezdívce, sociální zázemí jednoduché, vytápění lokální. Na celoroční bydlení by byla potřeba další investice mimo kupní cenu.",
       "Smysl dává jako druhé bydlení u vody. Přestavba na celoroční dům ani výnos z krátkodobého pronájmu nejsou v ceně. Územní režim rekreačního objektu si ověřte na obci.",
     ),
     galerie: [photo.forest, photo.mountain, photo.small],
@@ -320,7 +320,7 @@ export const CATALOG_DETAIL: Record<
     lokalita_gps: gps(50.2104, 15.8252),
     detail_popis: popis(
       "Byt 4+1 v Hradci Králové, 88 m², nájem 24 000 Kč měsíčně za celý byt, ne za pokoj. Čtyři místnosti, kuchyň, koupelna, balkon. Dům je panelový, výtah ano. Lokalita u školy a trolejbusu.",
-      "Po úpravě povrchů je byt uklizený a světlý, jádro je po výměně umakartu za zděné, podlahy vinyl. Fotografie před úpravou ukazují panelový dům a původnější pokoj, snímky po úpravě běžný evropský byt, ne otevřený americký dům s kobercem přes celé patro.",
+      "Po úpravě povrchů je byt uklizený a světlý, jádro je po výměně umakartu za zděné, podlahy vinyl. Fotografie jsou ilustrační snímky panelového domu a běžného bytu.",
       "Pro spolubydlení čtyř lidí je matematika nájmu srozumitelná, ale inzerát neslibuje obsazenost. Energie v částce nejsou rozepsané. Jde o pronájem celého bytu v udržovaném paneláku.",
     ),
     galerie: [photo.panel, photo.old, photo.small, photo.euro],
