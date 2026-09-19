@@ -50,6 +50,11 @@ function makeListing(i: number): SearchableListing {
     fieldConflicts: [],
     freshness: "FRESH",
     lastSeenAt: null,
+    condition: null,
+    shortDescription: null,
+    acceptsPriceOffers: false,
+    acceptsCoPurchaseSeekPartner: false,
+    acceptsCoPurchaseSellerRetains: false,
   };
 }
 

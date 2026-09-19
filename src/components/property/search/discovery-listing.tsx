@@ -48,7 +48,7 @@ export async function loadDiscoveryListings(): Promise<SearchableListing[]> {
     const extra: SearchableListing = {
       ...dto,
       energyRating: record.energyRating,
-      condition: record.condition,
+      condition: record.condition ?? null,
       ownershipType: record.ownershipType,
       freshness: record.freshness,
       status: record.status,

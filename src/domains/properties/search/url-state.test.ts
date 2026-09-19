@@ -145,6 +145,11 @@ describe("applyUrlFiltersToListings", () => {
       freshness: null,
       lastSeenAt: null,
       energyRating: "C",
+      condition: null,
+      shortDescription: null,
+      acceptsPriceOffers: false,
+      acceptsCoPurchaseSeekPartner: false,
+      acceptsCoPurchaseSellerRetains: false,
       strategySlugs: ["dlouhodoby-pronajem"],
     },
   ];

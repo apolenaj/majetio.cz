@@ -69,6 +69,13 @@ describe("public DTO", () => {
     expect(JSON.stringify(dto)).not.toContain("auditMeta");
   });
 
+  it("keeps a stated condition and maps a missing one to null", () => {
+    expect(toPublicPropertyDto({ ...baseRecord, condition: "GOOD" }).condition).toBe("GOOD");
+    expect(toPublicPropertyDto({ ...baseRecord, condition: null }).condition).toBeNull();
+    expect(toPublicPropertyDto({ ...baseRecord, condition: undefined }).condition).toBeNull();
+    expect(toPublicPropertyDto(baseRecord).condition).toBeNull();
+  });
+
   it("keeps street hidden when addressPrecision is HIDDEN", () => {
     const dto = toPublicPropertyDto(
       { ...baseRecord, addressPrecision: "HIDDEN" },
