@@ -29,9 +29,20 @@ describe("filterProperties", () => {
         expect(item.obrazky.po_rekonstrukci).toBeTruthy();
         expect(item.obrazky.pocet_wow_fotek).toBeGreaterThanOrEqual(3);
       }
-      expect(item.detail_popis.length).toBeGreaterThan(80);
+      expect(item.detail_popis).toContain("O nemovitosti");
+      expect(item.detail_popis).toContain("Technický stav");
       expect(item.galerie.length).toBeGreaterThanOrEqual(3);
+      expect(item.obcanska_vybavenost.length).toBeGreaterThanOrEqual(4);
+      expect(item.lokalita_gps.lat).toBeGreaterThan(48);
+      expect(item.lokalita_gps.lng).toBeGreaterThan(12);
     }
+  });
+
+  it("gives the Krnov house Czech copy, coordinates and amenities", () => {
+    const house = mockProperties.find((item) => item.id === 5);
+    expect(house?.lokalita_gps).toEqual({ lat: 50.0905, lng: 17.7038 });
+    expect(house?.obcanska_vybavenost.some((item) => item.nazev === "MŠ Smetanova")).toBe(true);
+    expect(house?.detail_popis).toContain("4+1");
   });
 
   it("resolves catalog detail slugs without touching real listing slugs", () => {

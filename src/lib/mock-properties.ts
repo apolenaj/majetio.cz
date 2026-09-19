@@ -5,10 +5,23 @@
 
 import { foldDiacritics } from "@/domains/properties/search/text-match";
 import type { PropertyUrlFilterState } from "@/domains/properties/search/url-state";
+import { CATALOG_DETAIL } from "@/lib/catalog-listing-details";
 
 export type PropertyTransaction = "prodej" | "pronajem";
 export type PropertyKind = "byt" | "dum" | "pozemek" | "komerce";
 export type ListingPresentation = "premium" | "klasicky";
+export type AmenityCategory = "education" | "shopping" | "transport" | "health";
+
+export interface CivicAmenity {
+  kategorie: AmenityCategory;
+  nazev: string;
+  vzdalenost: string;
+}
+
+export interface PropertyGps {
+  lat: number;
+  lng: number;
+}
 
 export interface PropertyImages {
   /** Jedna hlavní fotka klasického inzerátu. */
@@ -36,6 +49,8 @@ export interface Property {
   detail_popis: string;
   /** Další fotky mimo hlavní snímek / srovnání před–po. */
   galerie: string[];
+  obcanska_vybavenost: CivicAmenity[];
+  lokalita_gps: PropertyGps;
   stitky: string[];
   popis_upravy: string;
 }
@@ -49,7 +64,9 @@ const TYPE_SLUG_TO_KIND: Record<string, PropertyKind> = {
   projekty: "komerce",
 };
 
-const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
+const catalogSeed: Array<
+  Omit<Property, "detail_popis" | "galerie" | "obcanska_vybavenost" | "lokalita_gps">
+> = [
   {
     id: 1,
     nazev: "Světlý byt 2+kk blízko metra",
@@ -83,7 +100,7 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "klasicky",
     obrazky: {
       hlavni:
-        "https://images.unsplash.com/photo-1490006388477-9ab871431fb6?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1770233447535-d557efaa1550?auto=format&fit=crop&w=900&q=70",
     },
     stitky: ["Pod tržním odhadem", "Fix & Rent"],
     popis_upravy: "Klasika: Fotky z mobilu, stručný popis od majitele, bez přípravy.",
@@ -138,9 +155,9 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "premium",
     obrazky: {
       pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1687255634768-71ca855616c6?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1676578116771-8b5e17e9ce2d?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 6,
     },
     stitky: ["Bez rekonstrukce"],
@@ -158,7 +175,7 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "klasicky",
     obrazky: {
       hlavni:
-        "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1676578116771-8b5e17e9ce2d?auto=format&fit=crop&w=900&q=70",
     },
     stitky: ["Pod tržním odhadem"],
     popis_upravy: "Klasika: Pouze venkovní fotky a pár tmavých fotek interiéru.",
@@ -175,7 +192,7 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "premium",
     obrazky: {
       pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1490006388477-9ab871431fb6?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
         "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 8,
@@ -196,9 +213,9 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "premium",
     obrazky: {
       pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1676578116771-8b5e17e9ce2d?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdbc?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 5,
     },
     stitky: ["Stabilní pronájem"],
@@ -235,7 +252,7 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
       pred_rekonstrukci:
         "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 3,
     },
     stitky: ["Bez rekonstrukce"],
@@ -255,7 +272,7 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
       pred_rekonstrukci:
         "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1676578116771-8b5e17e9ce2d?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 7,
     },
     stitky: [],
@@ -291,7 +308,7 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "klasicky",
     obrazky: {
       hlavni:
-        "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1687255634768-71ca855616c6?auto=format&fit=crop&w=900&q=70",
     },
     stitky: ["Stabilní pronájem"],
     popis_upravy: "Klasika: Běžný popis, fotky za špatného počasí.",
@@ -308,9 +325,9 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "premium",
     obrazky: {
       pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1542718610-a1d656d1884c?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 6,
     },
     stitky: ["Vysoký výnos", "Pozitivní cashflow", "Bez rekonstrukce"],
@@ -329,9 +346,9 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "premium",
     obrazky: {
       pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 4,
     },
     stitky: ["Vysoký výnos"],
@@ -404,9 +421,9 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "premium",
     obrazky: {
       pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1770233447535-d557efaa1550?auto=format&fit=crop&w=900&q=70",
       po_rekonstrukci:
-        "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70",
       pocet_wow_fotek: 7,
     },
     stitky: ["Vysoký výnos", "Pozitivní cashflow"],
@@ -424,206 +441,12 @@ const catalogSeed: Array<Omit<Property, "detail_popis" | "galerie">> = [
     stav_inzeratu: "klasicky",
     obrazky: {
       hlavni:
-        "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1676578116771-8b5e17e9ce2d?auto=format&fit=crop&w=900&q=70",
     },
     stitky: ["Pod tržním odhadem", "Fix & Rent"],
     popis_upravy: "Klasika: Těžko čitelné fotky, strohé právní informace.",
   },
 ];
-
-function shot(id: string): string {
-  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=70`;
-}
-
-const CATALOG_DETAIL: Record<number, Pick<Property, "detail_popis" | "galerie">> = {
-  1: {
-    detail_popis:
-      "Byt 2+kk v cihlovém domě na Vysočanech, pět minut pěšky od metra B. Dispozice je běžná pražská: obývák s kuchyňským koutem, samostatná ložnice, koupelna s vanou a malá předsíň. Podlaha je původní, okna plastová zhruba z roku 2012. Dům má výtah a klidný dvůr.\n\nZa 6,5 milionu nejde o Vinohrady ani o novostavbu u řeky. Cena sedí na udržovaný menší byt u metra. Okolo je obchod, škola a park. Pro nájem je lokalita srozumitelná, ale výnos z inzerátu nepočítejte — jde o ukázkový text, ne o ověřenou kalkulaci.",
-    galerie: [
-      shot("1545324418-cc1a3fa10c00"),
-      shot("1631679706909-1844bbd07221"),
-      shot("1616594039964-ae9021a400a0"),
-      shot("1584622650111-993a426fbf0a"),
-    ],
-  },
-  2: {
-    detail_popis:
-      "Panelový byt 3+1 v Porubě, 4. patro bez výtahu. Jádro je stále umakartové, v koupelně je vana a starší baterie, v kuchyni linka z devadesátých let. Okna jsou vyměněná, podlahy jsou PVC a v obýváku staré parkety pod kobercem. Byt je vyklizený, ale nikdo ho před focením nepřipravoval.\n\n2,1 milionu je cena původního stavu na ostravském sídlišti, ne zařízeného bytu v centru. MHD a obchod jsou dole v ulici. Rekonstrukce jádra tu dává smysl, ale rozpočet na ni v inzerátu není — fotky ukazují to, co v bytě opravdu je.",
-    galerie: [
-      shot("1460317442991-0ec209397118"),
-      shot("1484154218962-a197022b5858"),
-      shot("1505691938895-1758d7feb511"),
-    ],
-  },
-  3: {
-    detail_popis:
-      "Garsonka 28 m² v činžáku u centra Brna, vhodná spíš pro jednoho člověka nebo studenta. Kuchyňský kout je v jedné místnosti s postelí, koupelna je malá se sprchovým koutem. Dům je starší, bez výtahu, druhé patro.\n\nNájem 12 000 Kč včetně energií by byl na tuhle výměru nízký, proto počítejte spíš s nájmem bez služeb — v textu je uvedená nabídková částka 12 000 Kč měsíčně. Fotky po úpravě jsou homestaging malého bytu, ne loft.",
-    galerie: [
-      shot("1554995207-c18c203602cb"),
-      shot("1598928506311-c55ded91a20c"),
-      shot("1522708323590-d24dbb6b0267"),
-    ],
-  },
-  4: {
-    detail_popis:
-      "Byt 2+1 v běžném olomouckém domě, nájem 14 500 Kč měsíčně. Obývák a ložnice jsou prázdné, světlo je odpolední a na fotkách z telefonu tmavší, než je byt ve dne. Kuchyně je funkční, spotřebiče starší, balkon na dvůr.\n\nV okolí je škola a zastávka. Inzerát neprošel úpravou: žádný homestaging, žádné 3D. Hodí se pro někoho, kdo si byt umí představit i z obyčejných snímků.",
-    galerie: [
-      shot("1493809842364-78817add7ffb"),
-      shot("1505691938895-1758d7feb511"),
-      shot("1545324418-cc1a3fa10c00"),
-    ],
-  },
-  5: {
-    detail_popis:
-      "Rodinný dům 4+1 v Krnově se zahradou kolem 400 m². Přízemí má obývák, kuchyň a koupelnu, v patře jsou ložnice. Střecha je v pořádku, fasáda potřebuje nátěr, okna jsou mix plastu a původního dřeva. Topení je plynový kotel.\n\n5,2 milionu je cena udržovaného domu v menším městě, ne vily u Prahy. Zahrada je užitková, v ulici stojí podobné domy ze sedmdesátých a osmdesátých let. Premium úprava inzerátu znamená dron a uklizenou zahradu, ne mramor a bazén.",
-    galerie: [
-      shot("1448630360428-65456885c650"),
-      shot("1416879595882-3373a0480b5b"),
-      shot("1484154218962-a197022b5858"),
-      shot("1572120360610-d971b9d7767c"),
-    ],
-  },
-  6: {
-    detail_popis:
-      "Starší dům v Kladně, 5+kk na papíře, ve skutečnosti velké místnosti v původním stavu. Elektroinstalace je stará, koupelna v přízemí, topení kotlem na tuhá paliva. Střecha nezatéká, ale krytina je na konci životnosti. Fotky jsou jen z venku a pár tmavých záběrů chodby.\n\n3,8 milionu počítá s tím, že kupec bude rekonstruovat. Není to dům k nastěhování. V okolí je zástavba rodinných domů a autobus do centra.",
-    galerie: [
-      shot("1448630360428-65456885c650"),
-      shot("1493809842364-78817add7ffb"),
-      shot("1484154218962-a197022b5858"),
-    ],
-  },
-  7: {
-    detail_popis:
-      "Mezonet 4+kk ve starším činžáku na Vinohradech, 130 m², výtah v domě. Spodní patro je obývák s kuchyní, nahoře ložnice a pracovna. Okna do vnitrobloku, stropy vyšší než v paneláku, podlahy dubové parkety v obytných místnostech. Koupelny jsou po dílčí úpravě kolem roku 2015.\n\n18,5 milionu je pražská cena většího bytu v dobré čtvrti, ne cena paláce. V docházkové vzdálenosti je náměstí Míru a tramvaj. Text zdůrazňuje materiály a klid dvora, protože u téhle ceny kupující porovnává právě lokalitu a stav domu.",
-    galerie: [
-      shot("1541849546-216549ae216d"),
-      shot("1616486338812-3dadae4b4ace"),
-      shot("1616594039964-ae9021a400a0"),
-      shot("1584622650111-993a426fbf0a"),
-    ],
-  },
-  8: {
-    detail_popis:
-      "Pronájem rodinného domu 5+kk v Říčanech, 45 000 Kč měsíčně. Dům je zhruba patnáct let starý, zateplený, s garáží pro jedno auto a zahradou. Kuchyň je na míru, ale ne z showroomu, podlahy vinyl a dlažba. Vhodné pro rodinu, která chce zůstat u Prahy a dojíždět.\n\nČástka je na horní hraně místního nájmu. Fotky jsou připravené pro zahraničního nájemce: uklizený interiér, žádné osobní věci. Nejde o vilu s bazénem.",
-    galerie: [
-      shot("1572120360610-d971b9d7767c"),
-      shot("1600210492490-ec8edb0f5d0b"),
-      shot("1631679706909-1844bbd07221"),
-      shot("1416879595882-3373a0480b5b"),
-    ],
-  },
-  9: {
-    detail_popis:
-      "Byt 1+1 na Slovanech v Plzni, 41 m², cena 2,8 milionu. Koupelna je původní, kuchyňská linka opotřebená, na fotkách jsou ještě krabice a nábytek majitele. Okna do ulice, třetí patro bez výtahu.\n\nLokalita je běžná plzeňská čtvrť s tramvají. Byt dává smysl jako menší vlastní bydlení nebo jako základ pro kosmetickou úpravu. Inzerát je neupravený schválně: má ukázat, jak vypadá nabídka bez přípravy.",
-    galerie: [
-      shot("1484154218962-a197022b5858"),
-      shot("1505691938895-1758d7feb511"),
-      shot("1493809842364-78817add7ffb"),
-    ],
-  },
-  10: {
-    detail_popis:
-      "Novostavba 3+kk v Králově Poli, 82 m², 8,9 milionu. Byt je ve stavu po kolaudaci: bílé stěny, podlaha vinyl, kuchyňská příprava bez linky, koupelna obložená světlým obkladem. Parkování v ceně není, sklep ano. Dům je menší bytovka, ne mrakodrap.\n\nCena odpovídá novému bytu v Brně mimo historické centrum. Vizualizace zařízení na fotkách po úpravě je homestaging prázdného bytu, aby šlo odhadnout měřítko místností.",
-    galerie: [
-      shot("1598928506311-c55ded91a20c"),
-      shot("1631679706909-1844bbd07221"),
-      shot("1616594039964-ae9021a400a0"),
-      shot("1545324418-cc1a3fa10c00"),
-    ],
-  },
-  11: {
-    detail_popis:
-      "Stavební pozemek 1 100 m² na okraji Čeladné, 4,2 milionu. Svažitý, přístup ze zpevněné obecní cesty, sítě na hranici pozemku je potřeba ověřit u obce — v ukázce je nebereme jako jisté. Okolo je louka a les, ne satelit plný plotů.\n\nVizualizace domu na fotce po úpravě je dřevostavba v měřítku pozemku, ne skleněná vila. 4,2 milionu je cena pozemku, ne domu na klíč.",
-    galerie: [
-      shot("1441974231531-c6227db76b6e"),
-      shot("1500382017468-9049fed747ef"),
-      shot("1464822759023-fed622ff2c3b"),
-    ],
-  },
-  12: {
-    detail_popis:
-      "Komerční prostor 85 m² v centru Ostravy k pronájmu za 25 000 Kč měsíčně. Dříve obchod, teď prázdný, podlaha je stará dlažba, stěny potřebují výmalbu, zázemí je jeden záchod a malý sklad. Výloha do ulice s provozem.\n\nFotky jsou strohé, protože prostor nikdo před návštěvou neuklidil. Na kavárnu se hodí dispozicí, ne současným stavem. Nájem je bez energií a bez úprav, které si nájemce udělá sám.",
-    galerie: [
-      shot("1497366216548-37526070297c"),
-      shot("1497366754035-f200968a6e72"),
-      shot("1460317442991-0ec209397118"),
-    ],
-  },
-  13: {
-    detail_popis:
-      "Řadový dům 3+kk v Pardubicích, nájem 22 000 Kč měsíčně. Obývák, kuchyň, dvě ložnice, malá zahrádka do dvora. Vybavení je základní, podlahy laminát, koupelna se sprchou. Fotky vznikly za deště mobilem.\n\nJde o běžný pronájem pro rodinu, ne o designový dům. Zastávka a škola jsou v docházkové vzdálenosti. Kauce a energie v textu nejsou dopočítané.",
-    galerie: [
-      shot("1572120360610-d971b9d7767c"),
-      shot("1522708323590-d24dbb6b0267"),
-      shot("1416879595882-3373a0480b5b"),
-    ],
-  },
-  14: {
-    detail_popis:
-      "Apartmán 2+kk ve Špindlerově Mlýně, 52 m², 11,5 milionu. Cena je vysoká kvůli horám, ne kvůli metráži: jde o menší byt v apartmánovém domě, ne o chatu na samotě. Obývák s kuchyňským koutem, ložnice, sprcha. Společná recepce v domě není.\n\nFotky po úpravě ukazují horský interiér se dřevem, jaký v Krkonoších potkáte v udržovaných apartmánech. Krátkodobý pronájem je v textu jen jako možnost, bez slíbeného výnosu.",
-    galerie: [
-      shot("1483728642387-6c3bdd6c93e5"),
-      shot("1505691938895-1758d7feb511"),
-      shot("1518780664697-55e3ad937233"),
-      shot("1464822759023-fed622ff2c3b"),
-    ],
-  },
-  15: {
-    detail_popis:
-      "Chata 2+1 u Lipna, 70 m², 6,8 milionu. Dřevostavba se sedlovou střechou, veranda, suché WC nebo malá koupelna podle sezónního režimu — v ukázce počítejte s jednoduchým sociálním zázemím, ne s wellness. K vodě je to pěšky, ne vlastní pláž.\n\nCena je za chatu v turistické obci, ne za hotel. Premium inzerát přidává letecký záběr okolí a uklizený interiér. Rekonstrukce na celoroční bydlení by byla další investice mimo kupní cenu.",
-    galerie: [
-      shot("1449844908441-8829872d2607"),
-      shot("1439066615861-d1af74d74000"),
-      shot("1518780664697-55e3ad937233"),
-    ],
-  },
-  16: {
-    detail_popis:
-      "Pokoj 15 m² ve sdíleném bytě 4+1 v Dejvicích, 8 000 Kč měsíčně. Postel, stůl, skříň, společná kuchyň a jedna koupelna na byt. Fotka je z mobilu, v záběru je povlečení a kabel od notebooku.\n\nJde o studentský podnájem u metra Dejvická, ne o samostatný byt. V ceně bývají energie, ale v téhle ukázce to berte jako nabídkovou částku za pokoj. Smlouva a počet spolubydlících se řeší až na prohlídce.",
-    galerie: [
-      shot("1522771739844-6a9f6d5f14af"),
-      shot("1484154218962-a197022b5858"),
-      shot("1554995207-c18c203602cb"),
-    ],
-  },
-  17: {
-    detail_popis:
-      "Hala 450 m² ve Slatině k pronájmu za 85 000 Kč měsíčně. Světlá výška umožňuje regály, vjezd pro dodávku, sociální zázemí v rohu haly. Podlaha je beton, osvětlení zářivky. Okolo jsou další sklady a nájezd na okruh.\n\nČástka sedí na brněnský sklad této velikosti, ne na kancelářskou budovu. Premium podklady přidávají plánek a čistší fotku interiéru. Úpravy na míru nájemce v nájmu nejsou.",
-    galerie: [
-      shot("1586528116311-ad8dd3c8310d"),
-      shot("1587293852726-70cdb56c2866"),
-      shot("1460317442991-0ec209397118"),
-    ],
-  },
-  18: {
-    detail_popis:
-      "Orná půda 2,5 ha v okolí Znojma, 1,5 milionu. Pozemek je v jednom celku, přístup po polní cestě, bez stavebního povolení. Fotka je krajina a letecký pohled, žádný dům na parcele nestojí a stavět se tu v ukázce nepředpokládá.\n\nCena je za zemědělskou půdu, ne za stavební parcelu. Pro kupujícího je podstatný druh pozemku v katastru a přístup, ne vizualizace domu.",
-    galerie: [
-      shot("1500382017468-9049fed747ef"),
-      shot("1625246333195-78d9c38ad449"),
-      shot("1441974231531-c6227db76b6e"),
-    ],
-  },
-  19: {
-    detail_popis:
-      "Byt 4+1 v Hradci Králové, 88 m², nájem 24 000 Kč měsíčně. Čtyři obyvatelná místnosti, společná kuchyň, jedna koupelna. Dům je panelový, výtah ano, balkon na východ. Po úpravě fotek je byt uklizený a světlý, předtím v něm bydlel víc lidí najednou.\n\n24 tisíc za celý byt, ne za pokoj. Pro spolubydlení čtyř lidí je to srozumitelná matematika, ale inzerát neslibuje obsazenost. Lokalita je u školy a trolejbusu.",
-    galerie: [
-      shot("1522708323590-d24dbb6b0267"),
-      shot("1631679706909-1844bbd07221"),
-      shot("1505691938895-1758d7feb511"),
-      shot("1460317442991-0ec209397118"),
-    ],
-  },
-  20: {
-    detail_popis:
-      "Rodinný dům 4+kk v Teplicích za 2,9 milionu, prodávaný z insolvence. Stav odpovídá ceně: fasáda oprýskaná, v interiéru staré podlahy, koupelna v původním jádru, topení na tuhá paliva. Právní text v ukázce nenahrazuje výpis z katastru ani podmínky dražby.\n\nFotky jsou špatně čitelné schválně — takhle vypadá neupravený inzerát. Dům není k nastěhování. Kdo počítá s opravou, musí si rozpočet sehnat sám; v datech žádný odhad rekonstrukce není.",
-    galerie: [
-      shot("1448630360428-65456885c650"),
-      shot("1493809842364-78817add7ffb"),
-      shot("1484154218962-a197022b5858"),
-    ],
-  },
-};
 
 export const mockProperties: Property[] = catalogSeed.map((item) => {
   const extra = CATALOG_DETAIL[item.id];
