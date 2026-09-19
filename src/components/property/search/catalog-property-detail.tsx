@@ -3,6 +3,7 @@ import { ArrowLeft, Bus, HeartPulse, School, ShoppingCart } from "lucide-react";
 
 import { CatalogInvestmentPanel } from "@/components/property/search/catalog-investment-panel";
 import { CatalogPhotoGallery } from "@/components/property/search/catalog-photo-gallery";
+import { CatalogViewingChecklist } from "@/components/property/search/catalog-viewing-checklist";
 import { PropertyCard } from "@/components/property/search/catalog-property-card";
 import { Container } from "@/components/ui/container";
 import { formatCzk } from "@/lib/format";
@@ -106,6 +107,10 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
               {property.dispozice ? <Row label="Dispozice" value={property.dispozice} /> : null}
               <Row label="Plocha" value={area} />
               <Row label="Technický stav" value={TECHNICAL_CONDITION_LABEL[property.technicky_stav]} />
+              {property.konstrukce ? <Row label="Konstrukce" value={property.konstrukce} /> : null}
+              {property.vytah != null ? (
+                <Row label="Výtah" value={property.vytah ? "Ano" : "Ne"} />
+              ) : null}
               <Row label="PENB" value="Neuvedeno" />
             </dl>
           </section>
@@ -156,21 +161,21 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
             </ul>
           </section>
 
-          {similar.length > 0 ? (
-            <section className="mt-12">
-              <h2 className="font-display text-2xl text-[var(--text-primary)]">Podobné nabídky</h2>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">
-                Stejný typ transakce a nemovitosti v ukázkovém katalogu
-              </p>
+          <CatalogViewingChecklist />
+
+          <section className="mt-12">
+            <h2 className="font-display text-2xl text-[var(--text-primary)]">Podobné nabídky</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">{similar.note}</p>
+            {similar.items.length > 0 ? (
               <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {similar.map((item) => (
+                {similar.items.map((item) => (
                   <Link key={item.id} href={catalogPropertyHref(item.id)} className="block h-full">
                     <PropertyCard property={item} />
                   </Link>
                 ))}
               </div>
-            </section>
-          ) : null}
+            ) : null}
+          </section>
         </div>
 
         <aside className="hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 lg:sticky lg:top-24 lg:block">

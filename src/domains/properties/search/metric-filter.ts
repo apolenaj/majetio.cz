@@ -1,17 +1,16 @@
 /**
- * Investment metric bounds.
- * A missing value does not fail the filter unless the user asked for computed data only.
+ * A missing value is not a match when a bound is set.
+ * Pass includeUnknown only for the explicit „Zahrnout i nabídky bez údajů“ choice.
  */
-
 export function metricInRange(
   value: number | null | undefined,
   min: number | undefined,
   max: number | undefined,
-  onlyComputed: boolean | undefined,
+  includeUnknown: boolean | undefined,
 ): boolean {
   const constrained = min != null || max != null;
   if (!constrained) return true;
-  if (value == null || !Number.isFinite(value)) return onlyComputed !== true;
+  if (value == null || !Number.isFinite(value)) return includeUnknown === true;
   if (min != null && value < min) return false;
   if (max != null && value > max) return false;
   return true;

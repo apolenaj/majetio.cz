@@ -42,10 +42,32 @@ describe("filterProperties", () => {
     const house = mockProperties.find((item) => item.id === 5)!;
     expect(catalogShots(house)).toHaveLength(1);
     expect(house.galerie).toHaveLength(0);
+    expect(house.technicky_stav).toBe("pred_rekonstrukci");
+    expect(house.stitky).not.toContain("Bez rekonstrukce");
     const similar = findSimilarCatalogProperties(house, 3);
-    expect(similar.every((item) => item.typ_transakce === "prodej")).toBe(true);
-    expect(similar.every((item) => item.typ_nemovitosti === "dum")).toBe(true);
-    expect(publicListingTags(["Pod tržním odhadem", "Bez rekonstrukce"])).toEqual(["Bez rekonstrukce"]);
+    expect(similar.items).toHaveLength(0);
+    expect(publicListingTags(["Pod tržním odhadem", "Pozitivní cashflow", "Bez rekonstrukce"])).toEqual([
+      "Bez rekonstrukce",
+    ]);
+  });
+
+  it("does not treat a cash-flow tag as a calculated filter", () => {
+    const hits = filterProperties(mockProperties, {
+      ...EMPTY_PROPERTY_URL_STATE,
+      nabidka: "prodej",
+      cashflowOd: 0,
+      jenVypoctene: true,
+    });
+    expect(hits).toHaveLength(0);
+  });
+
+  it("keeps Prague sale flats from being paired with distant cities", () => {
+    const flat = mockProperties.find((item) => item.id === 1)!;
+    const similar = findSimilarCatalogProperties(flat, 3);
+    expect(similar.expanded).toBe(true);
+    expect(similar.items.map((item) => item.lokalita)).toEqual(["Praha 2 - Vinohrady"]);
+    expect(flat.konstrukce).toBe("Cihlová");
+    expect(flat.vytah).toBe(true);
   });
 
   it("gives the Krnov house Czech copy, coordinates and amenities", () => {

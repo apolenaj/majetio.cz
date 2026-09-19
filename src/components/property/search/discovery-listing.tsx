@@ -236,7 +236,7 @@ export function DiscoveryListingShell({
     cards.length === 0 ? filterProperties(mockProperties, state) : null;
 
   return (
-    <Container className="overflow-x-hidden py-10 sm:py-14 pb-28">
+    <Container className="overflow-x-hidden py-6 sm:py-8 pb-28">
       <PageHeader
         title={title}
         description={description}
@@ -256,9 +256,8 @@ export function DiscoveryListingShell({
       />
 
       {hasDemoListings && !hasLiveListings ? (
-        <InlineAlert tone="warning" title="Modelové ukázky" className="mb-8">
-          Zatím nejsou publikované reálné inzeráty. Zobrazené položky jsou modelové studie
-          pro ověření filtrů — nejsou aktuální nabídky z trhu.
+        <InlineAlert tone="warning" title="Ukázkové nabídky" className="mb-4">
+          Nejsou to živé inzeráty z trhu.
         </InlineAlert>
       ) : hasDemoListings ? (
         <InlineAlert tone="info" title="Oddělení modelových ukázek" className="mb-8">

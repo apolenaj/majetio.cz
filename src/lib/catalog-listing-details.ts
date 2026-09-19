@@ -50,9 +50,9 @@ export const CATALOG_DETAIL: Record<
     detail_popis: popis(
       "Nabízíme byt 2+kk v cihlovém domě na Vysočanech, pět minut pěšky od metra B Kolbenova. Dispozice je běžná pražská: obývací pokoj s kuchyňským koutem, samostatná ložnice, koupelna a předsíň. Dům má výtah a klidný vnitroblok. Nabídková cena je 6,5 milionu.",
       "Podlahy jsou původní, okna plastová zhruba z roku 2012, stoupačky funkční. Byt je po dílčí úpravě povrchů, ne po kompletní rekonstrukci jádra. Fotografie v galerii jsou ilustrační, ne dokumentace této jednotky.",
-      "Lokalita dává smysl pro vlastní bydlení i pro dlouhodobý pronájem u metra. Výnos z inzerátu nepočítejte — text popisuje dispozici a stav, není to kalkulace ani znalecký posudek. Kdo chce byt dál upravovat, musí si rozpočet sehnat sám.",
+      "Lokalita dává smysl pro vlastní bydlení i pro dlouhodobý pronájem u metra. Plánované úpravy si doplňte do rozpočtu níže — text sám výnos nepočítá.",
     ),
-    galerie: [photo.panel, photo.euro, photo.small, photo.old],
+    galerie: [photo.euro, photo.small],
     obcanska_vybavenost: nearby([
       ["transport", "Metro B Kolbenova", "400 m (5 min pěšky)"],
       ["shopping", "Obchod a drogerie v ulici", "200 m (3 min pěšky)"],

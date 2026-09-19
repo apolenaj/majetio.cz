@@ -14,39 +14,16 @@ export type InvestorPreset = {
 
 export const INVESTOR_PRESETS: InvestorPreset[] = [
   {
-    id: "vysoky-vynos",
-    label: "Vysoký výnos",
-    description: "Jen nabídky, které mají ve štítcích „Vysoký výnos“.",
-    patch: { roiOd: 6 },
-  },
-  {
     id: "cashflow",
-    label: "Pozitivní cashflow",
-    description: "Jen nabídky, které mají ve štítcích „Pozitivní cashflow“.",
-    patch: { cashflowOd: 0 },
-  },
-  {
-    id: "fix-rent",
-    label: "Fix & Rent",
-    description: "Jen nabídky, které mají ve štítcích „Fix & Rent“.",
-    patch: { stav: ["rekonstrukce"], roiOd: 5 },
-  },
-  {
-    id: "pod-odhadem",
-    label: "Pod tržním odhadem",
-    description: "Jen nabídky, které mají ve štítcích „Pod tržním odhadem“.",
-    patch: { diskontOd: 10 },
-  },
-  {
-    id: "stabilni",
-    label: "Stabilní pronájem",
-    description: "Jen nabídky, které mají ve štítcích „Stabilní pronájem“.",
-    patch: { poptavkaOd: 65, obsazenostOd: 95 },
+    label: "Cash flow alespoň 0 Kč",
+    description:
+      "Jen koupě, kde je dopočtené měsíční cash flow po rezervě alespoň 0 Kč. Nabídka bez nájmu není shoda.",
+    patch: { nabidka: "prodej", cashflowOd: 0, jenVypoctene: true },
   },
   {
     id: "bez-rekonstrukce",
     label: "Bez rekonstrukce",
-    description: "Jen nabídky, které mají ve štítcích „Bez rekonstrukce“.",
+    description: "Technický stav není před rekonstrukcí, v rekonstrukci ani k demolici.",
     patch: { urovenRekonstrukce: ["bez"] },
   },
 ];

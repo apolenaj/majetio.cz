@@ -188,14 +188,9 @@ describe("applyUrlFiltersToListings", () => {
     expect(hits[0]?.id).toBe("high");
   });
 
-  it("keeps listings without a calculated yield unless only computed data is requested", () => {
+  it("excludes listings without a calculated yield when a bound is set", () => {
     const state = parsePropertySearchParams({ "roi-od": "5" });
-    expect(applyUrlFiltersToListings(sample, state)).toHaveLength(1);
-    const only = parsePropertySearchParams({
-      "roi-od": "5",
-      "jen-vypoctene": "1",
-    });
-    expect(applyUrlFiltersToListings(sample, only)).toHaveLength(0);
+    expect(applyUrlFiltersToListings(sample, state)).toHaveLength(0);
   });
 });
 

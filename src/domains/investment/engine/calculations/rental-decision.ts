@@ -135,3 +135,18 @@ function assertNonNegative(value: Decimal, label: string) {
     throw new Error(`${label} nesmí být záporná ani nečíselná`);
   }
 }
+
+/** Nejvyšší jistina, jejíž anuita nepřesáhne danou měsíční splátku. */
+export function maxLoanForMonthlyPayment(
+  monthlyPayment: Decimal,
+  annualRate: Decimal,
+  termYears: number,
+): Decimal {
+  const months = Math.round(termYears * 12);
+  if (months <= 0) throw new Error("splatnost musí vyjít alespoň na jeden měsíc");
+  if (monthlyPayment.lte(0)) return new Decimal(0);
+  if (annualRate.isZero()) return monthlyPayment.mul(months);
+  const monthlyRate = annualRate.div(12);
+  const growth = monthlyRate.plus(1).pow(months);
+  return monthlyPayment.mul(growth.minus(1)).div(monthlyRate.mul(growth));
+}

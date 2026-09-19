@@ -61,6 +61,9 @@ export interface Property {
   lokalita_gps: PropertyGps;
   /** Technický stav stavby. Není to balíček prezentace. */
   technicky_stav: TechnicalCondition;
+  konstrukce?: string;
+  /** true = v domě je výtah, false = není. Nevyplněné není ani jedno. */
+  vytah?: boolean;
   stitky: string[];
   popis_upravy: string;
 }
@@ -91,11 +94,8 @@ const catalogSeed: Array<
     plocha_m2: 54,
     stav_inzeratu: "premium",
     obrazky: {
-      pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1490006388477-9ab871431fb6?auto=format&fit=crop&w=900&q=70",
-      po_rekonstrukci:
+      hlavni:
         "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=70",
-      pocet_wow_fotek: 5,
     },
     stitky: ["Vysoký výnos", "Bez rekonstrukce"],
     popis_upravy:
@@ -484,16 +484,32 @@ const TECHNICAL_CONDITION: Record<number, TechnicalCondition> = {
   20: "pred_rekonstrukci",
 };
 
+const NEEDS_WORK = new Set<TechnicalCondition>([
+  "pred_rekonstrukci",
+  "v_rekonstrukci",
+  "k_demolici",
+]);
+
+const CATALOG_FACTS: Record<number, { konstrukce?: string; vytah?: boolean }> = {
+  1: { konstrukce: "Cihlová", vytah: true },
+  2: { konstrukce: "Panelová", vytah: false },
+};
+
 export const mockProperties: Property[] = catalogSeed.map((item) => {
   const extra = CATALOG_DETAIL[item.id];
   const technicky_stav = TECHNICAL_CONDITION[item.id];
   if (!extra || !technicky_stav) {
     throw new Error(`Chybí detail ukázkového inzerátu ${item.id}`);
   }
+  const facts = CATALOG_FACTS[item.id] ?? {};
   return {
     ...item,
     ...extra,
+    ...facts,
     technicky_stav,
+    stitky: item.stitky.filter(
+      (tag) => !(tag === "Bez rekonstrukce" && NEEDS_WORK.has(technicky_stav)),
+    ),
     popis_upravy: "Ilustrační fotografie. Video, dron ani virtuální prohlídka u této ukázky nejsou.",
   };
 });
@@ -541,6 +557,7 @@ export const SPECULATIVE_LISTING_TAGS = new Set([
   "Stabilní pronájem",
   "Vysoký výnos",
   "Fix & Rent",
+  "Pozitivní cashflow",
   "Cashflow pozitivní",
   "Krátká návratnost",
 ]);
@@ -549,16 +566,41 @@ export function publicListingTags(stitky: readonly string[]): string[] {
   return stitky.filter((tag) => !SPECULATIVE_LISTING_TAGS.has(tag));
 }
 
-export function findSimilarCatalogProperties(property: Property, limit = 3): Property[] {
-  return mockProperties
-    .filter(
-      (item) =>
-        item.id !== property.id &&
-        item.typ_transakce === property.typ_transakce &&
-        item.typ_nemovitosti === property.typ_nemovitosti,
-    )
-    .sort((a, b) => Math.abs(a.cena - property.cena) - Math.abs(b.cena - property.cena))
-    .slice(0, limit);
+export function findSimilarCatalogProperties(
+  property: Property,
+  limit = 3,
+): { items: Property[]; expanded: boolean; note: string } {
+  const district = property.lokalita.split(" - ")[0]?.trim() ?? property.lokalita;
+  const city = district.startsWith("Praha") ? "Praha" : district;
+  const pool = mockProperties.filter(
+    (item) =>
+      item.id !== property.id &&
+      item.typ_transakce === property.typ_transakce &&
+      item.typ_nemovitosti === property.typ_nemovitosti,
+  );
+  const byPrice = (list: Property[]) =>
+    [...list].sort((a, b) => Math.abs(a.cena - property.cena) - Math.abs(b.cena - property.cena));
+  const sameDistrict = pool.filter((item) => item.lokalita.startsWith(district));
+  if (sameDistrict.length > 0) {
+    return {
+      items: byPrice(sameDistrict).slice(0, limit),
+      expanded: false,
+      note: `Stejná lokalita: ${district}`,
+    };
+  }
+  const sameCity = pool.filter((item) => item.lokalita.startsWith(city));
+  if (sameCity.length > 0) {
+    return {
+      items: byPrice(sameCity).slice(0, limit),
+      expanded: true,
+      note: `V ${district} další ukázka není. Rozšířeno na ${city} — cena se může výrazně lišit.`,
+    };
+  }
+  return {
+    items: [],
+    expanded: true,
+    note: `V ukázkovém katalogu není další srovnatelná nabídka v lokalitě ${district}.`,
+  };
 }
 
 const CATALOG_SLUG_PREFIX = "ukazka-";
@@ -621,6 +663,19 @@ export function filterProperties(
     if (tags.length > 0 && !tags.every((tag) => property.stitky.includes(tag))) {
       return false;
     }
+    if (state.urovenRekonstrukce.includes("bez") && NEEDS_WORK.has(property.technicky_stav)) {
+      return false;
+    }
+    if (state.urovenRekonstrukce.includes("bez") && property.technicky_stav === "neuvedeno") {
+      return false;
+    }
+    const wantsComputed =
+      state.jenVypoctene === true ||
+      state.cashflowOd != null ||
+      state.cashflowDo != null ||
+      state.roiOd != null;
+    if (wantsComputed) return false;
+    if (state.prislusenstvi.length > 0) return false;
     return true;
   });
 }

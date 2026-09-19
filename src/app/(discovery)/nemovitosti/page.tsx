@@ -89,7 +89,7 @@ export default async function NemovitostiPage({ searchParams }: Props) {
   return (
     <DiscoveryListingShell
       title="Nemovitosti"
-      description="Filtry a řazení zůstávají v adrese — po návratu Zpět se hledání i scroll obnoví. Sponzorováno ≠ organika."
+      description="Najděte nemovitost podle svých plánů a rozpočtu."
       breadcrumbs={[{ href: "/", label: "Domů" }, { label: "Nemovitosti" }]}
       state={state}
       cards={cards}

@@ -256,7 +256,7 @@ export function applyUrlFiltersToListings(
         .map((value) => CONSTRUCTION_TO_ENUM[value])
         .filter(Boolean),
     );
-    items = items.filter((p) => !p.constructionType || types.has(p.constructionType));
+    items = items.filter((p) => p.constructionType != null && types.has(p.constructionType));
   }
 
   if (state.prislusenstvi.length) {
@@ -264,7 +264,7 @@ export function applyUrlFiltersToListings(
       .map((value) => AMENITY_TO_FIELD[value])
       .filter((field): field is string => Boolean(field));
     items = items.filter((p) => {
-      if (!p.features) return true;
+      if (!p.features) return false;
       return fields.every((field) => p.features?.[field] === true);
     });
   }
@@ -304,42 +304,42 @@ export function applyUrlFiltersToListings(
     items = items.filter((p) => p.isOffPlan !== false);
   }
 
-  const only = state.jenVypoctene === true;
-  if (only) {
+  const includeUnknown = false;
+  if (state.jenVypoctene) {
     items = items.filter((p) => hasComputedInvestmentData(p));
   }
 
   items = items.filter(
     (p) =>
-      metricInRange(p.grossYieldPct, state.roiOd, state.vynosDo, only) &&
-      metricInRange(p.netYieldPct, state.cistyVynosOd, state.cistyVynosDo, only) &&
-      metricInRange(p.cashFlowMonthlyCzk, state.cashflowOd, state.cashflowDo, only) &&
-      metricInRange(p.cashOnCashPct, state.cocOd, state.cocDo, only) &&
-      metricInRange(p.paybackYears, state.navratnostOd, state.navratnostDo, only) &&
-      metricInRange(p.estimatedRentMonthlyCzk, state.najemOd, state.najemDo, only) &&
-      metricInRange(p.rentPerSqm, state.najemM2Od, state.najemM2Do, only) &&
+      metricInRange(p.grossYieldPct, state.roiOd, state.vynosDo, includeUnknown) &&
+      metricInRange(p.netYieldPct, state.cistyVynosOd, state.cistyVynosDo, includeUnknown) &&
+      metricInRange(p.cashFlowMonthlyCzk, state.cashflowOd, state.cashflowDo, includeUnknown) &&
+      metricInRange(p.cashOnCashPct, state.cocOd, state.cocDo, includeUnknown) &&
+      metricInRange(p.paybackYears, state.navratnostOd, state.navratnostDo, includeUnknown) &&
+      metricInRange(p.estimatedRentMonthlyCzk, state.najemOd, state.najemDo, includeUnknown) &&
+      metricInRange(p.rentPerSqm, state.najemM2Od, state.najemM2Do, includeUnknown) &&
       metricInRange(
         p.renovationCostMinCzk ?? p.estimatedRenovationCostCzk,
         state.rekonstrukceOd,
         state.rekonstrukceDo,
-        only,
+        includeUnknown,
       ) &&
-      metricInRange(p.allInCostCzk, state.allInOd, state.allInDo, only) &&
-      metricInRange(p.discountToEstimatedValuePct, state.diskontOd, undefined, only) &&
-      metricInRange(p.tenantDemandScore, state.poptavkaOd, state.poptavkaDo, only) &&
+      metricInRange(p.allInCostCzk, state.allInOd, state.allInDo, includeUnknown) &&
+      metricInRange(p.discountToEstimatedValuePct, state.diskontOd, undefined, includeUnknown) &&
+      metricInRange(p.tenantDemandScore, state.poptavkaOd, state.poptavkaDo, includeUnknown) &&
       metricInRange(
         p.estimatedOccupancyMinPct,
         state.obsazenostOd,
         state.obsazenostDo,
-        only,
+        includeUnknown,
       ) &&
-      metricInRange(p.majetioScore, state.scoreOd, state.scoreDo, only) &&
-      metricInRange(p.dataConfidencePct, state.duveraOd, undefined, only) &&
+      metricInRange(p.majetioScore, state.scoreOd, state.scoreDo, includeUnknown) &&
+      metricInRange(p.dataConfidencePct, state.duveraOd, undefined, includeUnknown) &&
       metricInRange(
         p.yieldAfterRenovationPct,
         state.vynosPoRekonstrukci,
         undefined,
-        only,
+        includeUnknown,
       ),
   );
 

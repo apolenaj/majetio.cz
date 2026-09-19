@@ -26,6 +26,7 @@ import {
   SCORE_QUICK,
   SELLER_OPTIONS,
   YIELD_QUICK,
+  type InvestorPreset,
 } from "@/domains/properties/search/filter-catalog";
 import {
   DISPOZICE_OPTIONS,
@@ -193,11 +194,23 @@ export function DiscoveryFilterBar({
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
   const cta = resultCta(resultCount, dirty);
 
-  function applyPreset(label: string) {
-    const selected = draft.stitky ?? [];
-    const stitky = selected.includes(label) ? [] : [label];
-    const next = { ...draft, stitky, stranka: 1 };
-    onChange({ stitky });
+  function applyPreset(preset: InvestorPreset) {
+    const active = Object.entries(preset.patch).every(([key, value]) => {
+      const current = draft[key as keyof PropertyUrlFilterState];
+      if (Array.isArray(value)) {
+        return Array.isArray(current) && value.every((item) => current.includes(item));
+      }
+      return current === value;
+    });
+    const cleared: Partial<PropertyUrlFilterState> = { stitky: [] };
+    for (const key of Object.keys(preset.patch) as (keyof PropertyUrlFilterState)[]) {
+      const value = preset.patch[key];
+      (cleared as Record<string, unknown>)[key] = Array.isArray(value) ? [] : undefined;
+    }
+    const next: PropertyUrlFilterState = active
+      ? { ...draft, ...cleared, stranka: 1 }
+      : { ...draft, ...preset.patch, stitky: [], stranka: 1 };
+    onChange(active ? cleared : { ...preset.patch, stitky: [] });
     onCommit(next);
   }
 
@@ -888,14 +901,20 @@ export function DiscoveryFilterBar({
         </form>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {INVESTOR_PRESETS.map((preset) => {
-            const active = (draft.stitky ?? []).includes(preset.label);
+            const active = Object.entries(preset.patch).every(([key, value]) => {
+              const current = draft[key as keyof PropertyUrlFilterState];
+              if (Array.isArray(value)) {
+                return Array.isArray(current) && value.every((item) => current.includes(item));
+              }
+              return current === value;
+            });
             return (
               <button
                 key={preset.id}
                 type="button"
                 title={preset.description}
                 aria-pressed={active}
-                onClick={() => applyPreset(preset.label)}
+                onClick={() => applyPreset(preset)}
                 className={cn(
                   "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium",
                   active

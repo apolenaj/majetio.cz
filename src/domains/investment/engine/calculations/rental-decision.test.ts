@@ -55,6 +55,28 @@ describe("calculateRentalDecision control case", () => {
     expect(result.cashOnCash).toBeNull();
   });
 
+  it("matches the Vysočany model checked in the browser", () => {
+    const result = calculateRentalDecision({
+      purchasePrice: new Decimal(6_500_000),
+      acquisitionCosts: new Decimal(100_000),
+      renovation: new Decimal(0),
+      furnishing: new Decimal(0),
+      loanAmount: new Decimal(4_550_000),
+      annualInterestRate: new Decimal("0.05"),
+      termYears: 30,
+      monthlyNetRent: new Decimal(25_000),
+      occupancy: new Decimal("0.95"),
+      annualOwnerOpex: new Decimal(36_000),
+      annualCapexReserve: new Decimal(12_000),
+    });
+    expect(result.totalInvestment.toFixed(2)).toBe("6600000.00");
+    expect(result.equity.toFixed(2)).toBe("2050000.00");
+    expect(result.monthlyPayment?.toFixed(2)).toBe("24425.38");
+    expect(result.noi.toFixed(2)).toBe("249000.00");
+    expect(result.disposableMonthlyCashFlow.toFixed(2)).toBe("-4675.38");
+    expect(result.cashOnCash?.mul(100).toFixed(4)).toBe("-2.7368");
+  });
+
   it("does not invent infinity when there is no loan", () => {
     const result = calculateRentalDecision({
       purchasePrice: new Decimal(1_000_000),
