@@ -1,13 +1,12 @@
 "use client";
 
 import Decimal from "decimal.js";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { PropertyCard } from "@/components/property/search/catalog-property-card";
 import { maxLoanForMonthlyPayment } from "@/domains/investment/engine/calculations/rental-decision";
 import { formatCzk } from "@/lib/format";
-import { catalogPropertyHref, type Property } from "@/lib/mock-properties";
+import { type Property } from "@/lib/mock-properties";
 
 const RATE = new Decimal("0.05");
 
@@ -85,19 +84,14 @@ export function CatalogBudgetList({ properties }: { properties: Property[] }) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(assessed ? assessed.fits : properties).map((property) => (
-          <Link
-            key={property.id}
-            href={catalogPropertyHref(property.id)}
-            aria-label={`${property.nazev}, ${property.lokalita}`}
-            className="block h-full rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
+          <div key={property.id} className="h-full">
             {assessed ? (
               <p className="mb-1 text-xs font-medium text-[var(--text-secondary)]">
                 Vejde se podle vašeho scénáře
               </p>
             ) : null}
             <PropertyCard property={property} />
-          </Link>
+          </div>
         ))}
       </div>
     </div>

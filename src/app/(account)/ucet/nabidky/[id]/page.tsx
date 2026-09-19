@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { SellerListingForm } from "@/components/listings/seller-listing-form";
 import { SellerListingControls } from "@/components/listings/seller-listing-controls";
+import { ListingInbox } from "@/components/listings/listing-inbox";
 import { PageHeader } from "@/components/layout/page-layouts";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -87,6 +88,7 @@ export default async function UpravNabidkuPage({ params }: Props) {
         defaults={{
           title: property.title,
           description: property.description ?? "",
+          shortDescription: property.shortDescription ?? "",
           propertyType: property.propertyType,
           transactionType: property.transactionType,
           askingPrice: property.askingPrice,
@@ -124,8 +126,13 @@ export default async function UpravNabidkuPage({ params }: Props) {
           offerPriceEnabled: Boolean(offer.enabled),
           privateThreshold: readPrivateOfferThreshold(property.marketExtensions),
           willingToSwap: Boolean(swap.willing),
+          acceptsCoPurchaseSeekPartner: property.acceptsCoPurchaseSeekPartner,
+          acceptsCoPurchaseSellerRetains: property.acceptsCoPurchaseSellerRetains,
+          offeredOwnershipPercent: property.offeredOwnershipPercent,
         }}
       />
+
+      <ListingInbox userId={session.user.id} propertyId={property.id} />
 
       <p className="text-sm">
         <Link href="/ucet/nabidky" className="underline underline-offset-2">

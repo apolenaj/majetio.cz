@@ -13,7 +13,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
 import { AspectRatio } from "@/components/ui/layout-primitives";
-import { MetricValue } from "@/components/data-display/metric-card";
 import { PropertyListingImage } from "@/components/property/property-listing-image";
 import { formatCzk, formatCzkPerSqm } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -49,6 +48,12 @@ export type PropertyCardData = {
   risk?: RiskLevel;
   /** Orientační tagy (strategie, stav, …). */
   tags?: string[];
+  shortDescription?: string;
+  transactionLabel?: string;
+  propertyTypeLabel?: string;
+  conditionLabel?: string;
+  acceptsPriceOffers?: boolean;
+  acceptsCoPurchase?: boolean;
   isDemo?: boolean;
   /** Paid placement disclosure — never affects score rendering. */
   sponsored?: boolean;
@@ -142,6 +147,11 @@ export function PropertyCard({
       </Link>
 
       <div className="space-y-3 p-4">
+        {property.transactionLabel || property.propertyTypeLabel ? (
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+            {[property.transactionLabel, property.propertyTypeLabel].filter(Boolean).join(" · ")}
+          </p>
+        ) : null}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <Link
@@ -224,45 +234,50 @@ export function PropertyCard({
           </ul>
         ) : null}
 
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">Cena</dt>
-            <dd>
-              <MetricValue
-                size="s"
-                value={
-                  unavailable
-                    ? "Nedostupné"
-                    : property.priceCzk != null
-                      ? formatCzk(property.priceCzk)
-                      : "Cena na vyžádání"
-                }
-              />
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">Kč/m²</dt>
-            <dd className="font-metric font-medium">
-              {unavailable || property.pricePerSqmCzk == null
-                ? "—"
-                : formatCzkPerSqm(property.pricePerSqmCzk)}
-            </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="text-[var(--text-caption)] text-[var(--text-muted)]">
-              Dispozice / plocha
-            </dt>
-            <dd>
-              {[
-                property.disposition,
-                property.areaDisplay ??
-                  (property.areaSqm != null ? `${property.areaSqm} m²` : null),
-              ]
-                .filter(Boolean)
-                .join(" · ") || "Plocha neuvedena"}
-            </dd>
-          </div>
-        </dl>
+        <p className="whitespace-nowrap font-metric text-xl font-medium text-[var(--text-primary)]">
+          {unavailable
+            ? "Nedostupné"
+            : property.priceCzk != null
+              ? formatCzk(property.priceCzk)
+              : "Cena na vyžádání"}
+        </p>
+        {property.pricePerSqmCzk != null && !unavailable ? (
+          <p className="text-sm text-[var(--text-secondary)]">{formatCzkPerSqm(property.pricePerSqmCzk)}</p>
+        ) : null}
+        <p className="text-sm text-[var(--text-secondary)]">
+          {[
+            property.disposition,
+            property.areaDisplay ?? (property.areaSqm != null ? `${property.areaSqm} m²` : null),
+            property.conditionLabel && property.conditionLabel !== "—" ? property.conditionLabel : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Parametry neuvedeny"}
+        </p>
+        <p className="line-clamp-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+          {property.shortDescription || "Krátký popis není uveden."}
+        </p>
+        {property.acceptsPriceOffers || property.acceptsCoPurchase ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {property.acceptsPriceOffers ? (
+              <li className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
+                Přijímá cenové návrhy
+              </li>
+            ) : null}
+            {property.acceptsCoPurchase ? (
+              <li className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
+                Možnost jednat o společné koupi
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+
+        <Link
+          href={property.href}
+          className="inline-flex text-sm font-medium text-[var(--text-primary)] underline underline-offset-2"
+          onClick={() => saveSearchScrollPosition()}
+        >
+          Zobrazit detail
+        </Link>
 
         <InvestmentSnapshot property={property} hidden={unavailable} />
       </div>
@@ -338,13 +353,7 @@ function InvestmentSnapshot({
     rows.push({ label: "Majetio Score", value: `${property.majetioScore}/100` });
   }
 
-  if (rows.length === 0) {
-    return (
-      <p className="border-t border-[var(--border-default)] pt-3 text-xs text-[var(--text-muted)]">
-        Investiční data nejsou k dispozici
-      </p>
-    );
-  }
+  if (rows.length === 0) return null;
 
   return (
     <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-[var(--border-default)] pt-3 text-sm">

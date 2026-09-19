@@ -64,6 +64,10 @@ export interface Property {
   konstrukce?: string;
   /** true = v domě je výtah, false = není. Nevyplněné není ani jedno. */
   vytah?: boolean;
+  /** Ukázkový inzerent povolil cenové návrhy. Není to sleva. */
+  prijima_cenove_navrhy?: boolean;
+  spolecna_koupe_a?: boolean;
+  spolecna_koupe_b?: boolean;
   stitky: string[];
   popis_upravy: string;
 }
@@ -490,8 +494,23 @@ const NEEDS_WORK = new Set<TechnicalCondition>([
   "k_demolici",
 ]);
 
-const CATALOG_FACTS: Record<number, { konstrukce?: string; vytah?: boolean }> = {
-  1: { konstrukce: "Cihlová", vytah: true },
+const CATALOG_FACTS: Record<
+  number,
+  {
+    konstrukce?: string;
+    vytah?: boolean;
+    prijima_cenove_navrhy?: boolean;
+    spolecna_koupe_a?: boolean;
+    spolecna_koupe_b?: boolean;
+  }
+> = {
+  1: {
+    konstrukce: "Cihlová",
+    vytah: true,
+    prijima_cenove_navrhy: true,
+    spolecna_koupe_a: true,
+    spolecna_koupe_b: true,
+  },
   2: { konstrukce: "Panelová", vytah: false },
 };
 

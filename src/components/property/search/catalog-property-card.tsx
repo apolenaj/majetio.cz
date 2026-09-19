@@ -1,5 +1,9 @@
+import Link from "next/link";
+
 import { formatCzk } from "@/lib/format";
+import { resolveShortDescription } from "@/domains/listings/negotiations/validate";
 import {
+  catalogPropertyHref,
   catalogShots,
   publicListingTags,
   TECHNICAL_CONDITION_LABEL,
@@ -53,11 +57,11 @@ export function PropertyCard({ property }: { property: Property }) {
         </p>
 
         <div>
-          <h3 className="font-display text-lg leading-snug text-[var(--text-primary)]">{property.nazev}</h3>
+          <h3 className="line-clamp-2 min-h-[2.75rem] font-display text-lg leading-snug text-[var(--text-primary)]">{property.nazev}</h3>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">{property.lokalita}</p>
         </div>
 
-        <p className="font-metric text-xl font-medium text-[var(--text-primary)]">{price}</p>
+        <p className="whitespace-nowrap font-metric text-xl font-medium text-[var(--text-primary)]">{price}</p>
         <p className="text-sm text-[var(--text-secondary)]">
           {property.dispozice ? `${property.dispozice} · ` : null}
           {new Intl.NumberFormat("cs-CZ").format(property.plocha_m2)} m²
@@ -66,7 +70,7 @@ export function PropertyCard({ property }: { property: Property }) {
         </p>
 
         {tags.length > 0 ? (
-          <ul className="mt-auto flex flex-wrap gap-1.5">
+          <ul className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (
               <li
                 key={tag}
@@ -77,6 +81,46 @@ export function PropertyCard({ property }: { property: Property }) {
             ))}
           </ul>
         ) : null}
+
+        <p className="line-clamp-3 min-h-[3.75rem] text-sm leading-relaxed text-[var(--text-secondary)]">
+          {resolveShortDescription({
+            title: property.nazev,
+            description: property.detail_popis,
+          }) ?? "Krátký popis není uveden."}
+        </p>
+
+        {property.konstrukce || property.vytah != null ? (
+          <p className="text-xs text-[var(--text-secondary)]">
+            {[
+              property.konstrukce,
+              property.vytah === true ? "Výtah" : property.vytah === false ? "Bez výtahu" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        ) : null}
+
+        {property.prijima_cenove_navrhy || property.spolecna_koupe_a || property.spolecna_koupe_b ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {property.prijima_cenove_navrhy ? (
+              <li className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
+                Přijímá cenové návrhy
+              </li>
+            ) : null}
+            {property.spolecna_koupe_a || property.spolecna_koupe_b ? (
+              <li className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
+                Možnost jednat o společné koupi
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+
+        <Link
+          href={catalogPropertyHref(property.id)}
+          className="mt-auto inline-flex text-sm font-medium text-[var(--text-primary)] underline underline-offset-2"
+        >
+          Zobrazit detail
+        </Link>
       </div>
     </article>
   );

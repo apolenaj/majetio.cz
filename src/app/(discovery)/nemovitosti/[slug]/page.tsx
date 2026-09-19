@@ -61,6 +61,7 @@ import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import { auth } from "@/lib/auth";
 import { resolveLocationIntelligenceForProperty } from "@/domains/locations/integration";
 import { PropertyInquiryForm } from "@/components/listings/property-inquiry-form";
+import { CoPurchaseForm, PriceOfferForm } from "@/components/listings/negotiation-forms";
 import { CatalogPropertyDetail } from "@/components/property/search/catalog-property-detail";
 import { findCatalogPropertyBySlug } from "@/lib/mock-properties";
 
@@ -481,6 +482,47 @@ export default async function PropertyDetailPage({ params }: Props) {
                   defaultEmail={session?.user?.email}
                 />
               </section>
+            ) : null}
+            {!property.isDemo && property.transactionType === "SALE" && property.status === "ACTIVE" && property.acceptsPriceOffers ? (
+              <section className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
+                <h2 className="font-display text-lg text-[var(--text-primary)]">Navrhnout kupní cenu</h2>
+                <PriceOfferForm
+                  propertyId={property.id}
+                  askingPrice={property.askingPrice}
+                  currency={property.currency}
+                  defaultName={session?.user?.name}
+                  defaultEmail={session?.user?.email}
+                />
+              </section>
+            ) : null}
+            {!property.isDemo && property.transactionType === "SALE" && property.status !== "ACTIVE" && property.acceptsPriceOffers ? (
+              <p className="text-sm text-[var(--text-muted)]">
+                Na prodanou, archivovanou nebo jinak neaktivní nabídku nelze poslat nový cenový návrh.
+              </p>
+            ) : null}
+            {!property.isDemo &&
+            property.transactionType === "SALE" &&
+            property.status === "ACTIVE" &&
+            (property.acceptsCoPurchaseSeekPartner || property.acceptsCoPurchaseSellerRetains) ? (
+              <section className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
+                <h2 className="font-display text-lg text-[var(--text-primary)]">Mám zájem o společnou koupi</h2>
+                <CoPurchaseForm
+                  propertyId={property.id}
+                  askingPrice={property.askingPrice}
+                  offeredOwnershipPercent={property.offeredOwnershipPercent}
+                  allowSeekPartner={property.acceptsCoPurchaseSeekPartner}
+                  allowSellerRetains={property.acceptsCoPurchaseSellerRetains}
+                  defaultName={session?.user?.name}
+                  defaultEmail={session?.user?.email}
+                />
+              </section>
+            ) : !property.isDemo &&
+              property.transactionType === "SALE" &&
+              property.status !== "ACTIVE" &&
+              (property.acceptsCoPurchaseSeekPartner || property.acceptsCoPurchaseSellerRetains) ? (
+              <p className="text-sm text-[var(--text-muted)]">
+                Na prodanou, archivovanou nebo jinak neaktivní nabídku nelze poslat novou poptávku společné koupě.
+              </p>
             ) : null}
           </aside>
         </div>

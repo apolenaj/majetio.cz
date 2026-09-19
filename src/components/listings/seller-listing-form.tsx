@@ -1,18 +1,20 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import {
   createListingDraftAction,
   saveListingDraftAction,
   type ListingActionResult,
 } from "@/domains/listings/seller/actions";
+import { resolveShortDescription } from "@/domains/listings/negotiations/validate";
 
 const initial: ListingActionResult | null = null;
 
 type Defaults = {
   title?: string;
   description?: string;
+  shortDescription?: string;
   propertyType?: string;
   transactionType?: string;
   askingPrice?: number | null;
@@ -36,6 +38,9 @@ type Defaults = {
   offerPriceEnabled?: boolean;
   privateThreshold?: number | null;
   willingToSwap?: boolean;
+  acceptsCoPurchaseSeekPartner?: boolean;
+  acceptsCoPurchaseSellerRetains?: boolean;
+  offeredOwnershipPercent?: number | null;
 };
 
 const fieldClass =
@@ -67,6 +72,10 @@ export function SellerListingForm({
   };
 
   const [state, formAction, pending] = useActionState(action, initial);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const [shortText, setShortText] = useState(defaults?.shortDescription ?? "");
+  const [shortHint, setShortHint] = useState<string | null>(null);
 
   return (
     <form action={formAction} className="space-y-8">
@@ -88,6 +97,7 @@ export function SellerListingForm({
         <label className={labelClass}>
           Název nabídky
           <input
+            ref={titleRef}
             name="title"
             required
             defaultValue={defaults?.title ?? ""}
@@ -98,6 +108,7 @@ export function SellerListingForm({
         <label className={labelClass}>
           Popis
           <textarea
+            ref={descriptionRef}
             name="description"
             rows={5}
             defaultValue={defaults?.description ?? ""}
@@ -105,6 +116,40 @@ export function SellerListingForm({
             maxLength={20000}
           />
         </label>
+        <label className={labelClass}>
+          Krátký popis na kartu
+          <span className="mt-1 block text-xs font-normal text-[var(--text-muted)]">
+            Doporučeně 120–220 znaků. Konkrétní důvod otevřít nabídku: uspořádání, stav, příslušenství nebo dostupnost. Neslibujte výnos.
+          </span>
+          <textarea
+            name="shortDescription"
+            rows={3}
+            value={shortText}
+            onChange={(event) => setShortText(event.target.value)}
+            className={fieldClass}
+            maxLength={220}
+          />
+        </label>
+        <button
+          type="button"
+          className="text-sm font-medium underline"
+          onClick={() => {
+            const next = resolveShortDescription({
+              title: titleRef.current?.value,
+              description: descriptionRef.current?.value,
+              shortDescription: null,
+            });
+            if (!next) {
+              setShortHint("Z existujícího popisu nejde sestavit výňatek. Doplňte konkrétní údaj, nic se nedomýšlí.");
+              return;
+            }
+            setShortText(next);
+            setShortHint("Návrh používá jen text, který už v popisu je. Můžete ho upravit.");
+          }}
+        >
+          Navrhnout z popisu
+        </button>
+        {shortHint ? <p className="text-xs text-[var(--text-muted)]">{shortHint}</p> : null}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={labelClass}>
             Typ nemovitosti
@@ -377,6 +422,41 @@ export function SellerListingForm({
             className="mt-1"
           />
           <span>Ochota ke směně (protinabídky v dalším kroku jednání).</span>
+        </label>
+        <label className="flex items-start gap-3 text-sm text-[var(--text-secondary)]">
+          <input
+            type="checkbox"
+            name="acceptsCoPurchaseSeekPartner"
+            value="on"
+            defaultChecked={defaults?.acceptsCoPurchaseSeekPartner}
+            className="mt-1"
+          />
+          <span>
+            Situace A: zájemce chce koupit část a sám hledá dalšího kupujícího. Neznamená to, že Majetio partnera sežene.
+          </span>
+        </label>
+        <label className="flex items-start gap-3 text-sm text-[var(--text-secondary)]">
+          <input
+            type="checkbox"
+            name="acceptsCoPurchaseSellerRetains"
+            value="on"
+            defaultChecked={defaults?.acceptsCoPurchaseSellerRetains}
+            className="mt-1"
+          />
+          <span>
+            Situace B: zájemce se může zeptat, zda prodáte jen část a zbytek si ponecháte.
+          </span>
+        </label>
+        <label className={labelClass}>
+          Nabízený vlastnický podíl v % (jen když neprodáváte celou nemovitost)
+          <input
+            name="offeredOwnershipPercent"
+            type="number"
+            min={1}
+            max={99}
+            defaultValue={defaults?.offeredOwnershipPercent ?? ""}
+            className={fieldClass}
+          />
         </label>
       </fieldset>
 

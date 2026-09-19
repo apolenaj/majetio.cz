@@ -18,6 +18,7 @@ import {
 export type SellerListingInput = {
   title: string;
   description?: string | null;
+  shortDescription?: string | null;
   propertyType: PropertyType;
   transactionType: TransactionType;
   askingPrice: number;
@@ -50,6 +51,9 @@ export type SellerListingInput = {
     privateThreshold?: number | null;
   } | null;
   willingToSwap?: boolean;
+  acceptsCoPurchaseSeekPartner?: boolean;
+  acceptsCoPurchaseSellerRetains?: boolean;
+  offeredOwnershipPercent?: number | null;
 };
 
 function slugify(input: string): string {
@@ -186,6 +190,7 @@ export async function createSellerDraft(input: {
       transactionType: input.data.transactionType,
       title,
       description: input.data.description?.trim() || null,
+      shortDescription: input.data.shortDescription?.trim() || null,
       propertyType: input.data.propertyType,
       askingPrice,
       priceCzk: currency === "CZK" ? askingPrice : null,
@@ -213,7 +218,13 @@ export async function createSellerDraft(input: {
       ownerUserId: input.userId,
       listedByUserId: input.userId,
       isDemo: false,
-      negotiable: Boolean(input.data.offerPrice?.enabled),
+      negotiable: input.data.transactionType === "SALE" && Boolean(input.data.offerPrice?.enabled),
+      acceptsCoPurchaseSeekPartner:
+        input.data.transactionType === "SALE" && Boolean(input.data.acceptsCoPurchaseSeekPartner),
+      acceptsCoPurchaseSellerRetains:
+        input.data.transactionType === "SALE" && Boolean(input.data.acceptsCoPurchaseSellerRetains),
+      offeredOwnershipPercent:
+        input.data.transactionType === "SALE" ? input.data.offeredOwnershipPercent ?? null : null,
       marketExtensions: buildMarketExtensions(null, input.data),
     },
     select: { id: true, slug: true },
@@ -255,6 +266,7 @@ export async function updateSellerDraft(input: {
     data: {
       title,
       description: input.data.description?.trim() || null,
+      shortDescription: input.data.shortDescription?.trim() || null,
       propertyType: input.data.propertyType,
       transactionType: input.data.transactionType,
       askingPrice,
@@ -279,7 +291,13 @@ export async function updateSellerDraft(input: {
         `${title} — ${input.data.publicCity.trim()}`,
       marketCode: input.data.marketCode?.trim().toUpperCase() || "CZ",
       countryCode: input.data.countryCode?.trim().toUpperCase() || "CZ",
-      negotiable: Boolean(input.data.offerPrice?.enabled),
+      negotiable: input.data.transactionType === "SALE" && Boolean(input.data.offerPrice?.enabled),
+      acceptsCoPurchaseSeekPartner:
+        input.data.transactionType === "SALE" && Boolean(input.data.acceptsCoPurchaseSeekPartner),
+      acceptsCoPurchaseSellerRetains:
+        input.data.transactionType === "SALE" && Boolean(input.data.acceptsCoPurchaseSellerRetains),
+      offeredOwnershipPercent:
+        input.data.transactionType === "SALE" ? input.data.offeredOwnershipPercent ?? null : null,
       marketExtensions: buildMarketExtensions(
         access.property.marketExtensions,
         input.data,

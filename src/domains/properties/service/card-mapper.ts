@@ -1,5 +1,6 @@
 import type { PropertyCardData } from "@/components/property/property-card";
 import type { DataQuality } from "@/components/ui/badge";
+import { conditionLabel, propertyTypeLabel } from "@/domains/properties/service/identity-labels";
 import type { PublicPropertyDto, PublicPropertyListItemDto } from "./dto";
 
 function locationLabel(
@@ -51,5 +52,13 @@ export function mapPublicDtoToPropertyCard(
     tags: dto.tags,
     isDemo: dto.isDemo,
     listingStatus,
+    shortDescription: dto.shortDescription ?? undefined,
+    transactionLabel:
+      dto.transactionType === "RENT" ? "Pronájem" : dto.transactionType === "SALE" ? "Prodej" : undefined,
+    propertyTypeLabel: propertyTypeLabel(dto.propertyType),
+    conditionLabel: dto.condition ? conditionLabel(dto.condition) : undefined,
+    acceptsPriceOffers: dto.acceptsPriceOffers === true,
+    acceptsCoPurchase:
+      dto.acceptsCoPurchaseSeekPartner === true || dto.acceptsCoPurchaseSellerRetains === true,
   };
 }

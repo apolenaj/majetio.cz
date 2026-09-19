@@ -15,6 +15,7 @@ import {
   type SellerListingInput,
 } from "@/domains/listings/seller/seller-listing-service";
 import { createInquiry } from "@/domains/crm/inquiry-service";
+import { validateAdvertiserShortDescription } from "@/domains/listings/negotiations/validate";
 
 export type ListingActionResult =
   | { ok: true; message?: string; propertyId?: string; slug?: string }
@@ -25,6 +26,7 @@ const emptyToUndef = (v: unknown) => (v === "" || v == null ? undefined : v);
 const listingSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().max(20000).optional().nullable(),
+  shortDescription: z.string().max(220).optional().nullable(),
   propertyType: z.enum([
     "APARTMENT",
     "HOUSE",
@@ -81,6 +83,12 @@ const listingSchema = z.object({
     z.coerce.number().positive().optional().nullable(),
   ),
   willingToSwap: z.enum(["on", "true", "1"]).optional(),
+  acceptsCoPurchaseSeekPartner: z.enum(["on", "true", "1"]).optional(),
+  acceptsCoPurchaseSellerRetains: z.enum(["on", "true", "1"]).optional(),
+  offeredOwnershipPercent: z.preprocess(
+    emptyToUndef,
+    z.coerce.number().int().min(1).max(99).optional().nullable(),
+  ),
 });
 
 function parseListingForm(formData: FormData): {
@@ -97,11 +105,14 @@ function parseListingForm(formData: FormData): {
   }
   const v = parsed.data;
   const offerEnabled = Boolean(v.offerPriceEnabled);
+  const shortDescription = validateAdvertiserShortDescription(v.shortDescription);
+  if (!shortDescription.ok) return shortDescription;
   return {
     ok: true,
     data: {
       title: v.title,
       description: v.description,
+      shortDescription: shortDescription.value,
       propertyType: v.propertyType,
       transactionType: v.transactionType,
       askingPrice: v.askingPrice,
@@ -133,6 +144,9 @@ function parseListingForm(formData: FormData): {
         privateThreshold: offerEnabled ? (v.privateThreshold ?? null) : null,
       },
       willingToSwap: Boolean(v.willingToSwap),
+      acceptsCoPurchaseSeekPartner: Boolean(v.acceptsCoPurchaseSeekPartner),
+      acceptsCoPurchaseSellerRetains: Boolean(v.acceptsCoPurchaseSellerRetains),
+      offeredOwnershipPercent: v.offeredOwnershipPercent ?? null,
     },
   };
 }

@@ -4,11 +4,11 @@ import { ArrowLeft, Bus, HeartPulse, School, ShoppingCart } from "lucide-react";
 import { CatalogInvestmentPanel } from "@/components/property/search/catalog-investment-panel";
 import { CatalogPhotoGallery } from "@/components/property/search/catalog-photo-gallery";
 import { CatalogViewingChecklist } from "@/components/property/search/catalog-viewing-checklist";
+import { DemoNegotiationForms } from "@/components/listings/demo-negotiation-forms";
 import { PropertyCard } from "@/components/property/search/catalog-property-card";
 import { Container } from "@/components/ui/container";
 import { formatCzk } from "@/lib/format";
 import {
-  catalogPropertyHref,
   catalogShots,
   findSimilarCatalogProperties,
   TECHNICAL_CONDITION_LABEL,
@@ -163,15 +163,24 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
 
           <CatalogViewingChecklist />
 
+          {property.typ_transakce === "prodej" ? (
+            <div className="mt-8 lg:hidden">
+              <DemoNegotiationForms
+                askingPrice={property.cena}
+                allowPriceOffers
+                allowSeekPartner
+                allowSellerRetains
+              />
+            </div>
+          ) : null}
+
           <section className="mt-12">
             <h2 className="font-display text-2xl text-[var(--text-primary)]">Podobné nabídky</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">{similar.note}</p>
             {similar.items.length > 0 ? (
               <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {similar.items.map((item) => (
-                  <Link key={item.id} href={catalogPropertyHref(item.id)} className="block h-full">
-                    <PropertyCard property={item} />
-                  </Link>
+                  <PropertyCard key={item.id} property={item} />
                 ))}
               </div>
             ) : null}
@@ -179,19 +188,28 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
         </div>
 
         <aside className="hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 lg:sticky lg:top-24 lg:block">
-          <DemoContactCard price={price} />
+          <DemoContactCard property={property} price={price} />
         </aside>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-default)] bg-[var(--surface-primary)]/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
-        <DemoContactCard price={price} compact />
+        <DemoContactCard property={property} price={price} compact />
       </div>
       <div className="h-24 lg:hidden" aria-hidden />
     </Container>
   );
 }
 
-function DemoContactCard({ price, compact = false }: { price: string; compact?: boolean }) {
+function DemoContactCard({
+  property,
+  price,
+  compact = false,
+}: {
+  property: Property;
+  price: string;
+  compact?: boolean;
+}) {
+  const sale = property.typ_transakce === "prodej";
   return (
     <div className={compact ? "flex items-center gap-3" : undefined}>
       {!compact ? (
@@ -224,6 +242,14 @@ function DemoContactCard({ price, compact = false }: { price: string; compact?: 
         >
           Prohlédnout nabídky
         </Link>
+      ) : null}
+      {!compact && sale ? (
+        <DemoNegotiationForms
+          askingPrice={property.cena}
+          allowPriceOffers
+          allowSeekPartner
+          allowSellerRetains
+        />
       ) : null}
     </div>
   );

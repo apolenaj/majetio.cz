@@ -1127,6 +1127,7 @@ model User {
   analyses              PropertyAnalysis[]
   leads                 Lead[]
   inquiries             Inquiry[]                    @relation("InquiryBuyer")
+  negotiations          ListingNegotiation[]         @relation("NegotiationBuyer")
   inquiriesAsAgent      Inquiry[]                    @relation("InquiryAgent")
   qualifiedBuyerLeads   QualifiedBuyerLead[]         @relation("QualifiedBuyer")
   qualifiedBuyerLeadsAsAgent QualifiedBuyerLead[]    @relation("QualifiedBuyerAgent")
@@ -1792,6 +1793,17 @@ model Property {
   // ── Basics ───────────────────────────────────────────────────────────────
   title            String
   description      String?            @db.Text
+  /** Inzerentem schválený výňatek na kartu, 120–220 znaků. */
+  shortDescription String?           @db.VarChar(220)
+  /** Zájemce hledá dalšího kupujícího (situace A). */
+  acceptsCoPurchaseSeekPartner Boolean @default(false)
+  /** Prodávající může ponechat zbytek (situace B). */
+  acceptsCoPurchaseSellerRetains Boolean @default(false)
+  /**
+   * Nabídka už prodává jen tento podíl celé nemovitosti (1–99).
+   * Null = prodává se celá nemovitost.
+   */
+  offeredOwnershipPercent Int?
   propertyType     PropertyType
   condition        PropertyCondition  @default(UNKNOWN)
   constructionType ConstructionType  @default(UNKNOWN)
@@ -1912,6 +1924,7 @@ model Property {
   savedSearchMatches SavedSearchMatch[]
   leads           Lead[]
   inquiries       Inquiry[]
+  negotiations    ListingNegotiation[]
   qualifiedBuyerLeads QualifiedBuyerLead[]
   valuations      Valuation[]
   valuationComparablesAsComp ValuationComparable[] @relation("ValuationComparableProperty")
@@ -3344,6 +3357,106 @@ model Inquiry {
   @@index([organizationId, status, createdAt])
   @@index([agentUserId, status])
   @@index([buyerUserId, createdAt])
+}
+
+enum NegotiationKind {
+  PRICE_OFFER
+  CO_PURCHASE
+}
+
+enum NegotiationStatus {
+  NEW
+  IN_DISCUSSION
+  INFO_REQUESTED
+  COUNTERED
+  REJECTED
+  WITHDRAWN
+  CLOSED
+}
+
+enum NegotiationFinancing {
+  OWN_FUNDS
+  LOAN
+  MIXED
+  UNKNOWN
+}
+
+enum CoPurchaseSituation {
+  SEEK_PARTNER
+  SELLER_RETAINS
+}
+
+enum ShareReference {
+  WHOLE_PROPERTY
+  OFFERED_SHARE
+}
+
+enum NegotiationActor {
+  BUYER
+  SELLER
+}
+
+enum NoticeDeliveryStatus {
+  STORED_ONLY
+  SENT
+  FAILED
+}
+
+/**
+ * Nezávazný cenový návrh nebo zájem o společnou koupi.
+ * Není rezervace, spoluvlastnictví ani platba.
+ */
+model ListingNegotiation {
+  id                    String                 @id @default(cuid())
+  propertyId            String
+  kind                  NegotiationKind
+  status                NegotiationStatus      @default(NEW)
+  buyerUserId           String?
+  buyerName             String
+  buyerEmail            String
+  buyerPhone            String?
+  /** SHA-256 tokenu, kterým zájemce stáhne nebo upraví vlastní návrh. */
+  buyerTokenHash        String
+  currency              String                 @default("CZK")
+  amountCzk             Int
+  financing             NegotiationFinancing   @default(UNKNOWN)
+  timeline              String?
+  message               String?                @db.Text
+  situation             CoPurchaseSituation?
+  sharePercent          Int?
+  shareReference        ShareReference?
+  cashContributionCzk   Int?
+  proposedTotalPriceCzk Int?
+  purpose               String?
+  hasCoInvestor         Boolean?
+  noticeStatus          NoticeDeliveryStatus   @default(STORED_ONLY)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  property Property                    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyer    User?                       @relation("NegotiationBuyer", fields: [buyerUserId], references: [id], onDelete: SetNull)
+  versions ListingNegotiationVersion[]
+
+  @@index([propertyId, kind, status, createdAt])
+  @@index([buyerEmail, propertyId, createdAt])
+  @@index([buyerUserId, createdAt])
+}
+
+model ListingNegotiationVersion {
+  id                  String            @id @default(cuid())
+  negotiationId       String
+  actor               NegotiationActor
+  actorUserId         String?
+  amountCzk           Int?
+  sharePercent        Int?
+  cashContributionCzk Int?
+  message             String?           @db.Text
+  status              NegotiationStatus
+  createdAt           DateTime          @default(now())
+
+  negotiation ListingNegotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+
+  @@index([negotiationId, createdAt])
 }
 
 /**

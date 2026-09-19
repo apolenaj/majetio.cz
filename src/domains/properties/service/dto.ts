@@ -9,6 +9,7 @@ import {
   resolveCanonicalPropertyType,
 } from "@/domains/properties/taxonomy/canonical-types";
 import { toPublicMediaList, type PublicMediaItem } from "./media-public";
+import { resolveShortDescription } from "@/domains/listings/negotiations/validate";
 
 export type DataQualityLevel =
   | "verified"
@@ -55,6 +56,11 @@ export type PropertyRecord = {
   transactionType: string;
   title: string;
   description?: string | null;
+  shortDescription?: string | null;
+  negotiable?: boolean | null;
+  acceptsCoPurchaseSeekPartner?: boolean | null;
+  acceptsCoPurchaseSellerRetains?: boolean | null;
+  offeredOwnershipPercent?: number | null;
   propertyType: string;
   askingPrice?: number | null;
   priceCzk?: number | null;
@@ -206,6 +212,11 @@ export type PublicPropertyDto = {
   fieldConflicts: PublicFieldConflict[];
   freshness: string | null;
   lastSeenAt: string | null;
+  shortDescription: string | null;
+  acceptsPriceOffers: boolean;
+  acceptsCoPurchaseSeekPartner: boolean;
+  acceptsCoPurchaseSellerRetains: boolean;
+  offeredOwnershipPercent: number | null;
 };
 
 export type PublicPropertyListItemDto = Pick<
@@ -231,6 +242,11 @@ export type PublicPropertyListItemDto = Pick<
   | "cashFlowMonthlyCzk"
   | "majetioScore"
   | "risk"
+  | "condition"
+  | "shortDescription"
+  | "acceptsPriceOffers"
+  | "acceptsCoPurchaseSeekPartner"
+  | "acceptsCoPurchaseSellerRetains"
 >;
 
 export type ToPublicDtoOptions = {
@@ -394,6 +410,15 @@ export function toPublicPropertyDto(
     fieldConflicts: record.fieldConflicts ?? [],
     freshness: record.freshness ?? null,
     lastSeenAt: iso(record.lastSeenAt),
+    shortDescription: resolveShortDescription({
+      shortDescription: record.shortDescription,
+      description: record.description,
+      title: record.title,
+    }),
+    acceptsPriceOffers: record.negotiable === true,
+    acceptsCoPurchaseSeekPartner: record.acceptsCoPurchaseSeekPartner === true,
+    acceptsCoPurchaseSellerRetains: record.acceptsCoPurchaseSellerRetains === true,
+    offeredOwnershipPercent: record.offeredOwnershipPercent ?? null,
   };
 }
 
@@ -424,5 +449,10 @@ export function toPublicPropertyListItemDto(
     cashFlowMonthlyCzk: full.cashFlowMonthlyCzk,
     majetioScore: full.majetioScore,
     risk: full.risk,
+    condition: full.condition,
+    shortDescription: full.shortDescription,
+    acceptsPriceOffers: full.acceptsPriceOffers,
+    acceptsCoPurchaseSeekPartner: full.acceptsCoPurchaseSeekPartner,
+    acceptsCoPurchaseSellerRetains: full.acceptsCoPurchaseSellerRetains,
   };
 }
