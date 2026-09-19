@@ -9,7 +9,7 @@ import { formatCzk } from "@/lib/format";
 import {
   catalogPropertyHref,
   catalogShots,
-  mockProperties,
+  findSimilarCatalogProperties,
   TECHNICAL_CONDITION_LABEL,
   type AmenityCategory,
   type Property,
@@ -36,15 +36,25 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
     property.typ_transakce === "pronajem"
       ? `${formatCzk(property.cena)} / měsíc`
       : formatCzk(property.cena);
+  const area = `${new Intl.NumberFormat("cs-CZ").format(property.plocha_m2)} m²`;
   const pricePerM2 =
-    property.plocha_m2 > 0 ? `${formatCzk(property.cena / property.plocha_m2)} / m²` : null;
+    property.plocha_m2 > 0 && property.typ_transakce === "prodej"
+      ? `${formatCzk(property.cena / property.plocha_m2)} / m²`
+      : null;
   const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(`${property.lokalita_gps.lat},${property.lokalita_gps.lng}`)}&hl=cs&z=15&output=embed`;
-  const similar = mockProperties
-    .filter((item) => item.id !== property.id && item.typ_nemovitosti === property.typ_nemovitosti)
-    .slice(0, 3);
+  const similar = findSimilarCatalogProperties(property, 3);
+  const summary = [
+    property.typ_transakce === "pronajem" ? "Pronájem" : "Prodej",
+    KIND_LABEL[property.typ_nemovitosti],
+    property.dispozice,
+    area,
+    TECHNICAL_CONDITION_LABEL[property.technicky_stav],
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <Container className="py-6 sm:py-10">
+    <Container className="max-w-[1320px] py-6 sm:py-8">
       <Link
         href="/nemovitosti"
         className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -52,36 +62,51 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
         <ArrowLeft className="size-4" aria-hidden />
         Zpět na výpis
       </Link>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-        Ukázkový inzerát · není živá nabídka z trhu
-      </p>
 
-      <div className="mt-4 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+          Ukázková nabídka
+        </span>
+      </div>
+
+      <header className="mt-3">
+        <h1 className="font-display text-3xl text-[var(--text-primary)] sm:text-4xl">{property.nazev}</h1>
+        <p className="mt-1 text-base text-[var(--text-secondary)]">{property.lokalita}</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">{summary}</p>
+        <p className="mt-3 font-metric text-3xl text-[var(--text-primary)]">{price}</p>
+        {pricePerM2 ? (
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{pricePerM2}</p>
+        ) : null}
+      </header>
+
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-8">
         <div>
           <CatalogPhotoGallery shots={catalogShots(property)} />
-          <header className="mt-6">
-            <h1 className="font-display text-3xl text-[var(--text-primary)] sm:text-4xl">{property.nazev}</h1>
-            <p className="mt-1 text-base text-[var(--text-secondary)]">{property.lokalita}</p>
-            <p className="mt-3 font-metric text-3xl text-[var(--text-primary)]">{price}</p>
-            {pricePerM2 && property.typ_transakce === "prodej" ? (
-              <p className="mt-1 text-sm text-[var(--text-muted)]">{pricePerM2} z nabídkové ceny a uvedené plochy</p>
-            ) : null}
-          </header>
+
+          <nav className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[var(--text-secondary)]">
+            <a href="#parametry" className="hover:text-[var(--text-primary)]">
+              Parametry
+            </a>
+            <a href="#popis" className="hover:text-[var(--text-primary)]">
+              Popis
+            </a>
+            <a href="#investice" className="hover:text-[var(--text-primary)]">
+              Náklady
+            </a>
+            <a href="#lokalita" className="hover:text-[var(--text-primary)]">
+              Lokalita
+            </a>
+          </nav>
 
           <section id="parametry" className="mt-8">
             <h2 className="font-display text-2xl text-[var(--text-primary)]">Parametry</h2>
             <dl className="mt-3 divide-y divide-[var(--border-default)] border-y border-[var(--border-default)]">
               <Row label="Transakce" value={property.typ_transakce === "pronajem" ? "Pronájem" : "Prodej"} />
               <Row label="Typ" value={KIND_LABEL[property.typ_nemovitosti]} />
-              <Row label="Dispozice" value={property.dispozice ?? "Neuvedeno"} />
-              <Row label="Plocha" value={`${new Intl.NumberFormat("cs-CZ").format(property.plocha_m2)} m²`} />
+              {property.dispozice ? <Row label="Dispozice" value={property.dispozice} /> : null}
+              <Row label="Plocha" value={area} />
               <Row label="Technický stav" value={TECHNICAL_CONDITION_LABEL[property.technicky_stav]} />
-              <Row
-                label="Prezentace"
-                value={property.stav_inzeratu === "premium" ? "Premium prezentace" : "Základní prezentace"}
-              />
               <Row label="PENB" value="Neuvedeno" />
-              <Row label="Stav nabídky" value="Ukázka, není publikovaná na trhu" />
             </dl>
           </section>
 
@@ -108,14 +133,12 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
             <iframe
               title={`Mapa: ${property.lokalita}`}
               src={mapSrc}
-              className="mt-4 h-72 w-full rounded-2xl border border-[var(--border-default)]"
+              className="mt-4 h-64 w-full rounded-2xl border border-[var(--border-default)] sm:h-72"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
             <h3 className="mt-6 font-display text-xl text-[var(--text-primary)]">Občanská vybavenost</h3>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Orientační texty ukázkového katalogu. Není to trasa z routingu ani ověřená vzdálenost.
-            </p>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Orientační vzdálenost</p>
             <ul className="mt-3 grid gap-x-8 sm:grid-cols-2">
               {property.obcanska_vybavenost.map((item) => {
                 const Icon = AMENITY_ICON[item.kategorie];
@@ -135,11 +158,11 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
 
           {similar.length > 0 ? (
             <section className="mt-12">
-              <h2 className="font-display text-2xl text-[var(--text-primary)]">Podobné ukázky</h2>
+              <h2 className="font-display text-2xl text-[var(--text-primary)]">Podobné nabídky</h2>
               <p className="mt-1 text-sm text-[var(--text-muted)]">
-                Stejný typ v ukázkovém katalogu, ne srovnání trhu.
+                Stejný typ transakce a nemovitosti v ukázkovém katalogu
               </p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {similar.map((item) => (
                   <Link key={item.id} href={catalogPropertyHref(item.id)} className="block h-full">
                     <PropertyCard property={item} />
@@ -150,25 +173,54 @@ export function CatalogPropertyDetail({ property }: { property: Property }) {
           ) : null}
         </div>
 
-        <aside className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 lg:sticky lg:top-24">
-          <p className="font-metric text-2xl text-[var(--text-primary)]">{price}</p>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">{property.lokalita}</p>
-          <p className="mt-4 text-sm leading-relaxed text-[var(--text-secondary)]">
-            Ukázka nemá prodejce. Tlačítko nic neodesílá a neexistuje slíbená doba reakce.
-          </p>
-          <button
-            type="button"
-            disabled
-            className="mt-4 w-full cursor-not-allowed rounded-full bg-slate-900/40 px-4 py-3 text-sm font-semibold text-white"
-          >
-            Napsat prodejci
-          </button>
-          <p className="mt-3 text-xs text-[var(--text-muted)]">
-            U živé nabídky se poptávka ukládá k inzerátu. Tady by to předstíralo dostupnost nemovitosti.
-          </p>
+        <aside className="hidden rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 lg:sticky lg:top-24 lg:block">
+          <DemoContactCard price={price} />
         </aside>
       </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-default)] bg-[var(--surface-primary)]/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <DemoContactCard price={price} compact />
+      </div>
+      <div className="h-24 lg:hidden" aria-hidden />
     </Container>
+  );
+}
+
+function DemoContactCard({ price, compact = false }: { price: string; compact?: boolean }) {
+  return (
+    <div className={compact ? "flex items-center gap-3" : undefined}>
+      {!compact ? (
+        <>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+            Ukázka prezentace
+          </p>
+          <p className="mt-2 font-metric text-2xl text-[var(--text-primary)]">{price}</p>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+            Takto může vypadat váš inzerát na Majetiu — přehledně, s parametry a propočtem nákladů.
+          </p>
+        </>
+      ) : (
+        <p className="min-w-0 flex-1 font-metric text-lg text-[var(--text-primary)]">{price}</p>
+      )}
+      <Link
+        href="/pridat-nemovitost"
+        className={
+          compact
+            ? "shrink-0 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
+            : "mt-4 block w-full rounded-full bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white"
+        }
+      >
+        Přidat vlastní nemovitost
+      </Link>
+      {!compact ? (
+        <Link
+          href="/nemovitosti"
+          className="mt-3 block w-full rounded-full border border-[var(--border-default)] px-4 py-3 text-center text-sm font-medium text-[var(--text-primary)]"
+        >
+          Prohlédnout nabídky
+        </Link>
+      ) : null}
+    </div>
   );
 }
 

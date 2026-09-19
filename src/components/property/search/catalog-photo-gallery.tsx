@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,10 +11,14 @@ export type CatalogShot = {
   label?: string;
 };
 
+const GALLERY_HEIGHT = "h-[min(26rem,52vw)] sm:h-[26rem]";
+
 export function CatalogPhotoGallery({ shots }: { shots: CatalogShot[] }) {
   const [index, setIndex] = useState<number | null>(null);
   const open = index !== null;
   const current = open ? shots[index] : undefined;
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -38,6 +42,7 @@ export function CatalogPhotoGallery({ shots }: { shots: CatalogShot[] }) {
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
+      triggerRef.current?.focus();
     };
   }, [open, shots.length]);
 
@@ -45,51 +50,95 @@ export function CatalogPhotoGallery({ shots }: { shots: CatalogShot[] }) {
 
   const hero = shots[0];
   if (!hero) return null;
-  const side = shots.slice(1, 5);
-  const columns = side.length === 0 ? "grid-cols-1" : "sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]";
+
+  const previewCount = Math.min(shots.length, 5);
+  const side = shots.slice(1, previewCount);
+  const hiddenCount = shots.length - previewCount;
+  const columns =
+    side.length === 0
+      ? "grid-cols-1"
+      : side.length === 1
+        ? "sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"
+        : "sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]";
+
+  function openAt(i: number, button: HTMLButtonElement | null) {
+    triggerRef.current = button;
+    setIndex(i);
+  }
 
   return (
     <>
-      <div className={cn("mt-4 grid gap-1", columns, side.length > 1 && "sm:grid-rows-2")}>
+      <div className={cn("grid gap-1 overflow-hidden rounded-2xl", GALLERY_HEIGHT, columns)}>
         <PhotoButton
           shot={hero}
-          className={cn("h-56 sm:h-auto sm:max-h-[28rem] sm:min-h-72", side.length > 1 && "sm:row-span-2")}
-          onOpen={() => setIndex(0)}
+          className="h-full min-h-0"
+          onOpen={(button) => openAt(0, button)}
         />
-        {side.map((shot, offset) => (
-          <PhotoButton
-            key={`${shot.src}-${offset}`}
-            shot={shot}
-            className="hidden h-28 sm:block sm:h-auto"
-            onOpen={() => setIndex(offset + 1)}
-            overlay={offset === side.length - 1 && shots.length > 5 ? `+${shots.length - 5}` : undefined}
-          />
-        ))}
+        {side.length > 0 ? (
+          <div
+            className={cn(
+              "hidden h-full min-h-0 gap-1 sm:grid",
+              side.length === 1 ? "grid-rows-1" : "grid-rows-2",
+              side.length >= 3 && "grid-cols-2",
+            )}
+          >
+            {side.map((shot, offset) => (
+              <PhotoButton
+                key={`${shot.src}-${offset}`}
+                shot={shot}
+                className={cn(
+                  "h-full min-h-0",
+                  side.length === 3 && offset === 0 && "row-span-2",
+                )}
+                onOpen={(button) => openAt(offset + 1, button)}
+                overlay={
+                  offset === side.length - 1 && hiddenCount > 0
+                    ? `+${hiddenCount}`
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
+
       {shots.length > 1 ? (
-        <div className="mt-1 flex gap-1 overflow-x-auto sm:hidden">
-          {shots.slice(1).map((shot, offset) => (
-            <PhotoButton
-              key={`m-${shot.src}-${offset}`}
-              shot={shot}
-              className="h-20 w-28 shrink-0"
-              onOpen={() => setIndex(offset + 1)}
-            />
-          ))}
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <div className="flex gap-1 overflow-x-auto sm:hidden">
+            {shots.slice(1).map((shot, offset) => (
+              <PhotoButton
+                key={`m-${shot.src}-${offset}`}
+                shot={shot}
+                className="h-16 w-24 shrink-0 rounded-lg"
+                onOpen={(button) => openAt(offset + 1, button)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="text-sm font-medium text-[var(--text-primary)] underline-offset-2 hover:underline"
+            onClick={(event) => openAt(0, event.currentTarget)}
+          >
+            Všech {shots.length} {shots.length === 1 ? "fotografie" : "fotografií"}
+          </button>
         </div>
-      ) : null}
-      <p className="mt-2 text-sm text-[var(--text-muted)]">
-        {shots.length} {shots.length === 1 ? "ilustrační fotografie" : "ilustračních fotografií"}. Nejsou to záběry této nemovitosti.
-      </p>
+      ) : (
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
+          Ilustrační snímek. Fotografie této nemovitosti budou doplněny.
+        </p>
+      )}
 
       {current ? (
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Fotogalerie"
+          aria-labelledby={titleId}
           onClick={() => setIndex(null)}
         >
+          <p id={titleId} className="sr-only">
+            Fotogalerie
+          </p>
           <button
             type="button"
             className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
@@ -148,18 +197,22 @@ function PhotoButton({
   shot: CatalogShot;
   className?: string;
   overlay?: string;
-  onOpen: () => void;
+  onOpen: (button: HTMLButtonElement) => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={(event) => onOpen(event.currentTarget)}
       className={cn(
         "relative block w-full overflow-hidden bg-[var(--surface-sunken)] text-left",
         className,
       )}
     >
-      <img src={shot.src} alt={shot.alt} className="h-full w-full object-cover" />
+      <img
+        src={shot.src}
+        alt={shot.alt}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
       {shot.label ? (
         <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[0.65rem] font-semibold text-white">
           {shot.label}

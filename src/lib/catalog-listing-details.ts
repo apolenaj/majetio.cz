@@ -110,9 +110,10 @@ export const CATALOG_DETAIL: Record<
     detail_popis: popis(
       "Exkluzivně nabízíme k prodeji rodinný dům o dispozici 4+1 v klidné lokalitě Krnova. V přízemí se nachází prostorný obývací pokoj prosluněný okny do zahrady, kuchyň s jídelním koutem a koupelna. V patře jsou tři neprůchozí ložnice. K domu náleží rovinatá zahrada kolem 400 m².",
       "Dům je v udržovaném stavu před částečnou rekonstrukcí. Střecha prošla revizí, vytápění řeší plynový kotel, fasáda potřebuje nátěr a okna jsou mix novějších plastových a původních dřevěných. Stavba je zděná, se sedlovou střechou.",
-      "Nemovitost dává smysl jako rodinné bydlení s možností úprav podle vlastních představ. Zahrada je v rámci prémiové prezentace uklizená. Další práce si kupující nacení sám — inzerát rozpočet rekonstrukce neobsahuje a neslibuje výnos z pronájmu.",
+      "Nemovitost dává smysl jako rodinné bydlení s možností úprav podle vlastních představ. Další práce si kupující nacení sám — inzerát rozpočet rekonstrukce neobsahuje a neslibuje výnos z pronájmu.",
     ),
-    galerie: [photo.brick, photo.row, photo.field, photo.old],
+    // Jedna konzistentní ilustrace domu — ne koláž cizích staveb a krajiny.
+    galerie: [],
     obcanska_vybavenost: nearby([
       ["education", "MŠ Smetanova", "300 m (4 min pěšky)"],
       ["education", "ZŠ Janáčkovo náměstí", "800 m (10 min pěšky)"],

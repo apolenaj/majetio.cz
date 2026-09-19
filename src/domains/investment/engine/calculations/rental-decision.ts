@@ -77,7 +77,7 @@ export function calculateRentalDecision(input: RentalDecisionInput): RentalDecis
   const equity = money(totalInvestment.minus(input.loanAmount));
   const exactPayment = input.loanAmount.isZero()
     ? null
-    : annuity(input.loanAmount, input.annualInterestRate, input.termYears);
+    : monthlyAnnuityPayment(input.loanAmount, input.annualInterestRate, input.termYears);
   const monthlyPayment = exactPayment ? money(exactPayment) : null;
   const annualDebt = exactPayment ? money(exactPayment.mul(12)) : new Decimal(0);
   const effectiveAnnualRent = money(input.monthlyNetRent.mul(12).mul(input.occupancy));
@@ -116,9 +116,14 @@ export function calculateRentalDecision(input: RentalDecisionInput): RentalDecis
   };
 }
 
-function annuity(principal: Decimal, annualRate: Decimal, termYears: number): Decimal {
+export function monthlyAnnuityPayment(
+  principal: Decimal,
+  annualRate: Decimal,
+  termYears: number,
+): Decimal {
   const months = Math.round(termYears * 12);
   if (months <= 0) throw new Error("splatnost musí vyjít alespoň na jeden měsíc");
+  if (principal.isZero()) return new Decimal(0);
   if (annualRate.isZero()) return principal.div(months);
   const monthlyRate = annualRate.div(12);
   const growth = monthlyRate.plus(1).pow(months);

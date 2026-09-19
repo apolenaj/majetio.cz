@@ -188,7 +188,7 @@ const catalogSeed: Array<
     stav_inzeratu: "klasicky",
     obrazky: {
       hlavni:
-        "https://images.unsplash.com/photo-1676578116771-8b5e17e9ce2d?auto=format&fit=crop&w=900&q=70",
+        "https://images.unsplash.com/photo-1687255634768-71ca855616c6?auto=format&fit=crop&w=900&q=70",
     },
     stitky: ["Pod tržním odhadem"],
     popis_upravy: "Klasika: Pouze venkovní fotky a pár tmavých fotek interiéru.",
@@ -509,13 +509,17 @@ export const TECHNICAL_CONDITION_LABEL: Record<TechnicalCondition, string> = {
   neuvedeno: "Neuvedeno",
 };
 
+/**
+ * Veřejná sada snímků. Nepáruje pred/po — u ukázky to často nebyly stejné pohledy.
+ * Další snímky bereme jen z `galerie`, aby inzerát nepůsobil jako koláž cizích domů.
+ */
 export function catalogShots(property: Property): { src: string; alt: string; label: string }[] {
-  const urls = [
-    property.obrazky.hlavni,
-    property.obrazky.pred_rekonstrukci,
-    property.obrazky.po_rekonstrukci,
-    ...property.galerie,
-  ].filter((src): src is string => Boolean(src));
+  const cover =
+    property.obrazky.hlavni ??
+    property.obrazky.po_rekonstrukci ??
+    property.obrazky.pred_rekonstrukci ??
+    property.galerie[0];
+  const urls = [cover, ...property.galerie].filter((src): src is string => Boolean(src));
   const seen = new Set<string>();
   const shots = [];
   for (const src of urls) {
@@ -525,10 +529,36 @@ export function catalogShots(property: Property): { src: string; alt: string; la
     shots.push({
       src,
       alt: property.nazev,
-      label: "Ilustrační fotografie",
+      label: "Ilustrační",
     });
   }
   return shots;
+}
+
+/** Spekulativní štítky bez doložené metodiky — neukazovat jako fakt nabídky. */
+export const SPECULATIVE_LISTING_TAGS = new Set([
+  "Pod tržním odhadem",
+  "Stabilní pronájem",
+  "Vysoký výnos",
+  "Fix & Rent",
+  "Cashflow pozitivní",
+  "Krátká návratnost",
+]);
+
+export function publicListingTags(stitky: readonly string[]): string[] {
+  return stitky.filter((tag) => !SPECULATIVE_LISTING_TAGS.has(tag));
+}
+
+export function findSimilarCatalogProperties(property: Property, limit = 3): Property[] {
+  return mockProperties
+    .filter(
+      (item) =>
+        item.id !== property.id &&
+        item.typ_transakce === property.typ_transakce &&
+        item.typ_nemovitosti === property.typ_nemovitosti,
+    )
+    .sort((a, b) => Math.abs(a.cena - property.cena) - Math.abs(b.cena - property.cena))
+    .slice(0, limit);
 }
 
 const CATALOG_SLUG_PREFIX = "ukazka-";
