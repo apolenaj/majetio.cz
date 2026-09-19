@@ -14,6 +14,7 @@ export function FinancingCalculatorClient({
   passportState,
   callbackUrl,
   handoffSource,
+  askingPriceCzk,
 }: {
   offers: CanonicalMortgageOffer[];
   freshness: MortgageFreshness | null;
@@ -21,6 +22,7 @@ export function FinancingCalculatorClient({
   passportState: PassportState | null;
   callbackUrl?: string;
   handoffSource?: string;
+  askingPriceCzk?: number | null;
 }) {
   return (
     <PropertyFinancingCalculator
@@ -30,6 +32,7 @@ export function FinancingCalculatorClient({
       passportState={passportState}
       callbackUrl={callbackUrl}
       handoffSource={handoffSource}
+      askingPriceCzk={askingPriceCzk}
     />
   );
 }

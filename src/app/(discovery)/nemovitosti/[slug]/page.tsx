@@ -63,7 +63,9 @@ import { resolveLocationIntelligenceForProperty } from "@/domains/locations/inte
 import { PropertyInquiryForm } from "@/components/listings/property-inquiry-form";
 import { CoPurchaseForm, PriceOfferForm } from "@/components/listings/negotiation-forms";
 import { CatalogPropertyDetail } from "@/components/property/search/catalog-property-detail";
-import { findCatalogPropertyBySlug } from "@/lib/mock-properties";
+import { getSiteOrigin } from "@/domains/seo/site-origin";
+import { catalogPropertyHref, findCatalogPropertyBySlug } from "@/lib/mock-properties";
+import { formatCzk } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -71,10 +73,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const catalog = findCatalogPropertyBySlug(slug);
   if (catalog) {
+    const sale = catalog.typ_transakce === "prodej";
+    const kind = catalog.typ_nemovitosti === "byt" ? "bytu" : "nemovitosti";
+    const title = `${sale ? "Prodej" : "Pronájem"} ${kind}${catalog.dispozice ? ` ${catalog.dispozice}` : ""}, ${catalog.plocha_m2} m², ${catalog.lokalita}`;
+    const description = `${catalog.nazev}. ${formatCzk(catalog.cena)}${sale ? "" : " měsíčně"}, ${catalog.lokalita}. Ukázková nabídka, ne živý inzerát.`;
+    const url = `${getSiteOrigin()}${catalogPropertyHref(catalog.id)}`;
     return {
-      title: `${catalog.nazev} | Ukázkový inzerát`,
-      description: catalog.detail_popis.slice(0, 160),
+      title,
+      description,
       robots: { index: false, follow: false },
+      alternates: { canonical: url },
+      openGraph: { title, description, url, type: "website" },
     };
   }
   const property = await loadPropertyDetailBySlug(slug);

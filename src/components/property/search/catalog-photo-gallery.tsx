@@ -18,6 +18,7 @@ export function CatalogPhotoGallery({ shots }: { shots: CatalogShot[] }) {
   const open = index !== null;
   const current = open ? shots[index] : undefined;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const swipeStart = useRef<number | null>(null);
   const titleId = useId();
 
   useEffect(() => {
@@ -160,16 +161,50 @@ export function CatalogPhotoGallery({ shots }: { shots: CatalogShot[] }) {
           >
             <ChevronLeft className="size-6" aria-hidden />
           </button>
-          <figure className="max-h-[85vh] max-w-5xl" onClick={(event) => event.stopPropagation()}>
+          <figure
+            className="max-h-[85vh] max-w-5xl"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => {
+              swipeStart.current = event.clientX;
+            }}
+            onPointerUp={(event) => {
+              if (swipeStart.current == null) return;
+              const delta = event.clientX - swipeStart.current;
+              swipeStart.current = null;
+              if (delta > 48) {
+                setIndex((value) =>
+                  value === null ? value : (value - 1 + shots.length) % shots.length,
+                );
+              } else if (delta < -48) {
+                setIndex((value) => (value === null ? value : (value + 1) % shots.length));
+              }
+            }}
+          >
             <img
               src={current.src}
               alt={current.alt}
-              className="max-h-[78vh] w-auto max-w-full object-contain"
+              className="max-h-[70vh] w-auto max-w-full object-contain"
             />
             <figcaption className="mt-3 text-center text-sm text-white">
               {current.label ? `${current.label} · ` : null}
               {(index ?? 0) + 1} / {shots.length}
             </figcaption>
+            {shots.length > 1 ? (
+              <div className="mt-3 flex justify-center gap-2 overflow-x-auto">
+                {shots.map((shot, shotIndex) => (
+                  <button
+                    key={`thumb-${shot.src}-${shotIndex}`}
+                    type="button"
+                    aria-label={`Fotografie ${shotIndex + 1}`}
+                    aria-current={shotIndex === index}
+                    className={shotIndex === index ? "ring-2 ring-white" : "opacity-70"}
+                    onClick={() => setIndex(shotIndex)}
+                  >
+                    <img src={shot.src} alt="" className="h-12 w-16 object-cover" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </figure>
           <button
             type="button"

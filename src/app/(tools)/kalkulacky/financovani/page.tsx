@@ -14,7 +14,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ cena?: string }>;
+}) {
+  const params = await searchParams;
+  const parsedPrice = Number(params.cena);
+  const askingPriceCzk = Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : null;
   const [session, { offers, freshness }] = await Promise.all([
     auth(),
     getCachedMortgageOffers(),
@@ -52,6 +59,7 @@ export default async function Page() {
         passportState={passportState}
         callbackUrl="/kalkulacky/financovani"
         handoffSource="kalkulacky/financovani"
+        askingPriceCzk={askingPriceCzk}
       />
     </Container>
   );
