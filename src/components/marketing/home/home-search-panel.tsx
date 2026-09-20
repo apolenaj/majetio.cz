@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Building2, MapPin, Wallet } from "lucide-react";
+import { Building2, Heart, MapPin, Wallet } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,7 @@ const PRICE_OPTIONS = [
 ];
 
 const fieldClass =
-  "flex h-11 w-full items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 text-sm text-[var(--text-primary)] focus-within:border-[var(--action-accent)] focus-within:ring-2 focus-within:ring-[var(--focus-ring)]";
+  "flex h-12 w-full items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)] px-3.5 text-sm text-[var(--text-primary)] focus-within:border-[var(--action-accent)] focus-within:ring-2 focus-within:ring-[var(--focus-ring)]";
 
 export function HomeSearchPanel() {
   const router = useRouter();
@@ -69,11 +69,11 @@ export function HomeSearchPanel() {
     <div className="relative z-10">
       <form
         onSubmit={onSubmit}
-        className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 py-3 shadow-[var(--shadow-card)] sm:px-4 sm:py-3.5"
+        className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-white px-4 py-4 shadow-[var(--shadow-card)] sm:px-5 sm:py-4"
         aria-label="Vyhledávání nemovitostí"
       >
         <div
-          className="flex flex-wrap gap-0.5 border-b border-[var(--border-default)] pb-2"
+          className="flex flex-wrap gap-1 border-b border-[var(--border-default)] pb-2.5"
           role="tablist"
           aria-label="Režim hledání"
         >
@@ -87,7 +87,7 @@ export function HomeSearchPanel() {
                 aria-selected={active}
                 onClick={() => setMode(item.id)}
                 className={cn(
-                  "relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  "relative rounded-sm px-3.5 py-2 text-sm font-medium transition-colors",
                   active
                     ? "text-[var(--action-accent)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
@@ -95,14 +95,14 @@ export function HomeSearchPanel() {
               >
                 {item.label}
                 {active ? (
-                  <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-[var(--action-accent)]" />
+                  <span className="absolute inset-x-2.5 -bottom-2.5 h-0.5 rounded-full bg-[var(--action-accent)]" />
                 ) : null}
               </button>
             );
           })}
         </div>
 
-        <div className="mt-2.5 grid gap-2 lg:grid-cols-[1fr_1.25fr_1fr_auto]">
+        <div className="mt-3.5 grid gap-2.5 lg:grid-cols-[1fr_1.3fr_1fr_auto_auto]">
           <label className={fieldClass}>
             <Building2 className="size-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
             <span className="sr-only">Typ nemovitosti</span>
@@ -122,12 +122,12 @@ export function HomeSearchPanel() {
 
           <label className={fieldClass}>
             <MapPin className="size-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
-            <span className="sr-only">Místo nebo lokalita</span>
+            <span className="sr-only">Město nebo lokalita</span>
             <input
               name="lokalita"
               value={lokalita}
               onChange={(e) => setLokalita(e.target.value)}
-              placeholder="Místo nebo lokalita"
+              placeholder="Město nebo lokalita"
               className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
               autoComplete="address-level2"
             />
@@ -152,30 +152,35 @@ export function HomeSearchPanel() {
 
           <button
             type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--action-accent)] px-5 text-sm font-semibold text-white transition-colors hover:bg-[var(--action-accent-hover)]"
+            className="inline-flex h-12 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--action-accent)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--action-accent-hover)]"
           >
-            Hledat
+            Hledat nemovitosti
           </button>
+
+          <Link
+            href={buildHref()}
+            className="inline-flex h-12 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--border-strong)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--background-primary)]"
+          >
+            Podrobné filtry
+          </Link>
         </div>
       </form>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 text-sm">
-        <Link
-          href={buildHref()}
-          className="font-medium text-[var(--action-accent)] underline-offset-2 hover:underline"
-        >
-          Podrobné filtry
-        </Link>
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-0.5 text-sm">
         <Link
           href="/nemovitosti?nabidka=prodej&razeni=hruby-vynos&jen-vypoctene=1"
           className="font-medium text-[var(--action-accent)] underline-offset-2 hover:underline"
         >
           Investiční filtry
         </Link>
+        <span className="text-[var(--border-strong)]" aria-hidden>
+          |
+        </span>
         <Link
           href="/ucet/oblibene"
-          className="text-[var(--text-secondary)] underline-offset-2 hover:underline"
+          className="inline-flex items-center gap-1.5 font-medium text-[var(--action-accent)] underline-offset-2 hover:underline"
         >
+          <Heart className="size-3.5" aria-hidden />
           Uložené nabídky
         </Link>
       </div>

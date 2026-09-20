@@ -6,7 +6,7 @@ export const brand = {
   },
   claims: {
     primary: "Než koupíte, mějte jasno.",
-    secondary: "Nemovitosti. Analýza. Rozhodnutí.",
+    secondary: "Nemovitosti s větším významem.",
     short: "Jasno před koupí.",
     english: "Clarity before you buy.",
     hero: "Vyplatí se tuto nemovitost koupit?",

@@ -60,10 +60,10 @@ export function SiteHeader(_props: {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-default)] bg-[color-mix(in_srgb,var(--background-primary)_94%,white)] backdrop-blur-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-default)] bg-[color-mix(in_srgb,var(--background-primary)_92%,white)] backdrop-blur-sm">
       <Container
         width="marketing"
-        className="flex h-[4.5rem] w-full items-center justify-between gap-4 px-4 sm:px-6"
+        className="flex h-[4.75rem] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
       >
         <div className="flex shrink-0 items-center">
           <Link
