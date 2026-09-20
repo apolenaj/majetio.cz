@@ -49,13 +49,13 @@ const SOCIAL = [
 export function SiteFooter() {
   return (
     <footer className="mt-auto bg-[var(--surface-inverse)] text-[var(--text-inverse)]">
-      <Container className="grid gap-8 py-8 sm:grid-cols-2 lg:grid-cols-6 lg:gap-6 lg:py-9">
+      <Container className="home-footer-compact grid gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:gap-3">
         <div className="lg:col-span-2">
-          <Logo variant="light" size="md" label="Majetio" />
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/70">
+          <Logo variant="light" size="sm" label="Majetio" />
+          <p className="mt-1.5 max-w-[13rem] text-[0.6875rem] leading-snug text-white/70">
             {brand.claims.secondary}
           </p>
-          <p className="mt-3 text-sm text-white/55">
+          <p className="mt-1.5 text-[0.6875rem] text-white/55">
             Financování:{" "}
             <a
               href="https://hypotekajasne.cz"
@@ -66,17 +66,17 @@ export function SiteFooter() {
               HypotekaJasne.cz
             </a>
           </p>
-          <ul className="mt-4 flex items-center gap-2">
+          <ul className="mt-2 flex items-center gap-1.5">
             {SOCIAL.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
-                  className="inline-flex size-8 items-center justify-center rounded-[4px] border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
+                  className="inline-flex size-6 items-center justify-center rounded-[4px] border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
                   aria-label={item.label}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <item.Icon className="size-3.5" />
+                  <item.Icon className="size-3" />
                 </a>
               </li>
             ))}
@@ -85,15 +85,15 @@ export function SiteFooter() {
 
         {FOOTER_GROUPS.map((group) => (
           <div key={group.title}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--action-accent)]">
+            <p className="text-[0.5625rem] font-semibold uppercase tracking-wide text-[var(--action-accent)]">
               {group.title}
             </p>
-            <ul className="mt-2.5 space-y-1.5">
+            <ul className="mt-1.5 space-y-0.5">
               {group.links.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm text-white/75 transition-colors hover:text-white"
+                    className="text-[0.6875rem] leading-snug text-white/75 transition-colors hover:text-white"
                   >
                     {item.label}
                   </Link>
@@ -104,7 +104,7 @@ export function SiteFooter() {
         ))}
       </Container>
       <div className="border-t border-white/10">
-        <Container className="flex flex-col gap-1 py-3 text-[11px] text-white/50 sm:flex-row sm:justify-between">
+        <Container className="flex flex-col gap-0.5 py-2 text-[10px] text-white/50 sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} {brand.domains.cz}
           </p>

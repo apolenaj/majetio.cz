@@ -34,17 +34,17 @@ export function HomeAssessmentEntry() {
   }
 
   return (
-    <div className="grid items-center gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-8">
+    <div className="grid items-center gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-6">
       <div>
-        <h2 className="home-heading text-[clamp(1.5rem,2.4vw,2rem)]">
+        <h2 className="home-heading text-xl">
           Máte vybranou nemovitost?
         </h2>
-        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+        <p className="mt-1 text-[0.8125rem] text-[var(--text-secondary)]">
           Pošlete nám odkaz a zjistěte možnosti posouzení.
         </p>
       </div>
       <form
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-1.5"
         onSubmit={(e) => {
           e.preventDefault();
           setStep(2);
@@ -59,7 +59,7 @@ export function HomeAssessmentEntry() {
               value={listingUrl}
               onChange={(e) => setListingUrl(e.target.value)}
               placeholder="Odkaz na inzerát (např. https://…)"
-              className="h-11 w-full rounded-[4px] border border-[var(--border-default)] bg-white px-3.5 text-sm outline-none focus:border-[var(--action-accent)] focus:ring-2 focus:ring-[var(--focus-ring)]"
+              className="h-11 w-full rounded-[4px] border border-[var(--border-default)] bg-white px-3 text-sm outline-none focus:border-[var(--action-accent)] focus:ring-2 focus:ring-[var(--focus-ring)]"
               autoComplete="url"
             />
           </label>
@@ -67,7 +67,7 @@ export function HomeAssessmentEntry() {
             Poptat posouzení
           </button>
         </div>
-        <p className="text-xs text-[var(--text-muted)]">Nezávazná poptávka.</p>
+        <p className="text-[0.6875rem] text-[var(--text-muted)]">Nezávazná poptávka.</p>
       </form>
     </div>
   );

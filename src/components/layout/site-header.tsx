@@ -63,7 +63,7 @@ export function SiteHeader(_props: {
     <header className="sticky top-0 z-40 w-full border-b border-[var(--border-default)] bg-white">
       <Container
         width="marketing"
-        className="flex h-[4.5rem] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-10"
+        className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-10"
       >
         <div className="flex shrink-0 items-center">
           <Link
@@ -76,7 +76,7 @@ export function SiteHeader(_props: {
               })
             }
           >
-            <Logo variant="dark" size="md" />
+            <Logo variant="dark" size="sm" />
           </Link>
         </div>
 
@@ -110,7 +110,7 @@ export function SiteHeader(_props: {
             href={NAV_PRIMARY_CTA.href}
             variant="primary"
             size="sm"
-            className="hidden h-auto whitespace-nowrap rounded-[4px] px-5 py-2.5 text-sm font-medium text-white xl:inline-flex"
+            className="hidden h-auto whitespace-nowrap rounded-[4px] bg-[var(--action-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--action-accent-hover)] xl:inline-flex"
             onClick={() =>
               track({
                 name: "primary_cta_clicked",

@@ -70,7 +70,7 @@ export function HomeSearchPanel() {
         aria-label="Vyhledávání nemovitostí"
       >
         <div
-          className="flex flex-wrap gap-0.5 border-b border-[var(--border-default)] pb-2"
+          className="flex flex-wrap gap-0.5 border-b border-[var(--border-default)] pb-1.5"
           role="tablist"
           aria-label="Režim hledání"
         >
@@ -84,7 +84,7 @@ export function HomeSearchPanel() {
                 aria-selected={active}
                 onClick={() => setMode(item.id)}
                 className={cn(
-                  "relative px-3.5 py-1.5 text-sm font-medium transition-colors",
+                  "relative px-3 py-1 text-[0.8125rem] font-medium transition-colors",
                   active
                     ? "text-[var(--action-accent)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
@@ -92,14 +92,14 @@ export function HomeSearchPanel() {
               >
                 {item.label}
                 {active ? (
-                  <span className="absolute inset-x-3 -bottom-2 h-0.5 bg-[var(--action-accent)]" />
+                  <span className="absolute inset-x-3 -bottom-1.5 h-0.5 bg-[var(--action-accent)]" />
                 ) : null}
               </button>
             );
           })}
         </div>
 
-        <div className="mt-3 grid gap-2 lg:grid-cols-[1fr_1.35fr_1fr_auto_auto]">
+        <div className="mt-2.5 grid gap-2 lg:grid-cols-[1fr_1.35fr_1fr_auto_auto]">
           <label className="home-search-field">
             <Building2 className="size-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
             <span className="sr-only">Typ nemovitosti</span>
@@ -162,7 +162,7 @@ export function HomeSearchPanel() {
         </div>
       </form>
 
-      <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm sm:justify-start">
+      <div className="home-search-links sm:justify-start">
         <Link
           href="/nemovitosti?nabidka=prodej&razeni=hruby-vynos&jen-vypoctene=1"
           className="home-link"

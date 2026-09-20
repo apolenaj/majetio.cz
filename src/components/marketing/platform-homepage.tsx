@@ -270,15 +270,12 @@ export function PlatformHomepage({
               <br />
               Poznejte její potenciál.
             </h1>
-            <p className="mt-3 max-w-md text-[0.9375rem] leading-relaxed text-[var(--text-secondary)]">
+            <p className="home-hero-lead">
               Pro bydlení i investici. S přehledem o ceně, nákladech a možnostech.
             </p>
-            <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+            <ul className="home-hero-benefits">
               {BENEFITS.map((item) => (
-                <li
-                  key={item.label}
-                  className="flex items-center gap-1.5 text-[0.8125rem] text-[var(--text-secondary)]"
-                >
+                <li key={item.label}>
                   <item.icon
                     className="size-3.5 stroke-[1.5] text-[var(--action-accent)]"
                     aria-hidden
@@ -288,7 +285,7 @@ export function PlatformHomepage({
               ))}
             </ul>
           </div>
-          <div className="home-hero-mobile-photo mt-4">
+          <div className="home-hero-mobile-photo">
             <Image
               src="/case-studies/homepage-hero.png"
               alt="Moderní bytový dům s balkony a zelení"
@@ -306,14 +303,12 @@ export function PlatformHomepage({
       </section>
 
       {/* PROPERTIES */}
-      <section className="home-section border-t border-[var(--border-default)] bg-white">
+      <section className="home-section-tight border-t border-[var(--border-default)] bg-white">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <p className="home-eyebrow">Doporučené nabídky</p>
-              <h2 className="home-heading mt-1.5 text-[clamp(1.625rem,2.6vw,2.25rem)]">
-                Objevte své další místo
-              </h2>
+              <h2 className="home-heading mt-1">Objevte své další místo</h2>
             </div>
             <Link href="/nemovitosti" className="home-link inline-flex items-center gap-1">
               Všechny nemovitosti
@@ -325,7 +320,7 @@ export function PlatformHomepage({
               Ukázkové karty — nejde o aktuální nabídky z katalogu.
             </p>
           ) : null}
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {displayListings.map((card) => (
               <HomePropertyCard
                 key={card.id ?? card.href}
@@ -338,36 +333,36 @@ export function PlatformHomepage({
       </section>
 
       {/* ANALYSIS */}
-      <section className="home-analysis home-section">
-        <Container className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+      <section className="home-analysis">
+        <Container className="grid items-center gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:gap-10">
           <div>
             <p className="home-eyebrow text-[var(--action-accent)]">
               Datově podložená rozhodnutí
             </p>
-            <h2 className="mt-2 font-display text-[clamp(1.75rem,3vw,2.5rem)] font-medium leading-[1.08] text-white">
+            <h2 className="home-analysis-title mt-1">
               Než si koupíte, podívejte se
               <br className="hidden sm:block" /> na čísla.
             </h2>
-            <p className="mt-3 max-w-md text-sm text-white/75">
+            <p className="mt-1.5 max-w-md text-[0.8125rem] text-white/75">
               Náklady, výnosy a rizika konkrétní nemovitosti v jedné analýze.
             </p>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-3">
+            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
               {ANALYSIS_POINTS.map((item) => (
                 <li key={item.title} className="flex items-start gap-2">
-                  <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--action-accent)]/20 text-[var(--action-accent)]">
+                  <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--action-accent)]/20 text-[var(--action-accent)]">
                     <item.icon className="size-3.5 stroke-[1.5]" aria-hidden />
                   </span>
-                  <span className="text-sm font-medium leading-snug text-white">
+                  <span className="text-[0.75rem] font-medium leading-snug text-white">
                     {item.title}
                   </span>
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-sm text-white/65">Podrobná analýza</p>
-            <p className="font-metric text-[1.75rem] tracking-tight text-white">
+            <p className="mt-3 text-[0.6875rem] text-white/65">Podrobná analýza</p>
+            <p className="font-metric text-xl tracking-tight text-white">
               {formatCzk(publicCustomerOffer.priceGrossCzk)}
             </p>
-            <div className="mt-5 flex flex-wrap gap-2.5">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link
                 href="/ukazky/byt-dlouhodoby-pronajem"
                 className="home-btn-outline-light"
@@ -384,19 +379,19 @@ export function PlatformHomepage({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="home-eyebrow">Modelová analýza</p>
-                <p className="mt-1 font-display text-lg text-[var(--text-primary)]">
+                <p className="mt-0.5 font-display text-base text-[var(--text-primary)]">
                   {houseRenovationStudy.shortTitle}
                 </p>
               </div>
-              <span className="rounded-[4px] bg-[var(--action-accent)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--action-accent)]">
+              <span className="rounded-[4px] bg-[var(--action-accent)]/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--action-accent)]">
                 Přehled
               </span>
             </div>
 
-            <dl className="mt-4 space-y-3">
+            <dl className="mt-2.5 space-y-2">
               {ANALYSIS_BARS.map((row) => (
                 <div key={row.label}>
-                  <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
+                  <div className="mb-0.5 flex items-baseline justify-between gap-2 text-[0.75rem]">
                     <dt className="text-[var(--text-secondary)]">{row.label}</dt>
                     <dd className="font-metric font-medium">{row.value}</dd>
                   </div>
@@ -409,22 +404,22 @@ export function PlatformHomepage({
                 </div>
               ))}
             </dl>
-            <p className="mt-2 text-[10px] leading-snug text-[var(--text-muted)]">
+            <p className="mt-1 text-[10px] leading-snug text-[var(--text-muted)]">
               Modelová struktura nákladů ze studie — ne tržní ocenění.
             </p>
 
-            <div className="relative mt-4 grid grid-cols-2 gap-2.5">
+            <div className="home-analysis-thumbs">
               <figure>
                 <div className="overflow-hidden rounded-[4px]">
                   <Image
                     src="/case-studies/house-before.png"
                     alt="Před rekonstrukcí"
-                    width={360}
-                    height={240}
-                    className="aspect-[4/3] w-full object-cover"
+                    width={280}
+                    height={160}
+                    className="aspect-[8/5] max-h-[6.25rem] w-full object-cover"
                   />
                 </div>
-                <figcaption className="mt-1 text-center text-[11px] text-[var(--text-muted)]">
+                <figcaption className="mt-0.5 text-center text-[10px] text-[var(--text-muted)]">
                   Před
                 </figcaption>
               </figure>
@@ -433,12 +428,12 @@ export function PlatformHomepage({
                   <Image
                     src="/case-studies/house-after-visualization.png"
                     alt="Po rekonstrukci — model"
-                    width={360}
-                    height={240}
-                    className="aspect-[4/3] w-full object-cover"
+                    width={280}
+                    height={160}
+                    className="aspect-[8/5] max-h-[6.25rem] w-full object-cover"
                   />
                 </div>
-                <figcaption className="mt-1 text-center text-[11px] text-[var(--text-muted)]">
+                <figcaption className="mt-0.5 text-center text-[10px] text-[var(--text-muted)]">
                   Po
                 </figcaption>
               </figure>
@@ -448,12 +443,10 @@ export function PlatformHomepage({
       </section>
 
       {/* TOOLS */}
-      <section className="home-section bg-white">
+      <section className="home-section-tight bg-white">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="home-heading text-[clamp(1.625rem,2.6vw,2.25rem)]">
-              Analýzy a kalkulačky
-            </h2>
+            <h2 className="home-heading">Analýzy a kalkulačky</h2>
             <Link
               href="/analyzy-a-kalkulacky"
               className="home-link inline-flex items-center gap-1"
@@ -462,20 +455,18 @@ export function PlatformHomepage({
               <ArrowRight className="size-3.5" aria-hidden />
             </Link>
           </div>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map((tool) => (
               <Link key={tool.href} href={tool.href} className="home-card home-tool-card">
                 <tool.icon
-                  className="mt-0.5 size-5 shrink-0 stroke-[1.5] text-[var(--action-accent)]"
+                  className="mt-0.5 size-[22px] shrink-0 stroke-[1.5] text-[var(--action-accent)]"
                   aria-hidden
                 />
                 <span>
-                  <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                  <span className="home-card-title text-[var(--text-primary)]">
                     {tool.title}
                   </span>
-                  <span className="mt-0.5 block text-sm text-[var(--text-muted)]">
-                    {tool.text}
-                  </span>
+                  <span className="home-card-desc block">{tool.text}</span>
                 </span>
               </Link>
             ))}
@@ -484,25 +475,21 @@ export function PlatformHomepage({
       </section>
 
       {/* MODES */}
-      <section className="home-section border-y border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)]">
+      <section className="home-section-tight border-y border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)]">
         <Container>
-          <h2 className="home-heading text-[clamp(1.625rem,2.6vw,2.25rem)]">
-            Více možností bydlení a investování
-          </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="home-heading">Více možností bydlení a investování</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {MODES.map((mode) => (
               <Link key={mode.href} href={mode.href} className="home-card home-mode-card">
                 <mode.icon
-                  className="mt-0.5 size-5 shrink-0 stroke-[1.5] text-[var(--action-accent)]"
+                  className="mt-0.5 size-[22px] shrink-0 stroke-[1.5] text-[var(--action-accent)]"
                   aria-hidden
                 />
                 <span>
-                  <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                  <span className="home-card-title text-[var(--text-primary)]">
                     {mode.title}
                   </span>
-                  <span className="mt-0.5 block text-sm leading-snug text-[var(--text-muted)]">
-                    {mode.text}
-                  </span>
+                  <span className="home-card-desc block">{mode.text}</span>
                 </span>
               </Link>
             ))}
@@ -511,9 +498,9 @@ export function PlatformHomepage({
       </section>
 
       {/* CATEGORIES — image overlay text */}
-      <section className="home-section bg-white">
+      <section className="home-section-tight bg-white">
         <Container>
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-3.5 md:grid-cols-3">
             {PROJECTS.map((project) => (
               <Link
                 key={project.href}
@@ -528,7 +515,7 @@ export function PlatformHomepage({
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
                 <span className="home-category-label">
-                  <span className="font-display text-lg leading-tight">
+                  <span className="font-display text-[0.9375rem] leading-tight">
                     {project.title}
                   </span>
                   <ArrowRight className="size-4 shrink-0" aria-hidden />
@@ -540,18 +527,16 @@ export function PlatformHomepage({
       </section>
 
       {/* STUDIES */}
-      <section className="home-section border-t border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)]">
+      <section className="home-section-tight border-t border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)]">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="home-heading text-[clamp(1.625rem,2.6vw,2.25rem)]">
-              Podívejte se, co odhalí analýza
-            </h2>
+            <h2 className="home-heading">Podívejte se, co odhalí analýza</h2>
             <Link href="/ukazky" className="home-link inline-flex items-center gap-1">
               Další modelové studie
               <ArrowRight className="size-3.5" aria-hidden />
             </Link>
           </div>
-          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
             {STUDY_TEASERS.map((study) => (
               <Link
                 key={study.slug}
@@ -564,15 +549,15 @@ export function PlatformHomepage({
                     alt=""
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                    sizes="15vw"
+                    sizes="12vw"
                   />
                 </div>
-                <div className="flex flex-1 flex-col justify-center gap-1 p-3.5">
+                <div className="flex flex-1 flex-col justify-center gap-0.5 p-2.5">
                   <p className="home-eyebrow">Modelová studie</p>
-                  <h3 className="font-display text-base leading-snug text-[var(--text-primary)] group-hover:text-[var(--action-accent)]">
+                  <h3 className="font-display text-[0.875rem] leading-snug text-[var(--text-primary)] group-hover:text-[var(--action-accent)]">
                     {study.title}
                   </h3>
-                  <p className="text-sm leading-snug text-[var(--text-muted)]">
+                  <p className="line-clamp-2 text-[0.6875rem] leading-snug text-[var(--text-muted)]">
                     {study.text}
                   </p>
                 </div>
@@ -584,19 +569,19 @@ export function PlatformHomepage({
 
       {/* SELLER */}
       <section className="home-seller-strip home-section-tight">
-        <Container className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--action-accent)]/30 text-[var(--action-accent)]">
-              <KeyRound className="size-4 stroke-[1.5]" aria-hidden />
+        <Container className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+          <div className="flex items-start gap-2.5">
+            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-[var(--action-accent)]/30 text-[var(--action-accent)]">
+              <KeyRound className="size-3.5 stroke-[1.5]" aria-hidden />
             </span>
             <div>
-              <h2 className="home-heading text-xl">Prodáváte nebo pronajímáte?</h2>
-              <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+              <h2 className="home-heading text-lg">Prodáváte nebo pronajímáte?</h2>
+              <p className="mt-0.5 text-[0.8125rem] text-[var(--text-secondary)]">
                 Pro majitele, makléře, realitní kanceláře i developery.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-2">
             <Link href="/pridat-nemovitost" className="home-btn-primary">
               Přidat nemovitost
             </Link>
@@ -661,20 +646,20 @@ function HomePropertyCard({
             <Heart className="size-3.5" />
           </span>
         </div>
-        <div className="space-y-1 p-3.5">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-semibold leading-snug text-[var(--text-primary)]">
-              {property.title}
-            </p>
-            <p className="shrink-0 font-metric text-base font-semibold text-[var(--text-primary)]">
+        <div className="home-prop-body">
+          <div className="home-prop-row">
+            <p className="home-prop-title">{property.title}</p>
+            <p className="home-prop-price">
               {property.priceCzk != null
                 ? formatCzk(property.priceCzk)
                 : "Na vyžádání"}
             </p>
           </div>
-          <p className="text-sm text-[var(--text-secondary)]">{property.location}</p>
+          <p className="mt-0.5 text-[0.8125rem] text-[var(--text-secondary)]">
+            {property.location}
+          </p>
           {property.shortDescription ? (
-            <p className="line-clamp-2 text-sm text-[var(--text-muted)]">
+            <p className="mt-0.5 line-clamp-2 text-[0.75rem] text-[var(--text-muted)]">
               {property.shortDescription}
             </p>
           ) : null}
