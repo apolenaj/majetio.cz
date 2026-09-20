@@ -46,13 +46,20 @@ export const CONSTRUCTION_OPTIONS = [
 
 export const AMENITY_OPTIONS = [
   { value: "balkon", label: "Balkon" },
+  { value: "bez_balkon", label: "Bez balkonu" },
   { value: "lodzie", label: "Lodžie" },
+  { value: "bez_lodzie", label: "Bez lodžie" },
   { value: "terasa", label: "Terasa" },
+  { value: "bez_terasa", label: "Bez terasy" },
   { value: "zahrada", label: "Zahrada" },
   { value: "sklep", label: "Sklep" },
+  { value: "bez_sklep", label: "Bez sklepa" },
   { value: "garaz", label: "Garáž" },
+  { value: "bez_garaz", label: "Bez garáže" },
   { value: "parkovani", label: "Parkovací stání" },
+  { value: "bez_parkovani", label: "Bez parkování" },
   { value: "vytah", label: "Výtah" },
+  { value: "bez_vytah", label: "Bez výtahu" },
   { value: "bezbarierovy", label: "Bezbariérový přístup" },
 ] as const;
 

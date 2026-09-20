@@ -49,6 +49,9 @@ export default async function MojeNabidkyPage() {
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
                   {item.status} · {item.publicCity ?? "—"} · poptávek:{" "}
                   {item._count.inquiries}
+                  {item.parametersNeedCompletion
+                    ? " · potřebuje doplnění parametrů"
+                    : ""}
                 </p>
               </div>
               <div className="flex gap-2 text-sm">

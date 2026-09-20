@@ -55,6 +55,15 @@ export const SEARCH_AMENITIES = [
   "parking",
   "elevator",
   "barrierFree",
+  "bez_balcony",
+  "bez_loggia",
+  "bez_terrace",
+  "bez_garden",
+  "bez_cellar",
+  "bez_garage",
+  "bez_parking",
+  "bez_elevator",
+  "bez_barrierFree",
 ] as const;
 
 /** Named sort presets — mapped server-side; never interpolated into SQL. */

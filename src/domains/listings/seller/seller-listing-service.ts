@@ -8,6 +8,18 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Prisma, PropertyType, TransactionType } from "@prisma/client";
 
 import { validatePropertyForPublish } from "@/domains/properties/admin/publish-validation";
+import {
+  answersFromFeatureRow,
+  landUtilitiesFromDetailsJson,
+  missingRequiredFeatureLabels,
+  presenceToDb,
+  sanitizeDetailsForAnswers,
+  validateFeaturesForPublish,
+  type FeatureAnswers,
+  type FeatureDetailsMap,
+  type LandUtilityKey,
+  type UtilityStatus,
+} from "@/domains/properties/parameters";
 import { prisma } from "@/lib/db";
 import {
   deleteListingObject,
@@ -54,6 +66,9 @@ export type SellerListingInput = {
   acceptsCoPurchaseSeekPartner?: boolean;
   acceptsCoPurchaseSellerRetains?: boolean;
   offeredOwnershipPercent?: number | null;
+  featureAnswers?: FeatureAnswers;
+  featureDetails?: FeatureDetailsMap;
+  landUtilities?: Partial<Record<LandUtilityKey, UtilityStatus>>;
 };
 
 function slugify(input: string): string {
@@ -78,6 +93,57 @@ async function uniqueSlug(base: string): Promise<string> {
     if (!exists) return candidate;
   }
   return `${root}-${randomBytes(4).toString("hex")}`;
+}
+
+async function upsertListingFeatures(input: {
+  propertyId: string;
+  propertyType: string;
+  answers?: FeatureAnswers;
+  details?: FeatureDetailsMap;
+  landUtilities?: Partial<Record<LandUtilityKey, UtilityStatus>>;
+}): Promise<void> {
+  if (!input.answers) return;
+  const details = sanitizeDetailsForAnswers(
+    input.answers,
+    input.details ?? {},
+  );
+  const payload: Record<string, unknown> = { ...details };
+  if (input.propertyType === "LAND" && input.landUtilities) {
+    payload.utilities = input.landUtilities;
+  }
+  const missing = missingRequiredFeatureLabels({
+    propertyType: input.propertyType,
+    answers: input.answers,
+  });
+  const data = {
+    balcony: presenceToDb(input.answers.balcony ?? "unset"),
+    loggia: presenceToDb(input.answers.loggia ?? "unset"),
+    terrace: presenceToDb(input.answers.terrace ?? "unset"),
+    garden: presenceToDb(input.answers.garden ?? "unset"),
+    cellar: presenceToDb(input.answers.cellar ?? "unset"),
+    garage: presenceToDb(input.answers.garage ?? "unset"),
+    parking: presenceToDb(input.answers.parking ?? "unset"),
+    elevator: presenceToDb(input.answers.elevator ?? "unset"),
+    barrierFree: presenceToDb(input.answers.barrierFree ?? "unset"),
+    pool: presenceToDb(input.answers.pool ?? "unset"),
+    furnished: presenceToDb(input.answers.furnished ?? "unset"),
+    details: payload as Prisma.InputJsonValue,
+  };
+
+  await prisma.$transaction([
+    prisma.propertyFeatures.upsert({
+      where: { propertyId: input.propertyId },
+      create: { propertyId: input.propertyId, ...data },
+      update: data,
+    }),
+    prisma.property.update({
+      where: { id: input.propertyId },
+      data: {
+        hasElevator: data.elevator,
+        parametersNeedCompletion: missing.length > 0,
+      },
+    }),
+  ]);
 }
 
 function buildMarketExtensions(
@@ -230,6 +296,14 @@ export async function createSellerDraft(input: {
     select: { id: true, slug: true },
   });
 
+  await upsertListingFeatures({
+    propertyId: property.id,
+    propertyType: input.data.propertyType,
+    answers: input.data.featureAnswers,
+    details: input.data.featureDetails,
+    landUtilities: input.data.landUtilities,
+  });
+
   return { ok: true, propertyId: property.id, slug: property.slug };
 }
 
@@ -305,6 +379,14 @@ export async function updateSellerDraft(input: {
     },
   });
 
+  await upsertListingFeatures({
+    propertyId: input.propertyId,
+    propertyType: input.data.propertyType,
+    answers: input.data.featureAnswers,
+    details: input.data.featureDetails,
+    landUtilities: input.data.landUtilities,
+  });
+
   return { ok: true };
 }
 
@@ -317,6 +399,7 @@ export async function publishSellerListing(input: {
 
   const property = await prisma.property.findUnique({
     where: { id: input.propertyId },
+    include: { features: true },
   });
   if (!property) return { ok: false, error: "Nabídka nenalezena." };
 
@@ -339,6 +422,37 @@ export async function publishSellerListing(input: {
     };
   }
 
+  const answers = answersFromFeatureRow(property.features);
+  const detailsRaw = property.features?.details;
+  const details =
+    detailsRaw && typeof detailsRaw === "object" && !Array.isArray(detailsRaw)
+      ? (detailsRaw as FeatureDetailsMap)
+      : {};
+  const landUtilities =
+    property.propertyType === "LAND"
+      ? landUtilitiesFromDetailsJson(detailsRaw)
+      : undefined;
+  const featureValidation = validateFeaturesForPublish({
+    propertyType: property.propertyType,
+    answers,
+    details,
+    landUtilities,
+  });
+  const missingFeatures = missingRequiredFeatureLabels({
+    propertyType: property.propertyType,
+    answers,
+  });
+  if (!featureValidation.ok || missingFeatures.length > 0) {
+    const labels = missingFeatures.length
+      ? missingFeatures
+      : [...new Set(featureValidation.issues.map((i) => i.labelCs))];
+    return {
+      ok: false,
+      error: `K publikaci doplňte: ${labels.join(", ")}.`,
+      issues: featureValidation.issues.map((i) => i.field),
+    };
+  }
+
   const updated = await prisma.property.update({
     where: { id: input.propertyId },
     data: {
@@ -346,6 +460,7 @@ export async function publishSellerListing(input: {
       publishedAt: property.publishedAt ?? new Date(),
       lastSeenAt: new Date(),
       freshness: "FRESH",
+      parametersNeedCompletion: false,
     },
     select: { slug: true },
   });

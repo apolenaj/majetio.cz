@@ -60,5 +60,6 @@ export function mapPublicDtoToPropertyCard(
     acceptsPriceOffers: dto.acceptsPriceOffers === true,
     acceptsCoPurchase:
       dto.acceptsCoPurchaseSeekPartner === true || dto.acceptsCoPurchaseSellerRetains === true,
+    featureHighlights: "featureHighlights" in dto ? dto.featureHighlights : undefined,
   };
 }

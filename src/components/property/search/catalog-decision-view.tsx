@@ -6,10 +6,12 @@ import { ArrowLeft, Bus, HeartPulse, Home, School, ShoppingCart, TrendingUp } fr
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { DemoNegotiationForms } from "@/components/listings/demo-negotiation-forms";
+import { AnalysisOfferCard } from "@/components/property/analysis-offer-card";
 import { CatalogPhotoGallery } from "@/components/property/search/catalog-photo-gallery";
 import { PropertyCard } from "@/components/property/search/catalog-property-card";
 import { CatalogViewingChecklist } from "@/components/property/search/catalog-viewing-checklist";
 import { Container } from "@/components/ui/container";
+import { getSiteOrigin } from "@/domains/seo/site-origin";
 import {
   buildModelDecision,
   matchCatalogComparables,
@@ -237,35 +239,42 @@ export function CatalogDecisionView({ property }: { property: Property }) {
           <section id="parametry" className="scroll-mt-28 mt-10">
             <h2 className="font-display text-2xl">Parametry</h2>
             <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              <ParamGroup title="Základní" rows={[
+              <ParamGroup title="Základní informace" rows={[
                 ["Dispozice", property.dispozice ?? "Neuvedeno"],
                 ["Užitná plocha", area],
-                ["Podlahová plocha", "Neuvedeno"],
                 ["Vlastnictví", "Neuvedeno"],
                 ["Stav", TECHNICAL_CONDITION_LABEL[property.technicky_stav]],
                 ["Typ stavby", property.konstrukce ?? "Neuvedeno"],
                 ["Patro", "Neuvedeno"],
-                ["Počet pater", "Neuvedeno"],
               ]} />
-              <ParamGroup title="Vybavení" rows={[
-                ["Výtah", property.vytah == null ? "Neuvedeno" : property.vytah ? "Ano" : "Ne"],
-                ["Balkon", "Neuvedeno"],
+              <ParamGroup
+                title="Venkovní prostory"
+                rows={(
+                  [
+                    ["Balkon", "Neuvedeno"],
+                    ["Lodžie", "Neuvedeno"],
+                    ["Terasa", "Neuvedeno"],
+                    ...(property.typ_nemovitosti === "dum"
+                      ? ([["Zahrada", "Neuvedeno"]] as Array<[string, string]>)
+                      : []),
+                  ] as Array<[string, string]>
+                )}
+              />
+              <ParamGroup title="Úložné prostory a parkování" rows={[
                 ["Sklep", "Neuvedeno"],
                 ["Parkování", "Neuvedeno"],
-                ["Bezbariérovost", "Neuvedeno"],
+                ["Garáž", "Neuvedeno"],
               ]} />
-              <ParamGroup title="Technické" rows={[
+              <ParamGroup title="Technické vybavení" rows={[
+                ["Výtah", property.vytah == null ? "Neuvedeno" : property.vytah ? "Ano" : "Není"],
+                ["Bezbariérový přístup", "Neuvedeno"],
                 ["PENB", "Neuvedeno"],
-                ["Vytápění", "Neuvedeno"],
-                ["Rok stavby", "Neuvedeno"],
                 ["Rok rekonstrukce", "Neuvedeno"],
               ]} />
-              <ParamGroup title="Další" rows={[
-                ["Dostupnost", "Neuvedeno"],
-                ["Fond oprav", "Neuvedeno"],
-                ["SVJ", "Neuvedeno"],
-              ]} />
             </div>
+            <p className="mt-3 text-xs text-[var(--text-muted)]">
+              Ukázka nemá potvrzené Ano/Ne od inzerenta. Neuvedeno ≠ Není.
+            </p>
           </section>
 
           <section id="trh" className="scroll-mt-28 mt-10">
@@ -440,6 +449,8 @@ export function CatalogDecisionView({ property }: { property: Property }) {
               <Risk title="Energetika" level="Nutné ověřit" text="Chybí PENB. Neuvedeno není třída G." />
             </ul>
           </section>
+
+          <CatalogAnalysisOffer property={property} sale={sale} />
 
           <section className="mt-10">
             <h2 className="font-display text-2xl">Co ověřit před koupí</h2>
@@ -750,6 +761,41 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+function CatalogAnalysisOffer({
+  property,
+  sale,
+}: {
+  property: Property;
+  sale: boolean;
+}) {
+  const typeMap = {
+    byt: "APARTMENT",
+    dum: "HOUSE",
+    pozemek: "LAND",
+    komerce: "COMMERCIAL",
+  } as const;
+  return (
+    <div className="mt-10">
+      <AnalysisOfferCard
+        property={{
+          id: String(property.id),
+          slug: String(property.id),
+          title: property.nazev,
+          canonicalUrl: `${getSiteOrigin()}${catalogPropertyHref(property.id)}`,
+          locality: property.lokalita,
+          askingPrice: property.cena,
+          currency: "CZK",
+          transactionType: sale ? "SALE" : "RENT",
+          propertyType: typeMap[property.typ_nemovitosti],
+          isDemo: true,
+          layout: property.dispozice,
+          usableArea: property.plocha_m2,
+        }}
+      />
+    </div>
+  );
+}
+
 function ParamGroup({ title, rows }: { title: string; rows: Array<[string, string]> }) {
   return (
     <div>

@@ -38,12 +38,21 @@ export function CheckoutWizard({
   defaultName,
   initialProductKey = "full_analysis",
   analysisId = null,
+  propertyId = null,
+  propertySummary = null,
   products,
 }: {
   defaultEmail?: string | null;
   defaultName?: string | null;
   initialProductKey?: string;
   analysisId?: string | null;
+  propertyId?: string | null;
+  propertySummary?: {
+    title: string;
+    locality: string;
+    priceLabel: string | null;
+    photoUrl: string | null;
+  } | null;
   products: CheckoutProductOption[];
 }) {
   const router = useRouter();
@@ -116,7 +125,7 @@ export function CheckoutWizard({
     }
     setBusy(true);
     setError(null);
-    const storageKey = `majetio.checkout.idem:${productKey}:${analysisId ?? ""}`;
+    const storageKey = `majetio.checkout.idem:${productKey}:${analysisId ?? ""}:${propertyId ?? ""}`;
     let idempotencyKey: string | undefined;
     try {
       const existing =
@@ -138,6 +147,7 @@ export function CheckoutWizard({
     const result = await startCheckoutAction({
       productKey,
       analysisId,
+      propertyId,
       promoCode: promoCode || null,
       billing,
       acceptPurchaseTerms: true,
@@ -205,6 +215,27 @@ export function CheckoutWizard({
         <Card className="space-y-4 p-5">
           <h1 className="font-display text-2xl">Rekapitulace</h1>
           <p className="text-sm text-[var(--text-secondary)]">{productName}</p>
+          {propertySummary ? (
+            <div className="flex gap-3 rounded-lg border border-[var(--border-default)] p-3">
+              {propertySummary.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={propertySummary.photoUrl}
+                  alt=""
+                  className="h-14 w-18 rounded object-cover"
+                />
+              ) : null}
+              <div className="min-w-0">
+                <p className="truncate font-medium">{propertySummary.title}</p>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {propertySummary.locality}
+                </p>
+                {propertySummary.priceLabel ? (
+                  <p className="text-sm font-metric">{propertySummary.priceLabel}</p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
           {display ? (
             <dl className="grid grid-cols-2 gap-2 text-sm">
               <dt className="text-[var(--text-muted)]">Cena bez DPH</dt>

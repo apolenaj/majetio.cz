@@ -63,9 +63,24 @@ import { resolveLocationIntelligenceForProperty } from "@/domains/locations/inte
 import { PropertyInquiryForm } from "@/components/listings/property-inquiry-form";
 import { CoPurchaseForm, PriceOfferForm } from "@/components/listings/negotiation-forms";
 import { CatalogPropertyDetail } from "@/components/property/search/catalog-property-detail";
+import { PropertyFeaturesPanel } from "@/components/property/property-features-panel";
+import { AnalysisOfferCard } from "@/components/property/analysis-offer-card";
 import { getSiteOrigin } from "@/domains/seo/site-origin";
 import { catalogPropertyHref, findCatalogPropertyBySlug } from "@/lib/mock-properties";
 import { formatCzk } from "@/lib/format";
+import {
+  buildPublicFeatureGroups,
+  detailsFromJson,
+  landUtilitiesFromDetailsJson,
+} from "@/domains/properties/parameters";
+import {
+  areaLabel,
+  conditionLabel,
+  energyLabel,
+  floorLabel,
+  ownershipLabel,
+  propertyTypeLabel,
+} from "@/domains/properties/service/identity-labels";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -373,6 +388,27 @@ export default async function PropertyDetailPage({ params }: Props) {
               />
             </section>
 
+            <AnalysisOfferCard
+              property={{
+                id: property.id,
+                slug: property.slug,
+                title: property.title,
+                canonicalUrl: `${getSiteOrigin()}/nemovitosti/${property.slug}`,
+                locality:
+                  locationLine ||
+                  property.location.label ||
+                  property.location.city ||
+                  "Neuvedeno",
+                askingPrice: property.askingPrice,
+                currency: property.currency,
+                transactionType: property.transactionType,
+                propertyType: property.propertyType,
+                isDemo: property.isDemo,
+                layout: property.layout,
+                usableArea: property.usableArea,
+              }}
+            />
+
             <section id="lokalita" className="scroll-mt-28">
               <MobileDisclosure title="Lokalita a mapa (rozbalit)">
                 <LazyPropertyLocationSection
@@ -438,6 +474,30 @@ export default async function PropertyDetailPage({ params }: Props) {
 
             <PropertyIdentityGrid property={property} />
 
+            <PropertyFeaturesPanel
+              basicRows={[
+                { label: "Typ", value: propertyTypeLabel(property.propertyType) },
+                { label: "Dispozice", value: property.layout ?? "Neuvedeno" },
+                {
+                  label: "Užitná plocha",
+                  value: areaLabel(property.usableArea, property.usableAreaDisplay),
+                },
+                { label: "Vlastnictví", value: ownershipLabel(property.ownershipType) },
+                { label: "Stav", value: conditionLabel(property.condition) },
+                {
+                  label: "Patro",
+                  value: floorLabel(property.floor, property.floorsTotal),
+                },
+                { label: "PENB", value: energyLabel(property.energyRating) },
+              ]}
+              groups={buildPublicFeatureGroups({
+                propertyType: property.propertyType,
+                answers: property.features ?? {},
+                details: detailsFromJson(property.featureDetails),
+                landUtilities: landUtilitiesFromDetailsJson(property.featureDetails),
+              })}
+            />
+
             {property.description ? (
               <section aria-labelledby="property-desc-heading">
                 <h2
@@ -490,6 +550,29 @@ export default async function PropertyDetailPage({ params }: Props) {
                   defaultName={session?.user?.name}
                   defaultEmail={session?.user?.email}
                 />
+                <div className="mt-4 border-t border-[var(--border-default)] pt-3">
+                  <AnalysisOfferCard
+                    compact
+                    property={{
+                      id: property.id,
+                      slug: property.slug,
+                      title: property.title,
+                      canonicalUrl: `${getSiteOrigin()}/nemovitosti/${property.slug}`,
+                      locality:
+                        locationLine ||
+                        property.location.label ||
+                        property.location.city ||
+                        "Neuvedeno",
+                      askingPrice: property.askingPrice,
+                      currency: property.currency,
+                      transactionType: property.transactionType,
+                      propertyType: property.propertyType,
+                      isDemo: property.isDemo,
+                      layout: property.layout,
+                      usableArea: property.usableArea,
+                    }}
+                  />
+                </div>
               </section>
             ) : null}
             {!property.isDemo && property.transactionType === "SALE" && property.status === "ACTIVE" && property.acceptsPriceOffers ? (

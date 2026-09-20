@@ -16,6 +16,10 @@ import {
 } from "@/domains/listings/seller/seller-listing-service";
 import { createInquiry } from "@/domains/crm/inquiry-service";
 import { validateAdvertiserShortDescription } from "@/domains/listings/negotiations/validate";
+import {
+  collectAnswersFromForm,
+  parseLandUtilities,
+} from "@/domains/properties/parameters";
 
 export type ListingActionResult =
   | { ok: true; message?: string; propertyId?: string; slug?: string }
@@ -107,6 +111,9 @@ function parseListingForm(formData: FormData): {
   const offerEnabled = Boolean(v.offerPriceEnabled);
   const shortDescription = validateAdvertiserShortDescription(v.shortDescription);
   if (!shortDescription.ok) return shortDescription;
+  const { answers, details } = collectAnswersFromForm(formData, v.propertyType);
+  const landUtilities =
+    v.propertyType === "LAND" ? parseLandUtilities(formData) : undefined;
   return {
     ok: true,
     data: {
@@ -147,6 +154,9 @@ function parseListingForm(formData: FormData): {
       acceptsCoPurchaseSeekPartner: Boolean(v.acceptsCoPurchaseSeekPartner),
       acceptsCoPurchaseSellerRetains: Boolean(v.acceptsCoPurchaseSellerRetains),
       offeredOwnershipPercent: v.offeredOwnershipPercent ?? null,
+      featureAnswers: answers,
+      featureDetails: details,
+      landUtilities,
     },
   };
 }

@@ -69,6 +69,8 @@ export async function loadDiscoveryListings(): Promise<SearchableListing[]> {
       cashFlowMonthlyCzk: record.cashFlowMonthlyCzk ?? null,
       grossYieldPct: record.grossYieldPct ?? null,
       majetioScore: record.majetioScore ?? null,
+      features: dto.features,
+      hasElevator: record.hasElevator ?? dto.features?.elevator ?? null,
     };
     return extra;
   });

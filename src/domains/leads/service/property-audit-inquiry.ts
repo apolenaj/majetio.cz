@@ -4,6 +4,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { applyLeadRouting } from "@/domains/crm/pipeline";
@@ -15,6 +16,7 @@ import { assertSafeOutboundUrl } from "@/lib/security/ssrf";
 
 const PURPOSE_VALUES = [
   "bydleni",
+  "investice",
   "pronajem",
   "rekonstrukce",
   "jine",
@@ -29,6 +31,13 @@ export const propertyAuditInquirySchema = z
     email: z.string().trim().email().max(254),
     phone: z.string().trim().max(40).optional().or(z.literal("")),
     note: z.string().trim().max(2_000).optional().or(z.literal("")),
+    propertyId: z.string().trim().min(1).max(64).optional(),
+    askingPrice: z.coerce.number().positive().max(1e12).optional().nullable(),
+    currency: z.string().trim().min(3).max(3).optional(),
+    transactionType: z.enum(["SALE", "RENT"]).optional(),
+    title: z.string().trim().max(200).optional(),
+    layout: z.string().trim().max(40).optional(),
+    usableArea: z.coerce.number().positive().max(1e6).optional().nullable(),
     caseStudySlug: z
       .enum([
         "byt-dlouhodoby-pronajem",
@@ -122,6 +131,7 @@ async function consumeRateSlot(
 
 const PURPOSE_LABELS: Record<(typeof PURPOSE_VALUES)[number], string> = {
   bydleni: "Vlastní bydlení",
+  investice: "Investice k pronájmu",
   pronajem: "Pronájem",
   rekonstrukce: "Rekonstrukce",
   jine: "Jiné",
@@ -167,6 +177,69 @@ export async function submitPropertyAuditInquiry(
   const note = data.note ? sanitizePlainText(data.note, 2_000) : null;
   const phone = data.phone ? sanitizePlainText(data.phone, 40) : null;
 
+  let propertySnapshot: Record<string, unknown> | null = null;
+  let linkedPropertyId: string | null = null;
+  if (data.propertyId) {
+    const property = await prisma.property.findUnique({
+      where: { id: data.propertyId },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        status: true,
+        visibility: true,
+        isDemo: true,
+        transactionType: true,
+        propertyType: true,
+        askingPrice: true,
+        currency: true,
+        publicCity: true,
+        publicDistrict: true,
+        publicLabel: true,
+        layout: true,
+        usableArea: true,
+        publishedAt: true,
+        updatedAt: true,
+      },
+    });
+    if (!property || property.isDemo) {
+      return {
+        ok: false,
+        error:
+          "Vybraná nabídka není dostupná pro placenou / poptávkovou analýzu. Zadejte vlastní skutečnou nemovitost.",
+      };
+    }
+    if (property.status !== "ACTIVE" || property.visibility !== "PUBLIC") {
+      return {
+        ok: false,
+        error: "Nabídka už není veřejně dostupná. Obnovte stránku nebo zadejte aktuální odkaz.",
+      };
+    }
+    linkedPropertyId = property.id;
+    propertySnapshot = {
+      capturedAt: new Date().toISOString(),
+      propertyId: property.id,
+      slug: property.slug,
+      title: property.title,
+      transactionType: property.transactionType,
+      propertyType: property.propertyType,
+      askingPrice: property.askingPrice,
+      currency: property.currency,
+      locality:
+        property.publicLabel ||
+        [property.publicDistrict, property.publicCity].filter(Boolean).join(", "),
+      layout: property.layout,
+      usableArea: property.usableArea,
+      publishedAt: property.publishedAt?.toISOString() ?? null,
+      listingUpdatedAt: property.updatedAt.toISOString(),
+      formAskingPrice: data.askingPrice ?? null,
+      priceChangedSinceCapture:
+        data.askingPrice != null &&
+        property.askingPrice != null &&
+        data.askingPrice !== property.askingPrice,
+    };
+  }
+
   const ip = (await getRequestIp()) ?? "unknown";
   const emailLimit = await consumeRateSlot(rateKey(["email", email]), MAX_PER_EMAIL);
   if (!emailLimit.ok) {
@@ -205,15 +278,19 @@ export async function submitPropertyAuditInquiry(
         status: "NEW",
         email,
         phone: phone || null,
-        source: "homepage_posoudit",
+        propertyId: linkedPropertyId,
+        source: linkedPropertyId
+          ? "property_detail_analysis_offer"
+          : "homepage_posoudit",
         correlationId,
         idempotencyKey,
         marketCode: "CZ",
         countryCode: "CZ",
-        currency: "CZK",
+        currency: data.currency?.toUpperCase() || "CZK",
         retentionExpiresAt,
         payload: {
           kind: "property_audit_inquiry",
+          productKey: "deep_analysis",
           nonBinding: true,
           listingUrl,
           propertyType,
@@ -222,6 +299,12 @@ export async function submitPropertyAuditInquiry(
           purposeLabel: PURPOSE_LABELS[data.purpose],
           note,
           caseStudySlug: data.caseStudySlug ?? null,
+          title: data.title ? sanitizePlainText(data.title, 200) : null,
+          transactionType: data.transactionType ?? null,
+          askingPrice: data.askingPrice ?? null,
+          layout: data.layout ?? null,
+          usableArea: data.usableArea ?? null,
+          propertySnapshot: propertySnapshot as Prisma.InputJsonValue | null,
           submittedAt: new Date().toISOString(),
         },
       },

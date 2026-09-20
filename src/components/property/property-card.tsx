@@ -55,6 +55,8 @@ export type PropertyCardData = {
   acceptsPriceOffers?: boolean;
   acceptsCoPurchase?: boolean;
   isDemo?: boolean;
+  /** Confirmed amenity highlights, e.g. "Balkon 6,2 m² · Sklep". */
+  featureHighlights?: string[];
   /** Paid placement disclosure — never affects score rendering. */
   sponsored?: boolean;
   listingStatus?: PropertyListingStatus;
@@ -258,6 +260,11 @@ export function PropertyCard({
             .filter(Boolean)
             .join(" · ") || "Parametry neuvedeny"}
         </p>
+        {property.featureHighlights && property.featureHighlights.length > 0 ? (
+          <p className="text-xs text-[var(--text-muted)]">
+            {property.featureHighlights.join(" · ")}
+          </p>
+        ) : null}
         <p className="line-clamp-3 text-sm leading-relaxed text-[var(--text-secondary)]">
           {property.shortDescription || "Krátký popis není uveden."}
         </p>

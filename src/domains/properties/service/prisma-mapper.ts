@@ -8,6 +8,20 @@ import type { PropertyRecord } from "@/domains/properties/service/dto";
 
 export type PrismaPropertyWithMedia = Property & {
   media?: PropertyMedia[];
+  features?: {
+    balcony: boolean | null;
+    loggia: boolean | null;
+    terrace: boolean | null;
+    garden: boolean | null;
+    cellar: boolean | null;
+    garage: boolean | null;
+    parking: boolean | null;
+    elevator: boolean | null;
+    furnished: boolean | null;
+    barrierFree: boolean | null;
+    pool: boolean | null;
+    details: Prisma.JsonValue | null;
+  } | null;
   completeness?: { score: number } | null;
   investmentSnapshot?: {
     grossYieldPct: number | null;
@@ -101,6 +115,22 @@ export function mapPrismaPropertyToRecord(
     estimatedOccupancyMaxPct: row.investmentSnapshot?.estimatedOccupancyMaxPct ?? null,
     majetioScore: row.investmentSnapshot?.majetioScore ?? null,
     hasInvestmentSnapshot: row.investmentSnapshot?.calculatedAt != null,
+    features: row.features
+      ? {
+          balcony: row.features.balcony,
+          loggia: row.features.loggia,
+          terrace: row.features.terrace,
+          garden: row.features.garden,
+          cellar: row.features.cellar,
+          garage: row.features.garage,
+          parking: row.features.parking,
+          elevator: row.features.elevator,
+          furnished: row.features.furnished,
+          barrierFree: row.features.barrierFree,
+          pool: row.features.pool,
+          details: row.features.details,
+        }
+      : null,
     media,
   };
 }
@@ -108,6 +138,8 @@ export function mapPrismaPropertyToRecord(
 export const propertyDetailInclude = {
   media: { orderBy: [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }] },
   completeness: true,
+  features: true,
+  investmentSnapshot: true,
 } satisfies Prisma.PropertyInclude;
 
 /** Public discovery eligibility — real listings + optional demos. */

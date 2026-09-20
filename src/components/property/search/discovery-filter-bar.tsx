@@ -340,7 +340,8 @@ export function DiscoveryFilterBar({
             ))}
           </div>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
-            Nabídky bez vyplněného příslušenství zůstanou vidět.
+            Filtr „Balkon“ = potvrzené Ano. „Bez balkonu“ = potvrzené Ne. Neuvedené
+            nabídky nepatří do žádné z těchto skupin.
           </p>
         </div>
         <div>

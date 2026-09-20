@@ -11,6 +11,7 @@ import {
   assertCanManageListing,
   readPrivateOfferThreshold,
 } from "@/domains/listings/seller/seller-listing-service";
+import { answersFromFeatureRow } from "@/domains/properties/parameters";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -29,9 +30,11 @@ export default async function UpravNabidkuPage({ params }: Props) {
 
   const property = await prisma.property.findUnique({
     where: { id },
-    include: { media: { orderBy: { sortOrder: "asc" } } },
+    include: { media: { orderBy: { sortOrder: "asc" } }, features: true },
   });
   if (!property) notFound();
+
+  const featureAnswers = answersFromFeatureRow(property.features);
 
   const ext =
     property.marketExtensions &&
@@ -56,13 +59,20 @@ export default async function UpravNabidkuPage({ params }: Props) {
     <div className="space-y-10">
       <PageHeader
         title={property.title}
-        description={`Stav: ${property.status}${property.status === "ACTIVE" ? ` · /nemovitosti/${property.slug}` : ""}`}
+        description={`Stav: ${property.status}${property.status === "ACTIVE" ? ` · /nemovitosti/${property.slug}` : ""}${property.parametersNeedCompletion ? " · doplňte povinné parametry" : ""}`}
         breadcrumbs={[
           { href: "/ucet", label: "Účet" },
           { href: "/ucet/nabidky", label: "Nabídky" },
           { label: "Úprava" },
         ]}
       />
+
+      {property.parametersNeedCompletion ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Tato nabídka potřebuje doplnění strukturovaných parametrů (Ano/Ne). Dokud
+          neodpovíte, nelze ji znovu publikovat.
+        </p>
+      ) : null}
 
       <SellerListingControls propertyId={property.id} status={property.status} />
 
@@ -129,6 +139,8 @@ export default async function UpravNabidkuPage({ params }: Props) {
           acceptsCoPurchaseSeekPartner: property.acceptsCoPurchaseSeekPartner,
           acceptsCoPurchaseSellerRetains: property.acceptsCoPurchaseSellerRetains,
           offeredOwnershipPercent: property.offeredOwnershipPercent,
+          featureAnswers,
+          parametersNeedCompletion: property.parametersNeedCompletion,
         }}
       />
 

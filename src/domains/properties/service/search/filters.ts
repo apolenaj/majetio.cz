@@ -466,7 +466,13 @@ function appendStandardColumns(
 
   if (filters.amenities?.length) {
     const is: Record<string, boolean> = {};
-    for (const amenity of filters.amenities) is[amenity] = true;
+    for (const amenity of filters.amenities) {
+      if (amenity.startsWith("bez_")) {
+        is[amenity.slice(4)] = false;
+      } else {
+        is[amenity] = true;
+      }
+    }
     where.features = { is };
   }
 }

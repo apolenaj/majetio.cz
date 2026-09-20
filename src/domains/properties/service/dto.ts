@@ -8,6 +8,10 @@ import {
   listAliasesForMarket,
   resolveCanonicalPropertyType,
 } from "@/domains/properties/taxonomy/canonical-types";
+import {
+  catalogFeatureHighlights,
+  detailsFromJson,
+} from "@/domains/properties/parameters";
 import { toPublicMediaList, type PublicMediaItem } from "./media-public";
 import { resolveShortDescription } from "@/domains/listings/negotiations/validate";
 
@@ -129,6 +133,20 @@ export type PropertyRecord = {
     licenseStatus?: string | null;
     sourceId?: string | null;
   }>;
+  features?: {
+    balcony?: boolean | null;
+    loggia?: boolean | null;
+    terrace?: boolean | null;
+    garden?: boolean | null;
+    cellar?: boolean | null;
+    garage?: boolean | null;
+    parking?: boolean | null;
+    elevator?: boolean | null;
+    furnished?: boolean | null;
+    barrierFree?: boolean | null;
+    pool?: boolean | null;
+    details?: unknown;
+  } | null;
 };
 
 export type PublicPropertyLocation = {
@@ -217,6 +235,22 @@ export type PublicPropertyDto = {
   acceptsCoPurchaseSeekPartner: boolean;
   acceptsCoPurchaseSellerRetains: boolean;
   offeredOwnershipPercent: number | null;
+  /** Structured amenity flags — true/false/null (never coerce null→false). */
+  features: {
+    balcony: boolean | null;
+    loggia: boolean | null;
+    terrace: boolean | null;
+    garden: boolean | null;
+    cellar: boolean | null;
+    garage: boolean | null;
+    parking: boolean | null;
+    elevator: boolean | null;
+    furnished: boolean | null;
+    barrierFree: boolean | null;
+    pool: boolean | null;
+  } | null;
+  featureDetails: Record<string, unknown> | null;
+  featureHighlights: string[];
 };
 
 export type PublicPropertyListItemDto = Pick<
@@ -247,7 +281,10 @@ export type PublicPropertyListItemDto = Pick<
   | "acceptsPriceOffers"
   | "acceptsCoPurchaseSeekPartner"
   | "acceptsCoPurchaseSellerRetains"
->;
+> & {
+  features?: PublicPropertyDto["features"];
+  featureHighlights?: string[];
+};
 
 export type ToPublicDtoOptions = {
   viewerRole?: "PUBLIC" | "OWNER" | "STAFF";
@@ -419,6 +456,45 @@ export function toPublicPropertyDto(
     acceptsCoPurchaseSeekPartner: record.acceptsCoPurchaseSeekPartner === true,
     acceptsCoPurchaseSellerRetains: record.acceptsCoPurchaseSellerRetains === true,
     offeredOwnershipPercent: record.offeredOwnershipPercent ?? null,
+    ...mapPublicFeatures(record),
+  };
+}
+
+function mapPublicFeatures(record: PropertyRecord): {
+  features: PublicPropertyDto["features"];
+  featureDetails: Record<string, unknown> | null;
+  featureHighlights: string[];
+} {
+  const row = record.features;
+  if (!row) {
+    return { features: null, featureDetails: null, featureHighlights: [] };
+  }
+  const features = {
+    balcony: row.balcony ?? null,
+    loggia: row.loggia ?? null,
+    terrace: row.terrace ?? null,
+    garden: row.garden ?? null,
+    cellar: row.cellar ?? null,
+    garage: row.garage ?? null,
+    parking: row.parking ?? null,
+    elevator: row.elevator ?? null,
+    furnished: row.furnished ?? null,
+    barrierFree: row.barrierFree ?? null,
+    pool: row.pool ?? null,
+  };
+  const details = detailsFromJson(row.details);
+  const highlights = catalogFeatureHighlights({
+    answers: features,
+    details,
+  });
+  return {
+    features,
+    featureDetails: Object.keys(details).length
+      ? (details as Record<string, unknown>)
+      : row.details && typeof row.details === "object"
+        ? (row.details as Record<string, unknown>)
+        : null,
+    featureHighlights: highlights,
   };
 }
 
@@ -454,5 +530,7 @@ export function toPublicPropertyListItemDto(
     acceptsPriceOffers: full.acceptsPriceOffers,
     acceptsCoPurchaseSeekPartner: full.acceptsCoPurchaseSeekPartner,
     acceptsCoPurchaseSellerRetains: full.acceptsCoPurchaseSellerRetains,
+    features: full.features,
+    featureHighlights: full.featureHighlights,
   };
 }

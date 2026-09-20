@@ -942,7 +942,13 @@ export function urlStateToSearchInput(state: PropertyUrlFilterState) {
       .map((value) => CONSTRUCTION_TO_ENUM[value])
       .filter((value): value is string => Boolean(value)),
     amenities: state.prislusenstvi
-      .map((value) => AMENITY_TO_FIELD[value])
+      .map((value) => {
+        if (value.startsWith("bez_")) {
+          const field = AMENITY_TO_FIELD[value.slice(4)];
+          return field ? `bez_${field}` : null;
+        }
+        return AMENITY_TO_FIELD[value] ?? null;
+      })
       .filter((value): value is string => Boolean(value)),
     floorMin: state.patroOd,
     floorMax: state.patroDo,

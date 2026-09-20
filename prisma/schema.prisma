@@ -1810,10 +1810,15 @@ model Property {
   ownershipType    OwnershipType      @default(UNKNOWN)
   /** Cross-market legal tenure (FREEHOLD / LEASEHOLD / …). */
   tenureType       CanonicalTenureType @default(UNKNOWN)
-  /** Market registry code (CZ, AE, …) — multi-market Core. Explicit — never from currency. */
+  /** Explicit channel — never FX from currency. */
   marketCode       String             @default("CZ")
   /** ISO 3166-1 alpha-2 — usually equals marketCode; kept explicit for multi-country markets. */
   countryCode      String             @default("CZ")
+  /**
+   * Historické / importované nabídky bez explicitních Ano/Ne u povinného vybavení.
+   * Neblokuje stávající ACTIVE zobrazení; blokuje novou publikaci / obnovu.
+   */
+  parametersNeedCompletion Boolean @default(false)
   /**
    * Primary new-build vs secondary resale (Prompt 17.3).
    * Prefer explicit channel over inferring from condition alone.
@@ -2033,28 +2038,33 @@ model PropertyInvestmentSnapshot {
   @@index([calculatedAt])
 }
 
-/** Fixed boolean / count feature flags (1:1). */
+/** Fixed feature flags (1:1). Boolean? = Ano / Ne / Nevyplněno — nikdy default false. */
 model PropertyFeatures {
   id              String  @id @default(cuid())
   propertyId      String  @unique
-  balcony         Boolean @default(false)
-  loggia          Boolean @default(false)
-  terrace         Boolean @default(false)
-  garden          Boolean @default(false)
-  cellar          Boolean @default(false)
-  garage          Boolean @default(false)
-  parking         Boolean @default(false)
-  elevator        Boolean @default(false)
-  furnished       Boolean @default(false)
-  barrierFree     Boolean @default(false)
-  airConditioning Boolean @default(false)
-  fireplace       Boolean @default(false)
-  pool            Boolean @default(false)
-  alarm           Boolean @default(false)
-  internet        Boolean @default(false)
-  cableTv         Boolean @default(false)
-  washingMachine  Boolean @default(false)
-  dishwasher      Boolean @default(false)
+  balcony         Boolean?
+  loggia          Boolean?
+  terrace         Boolean?
+  garden          Boolean?
+  cellar          Boolean?
+  garage          Boolean?
+  parking         Boolean?
+  elevator        Boolean?
+  furnished       Boolean?
+  barrierFree     Boolean?
+  airConditioning Boolean?
+  fireplace       Boolean?
+  pool            Boolean?
+  alarm           Boolean?
+  internet        Boolean?
+  cableTv         Boolean?
+  washingMachine  Boolean?
+  dishwasher      Boolean?
+  /**
+   * Podrobnosti po Ano (plochy, počty, poznámky, sítě u pozemku).
+   * Shape: { balcony?: FeatureDetail, utilities?: { electricity?: UtilityStatus, … } }
+   */
+  details         Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

@@ -16,6 +16,26 @@ export type AnalyticsEvent =
   | { name: "analysis_started"; props: { entry: string } }
   | { name: "comparison_opened"; props: { count?: number } }
   | { name: "pricing_viewed"; props: Record<string, never> }
+  | {
+      name: "analysis_offer_viewed";
+      props: {
+        propertyId: string;
+        isDemo: boolean;
+        transactionType: "SALE" | "RENT";
+      };
+    }
+  | {
+      name: "analysis_offer_cta_clicked";
+      props: {
+        propertyId: string;
+        cta: "primary" | "sample";
+        mode: "inquiry" | "checkout";
+      };
+    }
+  | {
+      name: "analysis_inquiry_submitted";
+      props: { propertyId: string | null; hasSnapshot: boolean };
+    }
   | { name: "financing_cta_clicked"; props: { location: string } }
   | { name: "guide_article_opened"; props: { slug: string } }
   | { name: "mega_menu_opened"; props: { menu: string } }

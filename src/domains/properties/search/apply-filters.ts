@@ -88,7 +88,7 @@ export type SearchableListing = PublicPropertyListItemDto & {
   hasInvestmentSnapshot?: boolean | null;
   renovationCostMinCzk?: number | null;
   renovationCostMaxCzk?: number | null;
-  features?: Record<string, boolean> | null;
+  features?: Record<string, boolean | null> | null;
 };
 
 export function applyUrlFiltersToListings(
@@ -260,12 +260,17 @@ export function applyUrlFiltersToListings(
   }
 
   if (state.prislusenstvi.length) {
-    const fields = state.prislusenstvi
-      .map((value) => AMENITY_TO_FIELD[value])
-      .filter((field): field is string => Boolean(field));
     items = items.filter((p) => {
       if (!p.features) return false;
-      return fields.every((field) => p.features?.[field] === true);
+      return state.prislusenstvi.every((token) => {
+        const wantAbsent = token.startsWith("bez_");
+        const amenityKey = wantAbsent ? token.slice(4) : token;
+        const field = AMENITY_TO_FIELD[amenityKey];
+        if (!field) return false;
+        const value = p.features?.[field];
+        if (wantAbsent) return value === false;
+        return value === true;
+      });
     });
   }
 

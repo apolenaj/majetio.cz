@@ -60,8 +60,8 @@ export function floorLabel(
 }
 
 export function elevatorLabel(hasElevator: boolean | null | undefined): string {
-  if (hasElevator == null) return "—";
-  return hasElevator ? "Ano" : "Ne";
+  if (hasElevator == null) return "Neuvedeno";
+  return hasElevator ? "Ano" : "Není";
 }
 
 export function areaLabel(

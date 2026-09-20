@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 
+import { ListingFeaturesFields } from "@/components/listings/listing-features-fields";
 import {
   createListingDraftAction,
   saveListingDraftAction,
@@ -41,6 +42,8 @@ type Defaults = {
   acceptsCoPurchaseSeekPartner?: boolean;
   acceptsCoPurchaseSellerRetains?: boolean;
   offeredOwnershipPercent?: number | null;
+  featureAnswers?: Partial<Record<string, "yes" | "no" | "unset">>;
+  parametersNeedCompletion?: boolean;
 };
 
 const fieldClass =
@@ -58,6 +61,9 @@ export function SellerListingForm({
 }) {
   const [transactionType, setTransactionType] = useState(
     defaults?.transactionType ?? "SALE",
+  );
+  const [propertyType, setPropertyType] = useState(
+    defaults?.propertyType ?? "APARTMENT",
   );
 
   const action = async (
@@ -80,9 +86,23 @@ export function SellerListingForm({
   return (
     <form action={formAction} className="space-y-8">
       {state && !state.ok ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {state.error}
-        </p>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p>{state.error}</p>
+          {state.issues && state.issues.length > 0 ? (
+            <p className="mt-2">
+              K publikaci doplňte:{" "}
+              {state.issues.map((issue, index) => (
+                <span key={issue}>
+                  {index > 0 ? ", " : null}
+                  <a href={`#${issue}`} className="underline">
+                    {issue.replace(/^feature_/, "").replace(/^utility_/, "")}
+                  </a>
+                </span>
+              ))}
+              .
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {state?.ok && state.message ? (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -155,7 +175,8 @@ export function SellerListingForm({
             Typ nemovitosti
             <select
               name="propertyType"
-              defaultValue={defaults?.propertyType ?? "APARTMENT"}
+              value={propertyType}
+              onChange={(event) => setPropertyType(event.target.value)}
               className={fieldClass}
             >
               <option value="APARTMENT">Byt</option>
@@ -459,6 +480,11 @@ export function SellerListingForm({
           />
         </label>
       </fieldset>
+
+      <ListingFeaturesFields
+        propertyType={propertyType}
+        initialAnswers={defaults?.featureAnswers}
+      />
 
       <button
         type="submit"
