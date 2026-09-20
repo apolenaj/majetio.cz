@@ -84,10 +84,9 @@ export function PropertyCard({
   const status = property.listingStatus ?? "active";
   const unavailable = status === "unavailable";
   const stale = status === "stale";
-  const imageAlt =
-    [property.title, property.location, property.disposition]
-      .filter(Boolean)
-      .join(" — ") || "Fotografie nemovitosti";
+  const detailLabel = `Zobrazit detail: ${property.title}`;
+  const detailLinkClass =
+    "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 
   return (
     <Card
@@ -100,51 +99,54 @@ export function PropertyCard({
         className,
       )}
     >
-      <Link
-        href={property.href}
-        className="block focus:outline-none"
-        onClick={() => saveSearchScrollPosition()}
-      >
-        <AspectRatio
-          ratio="4/3"
-          className={cn(
-            "bg-[var(--surface-sunken)]",
-            unavailable && "bg-[color-mix(in_srgb,var(--surface-sunken)_70%,var(--text-muted))]",
-          )}
+      <div className="relative">
+        <Link
+          href={property.href}
+          aria-label={detailLabel}
+          className={cn("block", detailLinkClass)}
+          onClick={() => saveSearchScrollPosition()}
         >
-          {property.imageUrl ? (
-            <PropertyListingImage
-              src={property.imageUrl}
-              alt={imageAlt}
-              priority={priority}
-              unavailable={unavailable}
-            />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
-              <Building2 className="size-8" aria-hidden />
-              <span className="text-xs">Fotografie není k dispozici</span>
+          <AspectRatio
+            ratio="4/3"
+            className={cn(
+              "bg-[var(--surface-sunken)]",
+              unavailable && "bg-[color-mix(in_srgb,var(--surface-sunken)_70%,var(--text-muted))]",
+            )}
+          >
+            {property.imageUrl ? (
+              <PropertyListingImage
+                src={property.imageUrl}
+                alt=""
+                priority={priority}
+                unavailable={unavailable}
+              />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
+                <Building2 className="size-8" aria-hidden />
+                <span className="text-xs">Fotografie není k dispozici</span>
+              </div>
+            )}
+            <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
+              {property.sponsored ? <SponsoredListingBadge /> : null}
+              {property.isDemo ? (
+                <span className="rounded border border-[var(--action-premium)] bg-[color-mix(in_srgb,var(--action-premium)_20%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">
+                  Demo
+                </span>
+              ) : null}
+              {stale ? (
+                <span className="rounded border border-[var(--border-default)] bg-[var(--surface-primary)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                  Zastaralé
+                </span>
+              ) : null}
+              {unavailable ? (
+                <span className="rounded border border-[var(--status-error)] bg-[color-mix(in_srgb,var(--status-error)_12%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--status-error)]">
+                  Nedostupné
+                </span>
+              ) : null}
             </div>
-          )}
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-            {property.sponsored ? <SponsoredListingBadge /> : null}
-            {property.isDemo ? (
-              <span className="rounded border border-[var(--action-premium)] bg-[color-mix(in_srgb,var(--action-premium)_20%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">
-                Demo
-              </span>
-            ) : null}
-            {stale ? (
-              <span className="rounded border border-[var(--border-default)] bg-[var(--surface-primary)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-                Zastaralé
-              </span>
-            ) : null}
-            {unavailable ? (
-              <span className="rounded border border-[var(--status-error)] bg-[color-mix(in_srgb,var(--status-error)_12%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--status-error)]">
-                Nedostupné
-              </span>
-            ) : null}
-          </div>
-        </AspectRatio>
-      </Link>
+          </AspectRatio>
+        </Link>
+      </div>
 
       <div className="space-y-3 p-4">
         {property.transactionLabel || property.propertyTypeLabel ? (
@@ -158,6 +160,7 @@ export function PropertyCard({
               href={property.href}
               className={cn(
                 "font-display text-lg hover:underline",
+                detailLinkClass,
                 unavailable ? "text-[var(--text-muted)]" : "text-[var(--text-primary)]",
               )}
               onClick={() => saveSearchScrollPosition()}
@@ -176,6 +179,7 @@ export function PropertyCard({
                 size="icon-sm"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   onFavourite();
                 }}
               >
@@ -191,6 +195,7 @@ export function PropertyCard({
                 size="icon-sm"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   onCompare();
                 }}
               >
@@ -273,7 +278,10 @@ export function PropertyCard({
 
         <Link
           href={property.href}
-          className="inline-flex text-sm font-medium text-[var(--text-primary)] underline underline-offset-2"
+          className={cn(
+            "inline-flex text-sm font-medium text-[var(--text-primary)] underline underline-offset-2",
+            detailLinkClass,
+          )}
           onClick={() => saveSearchScrollPosition()}
         >
           Zobrazit detail
