@@ -61,6 +61,7 @@ export const FOOTER_GROUPS = [
     title: "Nabídky",
     links: [
       { href: "/nemovitosti", label: "Nemovitosti" },
+      { href: "/novostavby", label: "Novostavby a projekty" },
       { href: "/pridat-nemovitost", label: "Přidat nemovitost" },
       { href: "/pro-inzerenty", label: "Pro inzerenty" },
       { href: "/moznosti", label: "Možnosti bydlení a investování" },

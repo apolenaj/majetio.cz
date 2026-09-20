@@ -30,7 +30,7 @@ export function CaseStudyCard({
           priority={priority}
         />
         <span className="absolute left-3 top-3 rounded-md bg-[var(--surface-inverse)]/85 px-2.5 py-1 text-xs font-medium text-[var(--text-inverse)]">
-          Modelová analýza
+          Modelová studie
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">

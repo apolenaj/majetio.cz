@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  Calculator,
+  Landmark,
+  LineChart,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 
 import { preparePageMeta } from "@/components/content/page-helpers";
 import {
@@ -8,7 +15,10 @@ import {
 } from "@/components/layout/page-layouts";
 import { MEGA_KALKULACKY } from "@/config/navigation";
 import { formatCzk } from "@/components/marketing/format";
-import { publicCustomerOffer } from "@/config/public-offer";
+import {
+  publicCheckoutMode,
+  publicCustomerOffer,
+} from "@/config/public-offer";
 
 export const metadata: Metadata = preparePageMeta({
   title: "Analýzy a kalkulačky",
@@ -17,7 +27,35 @@ export const metadata: Metadata = preparePageMeta({
   path: "/analyzy-a-kalkulacky",
 });
 
+const FEATURED = [
+  {
+    href: "/kalkulacky/investicni-vynos",
+    title: "Výnos a cash flow",
+    text: "Modelujte nájem, náklady a měsíční bilanci.",
+    icon: LineChart,
+  },
+  {
+    href: "/kalkulacky/rekonstrukce",
+    title: "Náklady rekonstrukce",
+    text: "Orientujte se v rozsahu prací a rezervě.",
+    icon: Wrench,
+  },
+  {
+    href: "/kalkulacky/financovani",
+    title: "Financování",
+    text: "Spočítejte splátku a potřebu vlastních prostředků.",
+    icon: Landmark,
+  },
+  {
+    href: "/ukazky",
+    title: "Modelové studie",
+    text: "Prohlédněte ověřené ukázky metodiky analýzy.",
+    icon: Sparkles,
+  },
+] as const;
+
 export default function AnalyzyAKalkulackyPage() {
+  const inquiry = publicCheckoutMode() === "inquiry";
   return (
     <StandardPageLayout>
       <PageHeader
@@ -29,36 +67,67 @@ export default function AnalyzyAKalkulackyPage() {
         ]}
       />
 
-      <section className="mt-10 space-y-4">
-        <h2 className="font-display text-xl">Analýza nemovitosti</h2>
-        <p className="text-sm text-[var(--text-secondary)]">
-          {publicCustomerOffer.nameCs} — {formatCzk(publicCustomerOffer.priceGrossCzk)}.
+      <section className="mt-10 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] p-6 text-white sm:p-8">
+        <h2 className="font-display text-2xl sm:text-3xl">
+          {publicCustomerOffer.nameCs}
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-white/80">
+          {publicCustomerOffer.summaryCs}
         </p>
-        <div className="flex flex-wrap gap-3">
+        <p className="mt-4 font-metric text-2xl">
+          {formatCzk(publicCustomerOffer.priceGrossCzk)}
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
           <Link
-            href="/#posoudit-form"
-            className="inline-flex h-10 items-center rounded-lg bg-[var(--action-primary)] px-4 text-sm font-medium text-white"
+            href={
+              inquiry
+                ? "/sluzby/analyza-pred-koupi#poptavka"
+                : "/checkout?product=deep_analysis"
+            }
+            className="inline-flex h-11 items-center rounded-[var(--radius-lg)] bg-[var(--action-accent)] px-5 text-sm font-semibold text-white"
           >
-            Nezávazná poptávka
+            {inquiry ? "Poptat analýzu" : "Objednat analýzu"}
           </Link>
           <Link
-            href="/ukazky"
-            className="inline-flex h-10 items-center rounded-lg border border-[var(--border-strong)] px-4 text-sm font-medium"
+            href="/ukazky/byt-dlouhodoby-pronajem"
+            className="inline-flex h-11 items-center rounded-[var(--radius-lg)] border border-white/40 px-5 text-sm font-medium"
           >
-            Modelové studie
+            Prohlédnout ukázku
           </Link>
         </div>
       </section>
 
-      <section className="mt-12 space-y-4">
-        <h2 className="font-display text-xl">Kalkulačky</h2>
-        <ul className="grid gap-2 sm:grid-cols-2">
+      <section className="mt-12">
+        <h2 className="font-display text-2xl text-[var(--text-primary)]">
+          Hlavní nástroje
+        </h2>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURED.map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-raised)]"
+            >
+              <tool.icon className="size-6 text-[var(--action-accent)]" aria-hidden />
+              <h3 className="mt-4 font-medium text-[var(--text-primary)]">{tool.title}</h3>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">{tool.text}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-display text-xl text-[var(--text-primary)]">
+          Všechny kalkulačky
+        </h2>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {MEGA_KALKULACKY.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="text-sm underline underline-offset-2"
+                className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] hover:border-[var(--action-accent)]"
               >
+                <Calculator className="size-4 text-[var(--action-accent)]" aria-hidden />
                 {item.label}
               </Link>
             </li>

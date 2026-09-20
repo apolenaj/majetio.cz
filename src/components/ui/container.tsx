@@ -10,7 +10,7 @@ export function Container({
   width?: "marketing" | "dashboard" | "form" | "article" | "full";
 }) {
   const widthClass = {
-    marketing: "max-w-6xl",
+    marketing: "max-w-7xl",
     dashboard: "max-w-7xl",
     form: "max-w-xl",
     article: "max-w-2xl",

@@ -31,7 +31,7 @@ export function SiteFooter() {
 
         {FOOTER_GROUPS.map((group) => (
           <div key={group.title}>
-            <p className="text-sm font-semibold tracking-wide text-[var(--action-premium)]">
+            <p className="text-sm font-semibold tracking-wide text-[var(--action-accent)]">
               {group.title}
             </p>
             <ul className="mt-3 space-y-2">

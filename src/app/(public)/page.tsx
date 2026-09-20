@@ -9,9 +9,9 @@ import { listDiscoveryPropertyRecords } from "@/domains/properties/service/prism
 import { toPublicPropertyListItemDto } from "@/domains/properties/service/dto";
 import { mapPublicDtoToPropertyCard } from "@/domains/properties/service/card-mapper";
 
-const title = "Majetio — realitní inzertní platforma";
+const title = "Majetio — najděte nemovitost a poznejte její potenciál";
 const description =
-  "Nabízejte a hledejte nemovitosti, alternativní režimy bydlení a investování, nebo si nechte posoudit konkrétní nabídku.";
+  "Pro bydlení i investici. Katalog nabídek, možnosti bydlení, analýzy a inzerce s pevným ceníkem.";
 
 export const metadata: Metadata = {
   title: { absolute: title },

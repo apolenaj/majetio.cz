@@ -7,18 +7,18 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Brand primitives (internal — prefer semantic tokens in components) */
+  /* Brand primitives — schválená paleta homepage 2026 */
   --brand-ink-950: #07131f;
-  --brand-ink-900: #0b1f33;
+  --brand-ink-900: #0b2233;
   --brand-ink-800: #243b53;
   --brand-ink-600: #486581;
   --brand-ink-400: #829ab1;
-  --brand-growth-700: #1a5c46;
-  --brand-growth-600: #1f6f54;
-  --brand-growth-500: #2a8a68;
+  --brand-growth-700: #0f5f55;
+  --brand-growth-600: #137d70;
+  --brand-growth-500: #1a9586;
   --brand-sand-500: #c4a574;
   --brand-sand-400: #d4bc94;
-  --brand-canvas-100: #f7f4ef;
+  --brand-canvas-100: #f7f5f0;
   --brand-canvas-200: #efeae2;
   --brand-canvas-300: #e4dfd6;
   --brand-canvas-400: #cfc7ba;
@@ -40,16 +40,16 @@
   --text-primary: var(--brand-ink-900);
   --text-secondary: var(--brand-ink-800);
   --text-muted: var(--brand-ink-600);
-  --text-inverse: var(--brand-canvas-100);
-  --text-link: var(--brand-ink-900);
-  --text-link-hover: var(--brand-growth-600);
+  --text-inverse: var(--brand-white);
+  --text-link: var(--brand-growth-600);
+  --text-link-hover: var(--brand-growth-700);
 
   /* Borders */
   --border-default: var(--brand-canvas-300);
   --border-strong: var(--brand-canvas-400);
-  --border-focus: var(--brand-sand-500);
+  --border-focus: var(--brand-growth-600);
 
-  /* Actions */
+  /* Actions — navy primary CTA, turquoise accent actions */
   --action-primary: var(--brand-ink-900);
   --action-primary-hover: var(--brand-ink-800);
   --action-accent: var(--brand-growth-600);
@@ -87,16 +87,17 @@
   --chart-5: var(--brand-ink-600);
 
   /* Focus / elevation */
-  --focus-ring: var(--brand-sand-500);
-  --shadow-raised: 0 1px 2px rgb(11 31 51 / 4%), 0 4px 12px rgb(11 31 51 / 5%);
-  --shadow-overlay: 0 4px 16px rgb(11 31 51 / 10%);
-  --shadow-modal: 0 12px 40px rgb(11 31 51 / 16%);
-  --shadow-sticky: 0 1px 0 rgb(11 31 51 / 6%);
+  --focus-ring: var(--brand-growth-600);
+  --shadow-raised: 0 1px 2px rgb(11 34 51 / 4%), 0 4px 12px rgb(11 34 51 / 6%);
+  --shadow-overlay: 0 4px 16px rgb(11 34 51 / 10%);
+  --shadow-modal: 0 12px 40px rgb(11 34 51 / 16%);
+  --shadow-sticky: 0 1px 0 rgb(11 34 51 / 6%);
+  --shadow-card: 0 2px 8px rgb(11 34 51 / 6%), 0 8px 24px rgb(11 34 51 / 5%);
 
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  /* Radius — 8–12 px dle předlohy */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
   --radius-card: 0.75rem;
   --radius-dialog: 0.75rem;
   --radius-pill: 9999px;

@@ -34,11 +34,11 @@ function ProductCard({
 }) {
   const czk = priceGrossCzkFromMinor(product.priceGrossMinor);
   return (
-    <article className="flex h-full flex-col rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5">
+    <article className="flex h-full flex-col rounded-[var(--radius-card)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-raised)]">
       <h3 className="font-display text-xl text-[var(--text-primary)]">{product.nameCs}</h3>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">{product.taglineCs}</p>
       {czk != null ? (
-        <p className="mt-4 font-display text-3xl text-[var(--text-primary)]">{formatCzk(czk)}</p>
+        <p className="mt-4 font-metric text-3xl text-[var(--text-primary)]">{formatCzk(czk)}</p>
       ) : (
         <p className="mt-4 text-sm text-[var(--text-muted)]">Individuální nabídka</p>
       )}
@@ -58,7 +58,7 @@ function ProductCard({
       </ul>
       <Link
         href={href}
-        className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-[var(--action-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--action-primary-hover)]"
+        className="mt-6 inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--action-accent)] px-4 text-sm font-medium text-white hover:bg-[var(--action-accent-hover)]"
       >
         {cta}
       </Link>
