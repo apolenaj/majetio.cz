@@ -6,37 +6,50 @@ import {
   PageHeader,
   StandardPageLayout,
 } from "@/components/layout/page-layouts";
+import { formatCzk } from "@/components/marketing/format";
 import { InlineAlert } from "@/components/feedback/states";
 import {
-  ACTOR_LABELS_CS,
-  SALE_SUCCESS_FEE_RATES,
-  TIER_LABELS_CS,
-  formatRatePct,
-} from "@/config/success-fee-packages";
+  listPublicCustomerProducts,
+  priceGrossCzkFromMinor,
+  PUBLIC_PRICING_POLICY,
+  publicCheckoutMode,
+} from "@/config/public-offer";
 
 export const metadata: Metadata = preparePageMeta({
   title: "Pro inzerenty",
   description:
-    "Vkládejte nabídky bez platby předem. Odměna po úspěchu podle sjednaného balíčku — ne automaticky při poptávce.",
+    "Zveřejněte nabídku za pevnou cenu. Premium zvýraznění, profesionální příprava a firemní limity — bez procentní provize z prodeje za běžnou inzerci.",
   path: "/pro-inzerenty",
 });
 
 export default function ProInzerentyPage() {
+  const products = listPublicCustomerProducts();
+  const listing = products.filter((p) =>
+    ["listing_basic_30", "listing_premium_30", "listing_prep"].includes(p.key),
+  );
+  const firm = products.filter((p) => p.key.startsWith("firm_"));
+  const inquiry = publicCheckoutMode() === "inquiry";
+
   return (
     <StandardPageLayout>
       <PageHeader
         title="Pro inzerenty"
-        description="Soukromí uživatelé, makléři, realitní kanceláře, developeři a firmy — jeden účet, role podle oprávnění."
+        description="Soukromí majitelé, makléři, kanceláře i developeři — pevná cena za zveřejnění, ne procento z prodeje."
         breadcrumbs={[
           { href: "/", label: "Domů" },
           { label: "Pro inzerenty" },
         ]}
       />
 
-      <InlineAlert tone="info" title="Bez platby předem ≠ zdarma" className="mb-8">
-        Publikace nevyžaduje platbu předem. Success-fee se sjednává nezávazně; automatické
-        účtování je vypnuté, dokud nebudou rozhodnuty obchodní otázky (DPH, okamžik vzniku
-        odměny, attribution).
+      <InlineAlert tone="info" title="Obchodní model" className="mb-8">
+        <p>{PUBLIC_PRICING_POLICY.noPercentageListingFeeCs}</p>
+        <p className="mt-2">
+          Partnerské odměny za kvalifikované poptávky řešíme individuálně a odděleně od
+          standardní inzerce.
+        </p>
+        {inquiry ? (
+          <p className="mt-2">{PUBLIC_PRICING_POLICY.inquiryUntilReadyCs}</p>
+        ) : null}
       </InlineAlert>
 
       <div className="flex flex-wrap gap-3">
@@ -53,46 +66,69 @@ export default function ProInzerentyPage() {
           Vytvořit účet
         </Link>
         <Link
-          href="/cenik#success-fee"
+          href="/cenik#inzerce"
           className="inline-flex h-11 items-center rounded-lg border border-[var(--border-default)] px-5 text-sm font-medium"
         >
-          Balíčky odměn
+          Zobrazit ceník
         </Link>
       </div>
 
-      <h2 className="mt-12 font-display text-2xl">Prodejní % (výchozí ze zadání)</h2>
-      <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-[var(--border-default)] text-[var(--text-muted)]">
-              <th className="py-2 pr-4">Role</th>
-              <th className="py-2 pr-4">Základní</th>
-              <th className="py-2 pr-4">Plus</th>
-              <th className="py-2">Premium</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(
-              ["private", "broker", "agency", "developer", "company"] as const
-            ).map((actor) => {
-              const rows = SALE_SUCCESS_FEE_RATES.filter((r) => r.actor === actor);
-              const cell = (tier: "basic" | "plus" | "premium") =>
-                formatRatePct(rows.find((r) => r.tier === tier)!);
-              return (
-                <tr key={actor} className="border-b border-[var(--border-default)]">
-                  <td className="py-2 pr-4">{ACTOR_LABELS_CS[actor]}</td>
-                  <td className="py-2 pr-4">{cell("basic")}</td>
-                  <td className="py-2 pr-4">{cell("plus")}</td>
-                  <td className="py-2">{cell("premium")}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-3 text-xs text-[var(--text-muted)]">
-        Tier labels: {Object.values(TIER_LABELS_CS).join(" · ")}. Detaily a otevřené otázky
-        na ceníku.
+      <h2 className="mt-12 font-display text-2xl">Inzerce za pevnou cenu</h2>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+        {listing.map((product) => {
+          const czk = priceGrossCzkFromMinor(product.priceGrossMinor);
+          return (
+            <li
+              key={product.key}
+              className="rounded-[var(--radius-lg)] border border-[var(--border-default)] p-4"
+            >
+              <p className="font-medium text-[var(--text-primary)]">{product.nameCs}</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">{product.taglineCs}</p>
+              {czk != null ? (
+                <p className="mt-3 font-display text-2xl">{formatCzk(czk)}</p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+
+      <h2 className="mt-12 font-display text-2xl">Firemní limity</h2>
+      <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
+        Předplatné nahrazuje základní poplatek za inzerát v rámci limitu. Premium a příprava
+        inzerátu se kupují zvlášť.
+      </p>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+        {firm.map((product) => {
+          const czk = priceGrossCzkFromMinor(product.priceGrossMinor);
+          const limit = product.limits.maxActiveListings;
+          return (
+            <li
+              key={product.key}
+              className="rounded-[var(--radius-lg)] border border-[var(--border-default)] p-4"
+            >
+              <p className="font-medium text-[var(--text-primary)]">{product.nameCs}</p>
+              {czk != null ? (
+                <p className="mt-2 font-display text-2xl">
+                  {formatCzk(czk)}
+                  <span className="text-sm font-normal text-[var(--text-muted)]"> / měsíc</span>
+                </p>
+              ) : null}
+              {typeof limit === "number" ? (
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                  Do {limit} aktivních inzerátů
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+
+      <p className="mt-8 text-sm text-[var(--text-muted)]">
+        Detailní popis a CTA najdete na{" "}
+        <Link href="/cenik" className="underline underline-offset-2">
+          ceníku
+        </Link>
+        .
       </p>
     </StandardPageLayout>
   );

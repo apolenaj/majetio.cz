@@ -198,8 +198,8 @@ export function PlatformHomepage({
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
               Soukromí majitelé, makléři, kanceláře, developeři i firmy — stejný účet,
-              různá oprávnění. Bez platby předem; odměna po úspěchu podle sjednaného
-              balíčku.
+              různá oprávnění. Inzerce má pevnou cenu za období zveřejnění, ne procento
+              z prodeje.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
@@ -248,7 +248,7 @@ export function PlatformHomepage({
           Nezávazná poptávka analýzy
         </h2>
         <p className="mt-2 mb-6 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Doplněk k inzertní platformě — neobjednává katalog ani success-fee.
+          Doplněk k inzertní platformě — nezávazná poptávka analýzy, ne objednávka inzerátu.
         </p>
         <PropertyAuditInquiryForm />
 

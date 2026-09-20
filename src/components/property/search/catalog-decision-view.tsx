@@ -513,8 +513,8 @@ export function CatalogDecisionView({ property }: { property: Property }) {
           <section className="mt-12 rounded-2xl border border-[var(--border-default)] p-5">
             <h2 className="font-display text-2xl">Zajímá vás tato nemovitost?</h2>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/pridat-nemovitost" className={CTA}>
-                Domluvit prohlídku u vlastního inzerátu
+              <Link href="/kontakt" className={CTA}>
+                Napsat na kontakt
               </Link>
               <Link href={financingHref} className="rounded-full border border-[var(--border-default)] px-4 py-3 text-sm font-semibold">
                 Spočítat financování
@@ -531,13 +531,15 @@ export function CatalogDecisionView({ property }: { property: Property }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Ukázka prezentace</p>
             <p className="mt-2 font-metric text-3xl">{price}</p>
             {perM2 != null && sale ? <p className="text-sm text-[var(--text-muted)]">{formatCzk(perM2)}/m²</p> : null}
-            <Link href="/pridat-nemovitost" className={`mt-4 ${CTA}`}>
-              Domluvit prohlídku
+            <Link href="/kontakt" className={`mt-4 ${CTA}`}>
+              Kontaktovat (ukázka)
             </Link>
             <Link href="/kontakt" className="mt-2 block rounded-full border border-[var(--border-default)] px-4 py-3 text-center text-sm font-semibold">
-              Kontaktovat prodejce
+              Napsat zprávu
             </Link>
-            <p className="mt-3 text-xs text-[var(--text-muted)]">Telefon ukázka nemá. U živého inzerátu je tlačítko až po zveřejnění kontaktu.</p>
+            <p className="mt-3 text-xs text-[var(--text-muted)]">
+              Ukázka nemá živého makléře ani telefon. Prohlídku u této nabídky nelze domluvit.
+            </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <TextButton onClick={toggleSave}>{saved ? "Uloženo" : "Uložit"}</TextButton>
               <TextButton onClick={() => void share()}>{shared ? "Zkopírováno" : "Sdílet"}</TextButton>
@@ -551,10 +553,10 @@ export function CatalogDecisionView({ property }: { property: Property }) {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-default)] bg-[var(--surface-primary)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <div className="mx-auto flex max-w-[1440px] gap-2">
           <Link href="/kontakt" className="flex-1 rounded-full border border-[var(--border-default)] py-3 text-center text-sm font-semibold">
-            Kontaktovat
+            Kontakt
           </Link>
-          <Link href="/pridat-nemovitost" className={`flex-1 ${CTA}`}>
-            Prohlídka
+          <Link href="/cenik" className={`flex-1 ${CTA}`}>
+            Ceník
           </Link>
         </div>
       </div>

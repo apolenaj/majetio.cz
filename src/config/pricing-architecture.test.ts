@@ -32,14 +32,35 @@ describe("Pricing architecture — catalog (221)", () => {
     );
     expect(pricingSegments.buyers.titleCs).toBe("Kupující");
     expect(pricingSegments.investors.titleCs).toBe("Investoři");
-    expect(pricingSegments.sellers.titleCs).toBe("Prodávající");
-    expect(pricingSegments.agents.titleCs).toBe("Makléři");
+    expect(pricingSegments.sellers.titleCs).toBe("Prodávající a inzerenti");
+    expect(pricingSegments.agents.titleCs).toBe("Firmy a makléři");
     expect(pricingSegments.developers.titleCs).toBe("Developeři");
   });
 
   it("matches seeded list prices (haléře, DPH v ceně)", () => {
     expect(getCatalogProductByKey("deep_analysis")?.priceGrossMinor).toBe(
       499_000,
+    );
+    expect(getCatalogProductByKey("listing_basic_30")?.priceGrossMinor).toBe(
+      29_900,
+    );
+    expect(getCatalogProductByKey("listing_premium_30")?.priceGrossMinor).toBe(
+      79_900,
+    );
+    expect(getCatalogProductByKey("listing_prep")?.priceGrossMinor).toBe(
+      299_000,
+    );
+    expect(
+      getCatalogProductByKey("property_search_project")?.priceGrossMinor,
+    ).toBe(999_000);
+    expect(getCatalogProductByKey("firm_starter_monthly")?.priceGrossMinor).toBe(
+      99_000,
+    );
+    expect(getCatalogProductByKey("firm_growth_monthly")?.priceGrossMinor).toBe(
+      199_000,
+    );
+    expect(getCatalogProductByKey("firm_scale_monthly")?.priceGrossMinor).toBe(
+      399_000,
     );
     expect(getCatalogProductByKey("buyer_pass")?.priceGrossMinor).toBe(149_900);
     expect(getCatalogProductByKey("investor_pro_monthly")?.priceGrossMinor).toBe(

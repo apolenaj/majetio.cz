@@ -35,10 +35,13 @@ export default async function PridatNemovitostPage() {
           { label: "Nová nabídka" },
         ]}
       />
-      <InlineAlert tone="info" title="Bez platby předem ≠ zdarma" className="mb-8">
-        Vložení nabídky nevyžaduje platbu předem. Odměna portálu se sjednává podle balíčku
-        success-fee a vzniká až po doloženém uzavření a potvrzení — ne při odeslání
-        poptávky.
+      <InlineAlert tone="info" title="Cena zveřejnění" className="mb-8">
+        Běžná inzerce má pevnou cenu za období zveřejnění — není podmíněná procentní
+        provizí z prodeje. Aktuální balíčky najdete na{" "}
+        <a href="/cenik#inzerce" className="underline underline-offset-2">
+          ceníku
+        </a>
+        . Koncept můžete uložit dřív, než dokončíte platbu nebo firemní předplatné.
       </InlineAlert>
       <SellerListingForm mode="create" />
     </StandardPageLayout>
