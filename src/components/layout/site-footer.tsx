@@ -48,14 +48,14 @@ const SOCIAL = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-white/10 bg-[var(--surface-inverse)] text-[var(--text-inverse)]">
-      <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-6">
+    <footer className="mt-auto bg-[var(--surface-inverse)] text-[var(--text-inverse)]">
+      <Container className="grid gap-8 py-8 sm:grid-cols-2 lg:grid-cols-6 lg:gap-6 lg:py-9">
         <div className="lg:col-span-2">
           <Logo variant="light" size="md" label="Majetio" />
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/75">
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/70">
             {brand.claims.secondary}
           </p>
-          <p className="mt-4 text-sm text-white/60">
+          <p className="mt-3 text-sm text-white/55">
             Financování:{" "}
             <a
               href="https://hypotekajasne.cz"
@@ -66,17 +66,17 @@ export function SiteFooter() {
               HypotekaJasne.cz
             </a>
           </p>
-          <ul className="mt-5 flex items-center gap-3">
+          <ul className="mt-4 flex items-center gap-2">
             {SOCIAL.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
-                  className="inline-flex size-9 items-center justify-center rounded-[var(--radius-md)] border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white"
+                  className="inline-flex size-8 items-center justify-center rounded-[4px] border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
                   aria-label={item.label}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <item.Icon className="size-4" />
+                  <item.Icon className="size-3.5" />
                 </a>
               </li>
             ))}
@@ -85,15 +85,15 @@ export function SiteFooter() {
 
         {FOOTER_GROUPS.map((group) => (
           <div key={group.title}>
-            <p className="text-sm font-semibold tracking-wide text-[var(--action-accent)]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--action-accent)]">
               {group.title}
             </p>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2.5 space-y-1.5">
               {group.links.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm text-white/80 transition-colors hover:text-white"
+                    className="text-sm text-white/75 transition-colors hover:text-white"
                   >
                     {item.label}
                   </Link>
@@ -104,12 +104,12 @@ export function SiteFooter() {
         ))}
       </Container>
       <div className="border-t border-white/10">
-        <Container className="flex flex-col gap-2 py-4 text-xs text-white/55 sm:flex-row sm:justify-between">
+        <Container className="flex flex-col gap-1 py-3 text-[11px] text-white/50 sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} {brand.domains.cz}
           </p>
           <p>
-            Odhad není investiční doporučení. Výnosy nejsou garantované.{" "}
+            Odhad není investiční doporučení.{" "}
             <Link href="/pravni-upozorneni" className="underline underline-offset-2">
               Právní upozornění
             </Link>

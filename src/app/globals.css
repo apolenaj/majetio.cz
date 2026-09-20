@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @source "..";
+@import "../components/marketing/home/home-surface.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Majetio Design System tokens
@@ -7,27 +8,27 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Brand primitives — reference homepage 2026 */
+  /* Brand primitives — reference homepage */
   --brand-ink-950: #052032;
-  --brand-ink-900: #073047;
-  --brand-ink-800: #123248;
-  --brand-ink-600: #60717d;
+  --brand-ink-900: #07334a;
+  --brand-ink-800: #14354b;
+  --brand-ink-600: #647985;
   --brand-ink-400: #8a9aa5;
-  --brand-growth-700: #007a78;
-  --brand-growth-600: #058c88;
+  --brand-growth-700: #047a78;
+  --brand-growth-600: #058c89;
   --brand-growth-500: #0aa39e;
   --brand-sand-500: #c4a574;
   --brand-sand-400: #d4bc94;
-  --brand-canvas-100: #f7f4ee;
+  --brand-canvas-100: #f6f3ec;
   --brand-canvas-200: #efeae2;
-  --brand-canvas-300: #dde3e2;
+  --brand-canvas-300: #dde4e4;
   --brand-canvas-400: #c5cdcc;
   --brand-white: #ffffff;
   --brand-warm-white: #fcfbf8;
   --brand-danger-700: #9b2c2c;
   --brand-warning-700: #b45309;
   --brand-info-700: #0369a1;
-  --brand-neutral-500: #60717d;
+  --brand-neutral-500: #647985;
 
   /* Semantic surfaces */
   --background-primary: var(--brand-canvas-100);

@@ -60,10 +60,10 @@ export function SiteHeader(_props: {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-default)] bg-[color-mix(in_srgb,var(--background-primary)_92%,white)] backdrop-blur-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-default)] bg-white">
       <Container
         width="marketing"
-        className="flex h-[4.75rem] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
+        className="flex h-[4.5rem] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-10"
       >
         <div className="flex shrink-0 items-center">
           <Link
@@ -81,7 +81,7 @@ export function SiteHeader(_props: {
         </div>
 
         <nav
-          className="hidden items-center gap-6 xl:flex"
+          className="hidden items-center gap-5 xl:flex"
           aria-label="Hlavní navigace"
         >
           {NAV_PRIMARY.map((item) => {
@@ -110,7 +110,7 @@ export function SiteHeader(_props: {
             href={NAV_PRIMARY_CTA.href}
             variant="primary"
             size="sm"
-            className="hidden h-auto whitespace-nowrap rounded-lg px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-[background-color,box-shadow] duration-[var(--duration-fast)] hover:bg-[var(--action-primary-hover)] hover:shadow-md xl:inline-flex"
+            className="hidden h-auto whitespace-nowrap rounded-[4px] px-5 py-2.5 text-sm font-medium text-white xl:inline-flex"
             onClick={() =>
               track({
                 name: "primary_cta_clicked",
@@ -141,7 +141,7 @@ export function SiteHeader(_props: {
       {mobileOpen ? (
         <div
           id={menuId}
-          className="border-t border-[var(--border-default)] bg-[var(--surface-primary)] xl:hidden"
+          className="border-t border-[var(--border-default)] bg-white xl:hidden"
         >
           <Container className="flex flex-col gap-1 px-6 py-4">
             {NAV_PRIMARY.map((item) => (
@@ -156,7 +156,7 @@ export function SiteHeader(_props: {
             ))}
             <Link
               href={NAV_PRIMARY_CTA.href}
-              className="mt-2 inline-flex h-11 items-center justify-center rounded-lg bg-[var(--action-primary)] px-4 text-sm font-medium text-white"
+              className="mt-2 inline-flex h-11 items-center justify-center rounded-[4px] bg-[var(--action-primary)] px-4 text-sm font-medium text-white"
               onClick={() => setMobileOpen(false)}
             >
               {NAV_PRIMARY_CTA.label}
