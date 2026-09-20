@@ -33,7 +33,7 @@ const PRICE_OPTIONS = [
 ];
 
 const fieldClass =
-  "flex h-12 w-full items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 text-sm text-[var(--text-primary)] focus-within:border-[var(--action-accent)] focus-within:ring-2 focus-within:ring-[var(--focus-ring)]";
+  "flex h-11 w-full items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 text-sm text-[var(--text-primary)] focus-within:border-[var(--action-accent)] focus-within:ring-2 focus-within:ring-[var(--focus-ring)]";
 
 export function HomeSearchPanel() {
   const router = useRouter();
@@ -66,14 +66,14 @@ export function HomeSearchPanel() {
   }
 
   return (
-    <div className="relative z-10 -mt-6 sm:-mt-10">
+    <div className="relative z-10">
       <form
         onSubmit={onSubmit}
-        className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-[var(--surface-primary)] p-4 shadow-[var(--shadow-card)] sm:p-5"
+        className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-[var(--surface-primary)] px-3 py-3 shadow-[var(--shadow-card)] sm:px-4 sm:py-3.5"
         aria-label="Vyhledávání nemovitostí"
       >
         <div
-          className="flex flex-wrap gap-1 border-b border-[var(--border-default)] pb-3"
+          className="flex flex-wrap gap-0.5 border-b border-[var(--border-default)] pb-2"
           role="tablist"
           aria-label="Režim hledání"
         >
@@ -87,7 +87,7 @@ export function HomeSearchPanel() {
                 aria-selected={active}
                 onClick={() => setMode(item.id)}
                 className={cn(
-                  "relative rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                  "relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   active
                     ? "text-[var(--action-accent)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
@@ -95,14 +95,14 @@ export function HomeSearchPanel() {
               >
                 {item.label}
                 {active ? (
-                  <span className="absolute inset-x-3 -bottom-3 h-0.5 rounded-full bg-[var(--action-accent)]" />
+                  <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-[var(--action-accent)]" />
                 ) : null}
               </button>
             );
           })}
         </div>
 
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1.2fr_1fr_auto_auto]">
+        <div className="mt-2.5 grid gap-2 lg:grid-cols-[1fr_1.25fr_1fr_auto]">
           <label className={fieldClass}>
             <Building2 className="size-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
             <span className="sr-only">Typ nemovitosti</span>
@@ -152,40 +152,33 @@ export function HomeSearchPanel() {
 
           <button
             type="submit"
-            className="inline-flex h-12 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--action-accent)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--action-accent-hover)]"
+            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--action-accent)] px-5 text-sm font-semibold text-white transition-colors hover:bg-[var(--action-accent-hover)]"
           >
-            Hledat nemovitosti
+            Hledat
           </button>
-
-          <Link
-            href={buildHref()}
-            className="inline-flex h-12 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--border-strong)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--background-primary)]"
-          >
-            Podrobné filtry
-          </Link>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-          <Link
-            href="/nemovitosti?nabidka=prodej&razeni=hruby-vynos&jen-vypoctene=1"
-            className="font-medium text-[var(--action-accent)] underline-offset-2 hover:underline"
-          >
-            Investiční filtry
-          </Link>
-          <Link
-            href="/ucet/oblibene"
-            className="text-[var(--text-secondary)] underline-offset-2 hover:underline"
-          >
-            Uložené nabídky
-          </Link>
-          <Link
-            href="/sluzby/analyza-pred-koupi#poptavka"
-            className="text-[var(--text-muted)] underline-offset-2 hover:underline"
-          >
-            Už máte vybráno? Nechte si nemovitost posoudit.
-          </Link>
         </div>
       </form>
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 text-sm">
+        <Link
+          href={buildHref()}
+          className="font-medium text-[var(--action-accent)] underline-offset-2 hover:underline"
+        >
+          Podrobné filtry
+        </Link>
+        <Link
+          href="/nemovitosti?nabidka=prodej&razeni=hruby-vynos&jen-vypoctene=1"
+          className="font-medium text-[var(--action-accent)] underline-offset-2 hover:underline"
+        >
+          Investiční filtry
+        </Link>
+        <Link
+          href="/ucet/oblibene"
+          className="text-[var(--text-secondary)] underline-offset-2 hover:underline"
+        >
+          Uložené nabídky
+        </Link>
+      </div>
     </div>
   );
 }

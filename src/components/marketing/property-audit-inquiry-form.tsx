@@ -65,6 +65,7 @@ export function PropertyAuditInquiryForm({
   id = "posoudit",
   caseStudySlug,
   prefill,
+  chrome = "full",
 }: {
   className?: string;
   id?: string;
@@ -73,6 +74,8 @@ export function PropertyAuditInquiryForm({
     | "dum-pred-rekonstrukci"
     | "mensi-bytovy-dum";
   prefill?: PropertyAuditPrefill;
+  /** `fields` hides intro chrome for nested homepage step 2. */
+  chrome?: "full" | "fields";
 }) {
   const context = prefill ?? {};
   const [form, setForm] = useState<FormState>(() => emptyForm(context));
@@ -163,17 +166,23 @@ export function PropertyAuditInquiryForm({
       )}
       noValidate
     >
-      <p className="text-sm font-medium uppercase tracking-wide text-[var(--text-muted)]">
-        Nezávazná poptávka
-      </p>
-      <h3 className="mt-2 font-display text-2xl text-[var(--text-primary)]">
-        {context.propertyId ? "Analýza této nemovitosti" : "Posoudit moji nemovitost"}
-      </h3>
-      <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        {context.propertyId
-          ? "Údaje z nabídky už máme — doplňte účel, kontakt a případnou poznámku. Odesláním nevzniká objednávka ani platba."
-          : "Pošlete odkaz na inzerát nebo základní údaje. Odesláním nevzniká objednávka ani platba."}
-      </p>
+      {chrome === "full" ? (
+        <>
+          <p className="text-sm font-medium uppercase tracking-wide text-[var(--text-muted)]">
+            Nezávazná poptávka
+          </p>
+          <h3 className="mt-2 font-display text-2xl text-[var(--text-primary)]">
+            {context.propertyId
+              ? "Analýza této nemovitosti"
+              : "Posoudit moji nemovitost"}
+          </h3>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            {context.propertyId
+              ? "Údaje z nabídky už máme — doplňte účel, kontakt a případnou poznámku. Odesláním nevzniká objednávka ani platba."
+              : "Pošlete odkaz na inzerát nebo základní údaje. Odesláním nevzniká objednávka ani platba."}
+          </p>
+        </>
+      ) : null}
 
       {context.propertyId ? (
         <div className="mt-5 flex gap-3 rounded-xl border border-[var(--border-default)] p-3">
@@ -202,7 +211,12 @@ export function PropertyAuditInquiryForm({
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div
+        className={cn(
+          "grid gap-4 sm:grid-cols-2",
+          chrome === "full" || context.propertyId ? "mt-6" : "mt-0",
+        )}
+      >
         {!context.propertyId ? (
           <>
             <label className="sm:col-span-2 block space-y-1.5">

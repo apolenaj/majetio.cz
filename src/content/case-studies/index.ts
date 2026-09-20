@@ -12,6 +12,12 @@ export {
   breakEvenPurchasePriceHoldingEquity,
 } from "./compute";
 
+export {
+  rentalApartmentStudy,
+} from "./rental-apartment";
+export { houseRenovationStudy } from "./house-renovation";
+export { smallBuildingStudy } from "./small-building";
+
 export const CASE_STUDY_DEFINITIONS = [
   rentalApartmentStudy,
   houseRenovationStudy,
