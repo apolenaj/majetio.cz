@@ -49,14 +49,24 @@ export function Logo({
       className={cn(
         "inline-flex items-center",
         s.gap,
-        colorClass,
         variant === "compact" && "gap-2",
         className,
       )}
       aria-label={label}
     >
-      <BrandSymbol className={s.symbol} decorative />
-      <Wordmark className={s.text} />
+      <BrandSymbol
+        className={cn(
+          s.symbol,
+          variant === "light" ? "text-[#5ec4c1]" : "text-[var(--home-teal,#008f8c)]",
+        )}
+        decorative
+      />
+      <Wordmark
+        className={cn(
+          s.text,
+          variant === "light" ? "text-[var(--color-canvas)]" : "text-[var(--home-navy,#07344a)]",
+        )}
+      />
     </span>
   );
 }

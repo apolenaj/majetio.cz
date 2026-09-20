@@ -110,7 +110,7 @@ export function SiteHeader(_props: {
             href={NAV_PRIMARY_CTA.href}
             variant="primary"
             size="sm"
-            className="hidden h-auto whitespace-nowrap rounded-[4px] bg-[var(--action-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--action-accent-hover)] xl:inline-flex"
+            className="hidden h-auto whitespace-nowrap rounded-[4px] bg-[var(--home-navy,#07344a)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--home-navy-deep,#052e42)] xl:inline-flex"
             onClick={() =>
               track({
                 name: "primary_cta_clicked",

@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  ArrowLeftRight,
   ArrowRight,
   BarChart3,
+  Calculator,
   Gavel,
   Heart,
   Home,
@@ -13,6 +15,8 @@ import {
   PiggyBank,
   RefreshCw,
   Scale,
+  Settings,
+  Shield,
   Sparkles,
   TrendingUp,
   Users,
@@ -31,16 +35,18 @@ import { formatCzk } from "@/components/marketing/format";
 import type { PropertyCardData } from "@/components/property/property-card";
 import { PropertyListingImage } from "@/components/property/property-listing-image";
 
+const HERO_IMAGE = "/home/hero.png";
+
 const BENEFITS = [
   { label: "Krásnější domov", icon: Home },
   { label: "Lepší investice", icon: TrendingUp },
-  { label: "Jistější budoucnost", icon: Sparkles },
+  { label: "Jistější budoucnost", icon: Shield },
 ] as const;
 
 const ANALYSIS_POINTS = [
-  { title: "Celkové náklady koupě", icon: PiggyBank },
-  { title: "Rekonstrukce a potenciál", icon: Wrench },
-  { title: "Scénáře a rizika", icon: BarChart3 },
+  { line1: "Celkové náklady", line2: "koupě", icon: Calculator },
+  { line1: "Rekonstrukce", line2: "a potenciál", icon: BarChart3 },
+  { line1: "Scénáře", line2: "a rizika", icon: Shield },
 ] as const;
 
 const TOOLS = [
@@ -125,17 +131,20 @@ const PROJECTS = [
   {
     href: "/novostavby",
     title: "Novostavby a projekty",
-    image: "/case-studies/homepage-hero.png",
+    text: "Moderní bydlení s budoucností.",
+    image: "/home/hero.png",
   },
   {
     href: "/domy-na-klic",
     title: "Domy na klíč",
-    image: "/case-studies/house-after-visualization.png",
+    text: "Hotové bydlení bez starostí.",
+    image: "/home/prop-villa.png",
   },
   {
     href: "/nemovitosti/investicni-prilezitosti",
     title: "Investiční nemovitosti",
-    image: "/case-studies/rental-apartment.png",
+    text: "Příležitosti s výnosovým potenciálem.",
+    image: "/home/cat-invest.png",
   },
 ] as const;
 
@@ -160,7 +169,7 @@ const STUDY_TEASERS = [
   },
 ] as const;
 
-/** Design demo cards for empty catalog — labeled as ukázková data. */
+/** Design demo cards for empty catalog — aspirational visuals. */
 export const HOMEPAGE_SHOWCASE_LISTINGS: PropertyCardData[] = [
   {
     href: "/ukazky/byt-dlouhodoby-pronajem",
@@ -171,7 +180,7 @@ export const HOMEPAGE_SHOWCASE_LISTINGS: PropertyCardData[] = [
     areaSqm: 58,
     priceCzk: 5_490_000,
     imageUrl: "/case-studies/rental-apartment.png",
-    shortDescription: "Ukázková nabídka — nájem, náklady a cash flow.",
+    shortDescription: "Světlý byt s velkým oknem a balkonem.",
     featureHighlights: ["Balkon"],
     tags: ["Ukázková data"],
     isDemo: true,
@@ -183,8 +192,8 @@ export const HOMEPAGE_SHOWCASE_LISTINGS: PropertyCardData[] = [
     propertyTypeLabel: "Dům",
     areaSqm: 146,
     priceCzk: 7_890_000,
-    imageUrl: "/case-studies/house-before.png",
-    shortDescription: "Ukázková nabídka — rekonstrukce a rezerva.",
+    imageUrl: "/home/prop-villa.png",
+    shortDescription: "Moderní rodinný dům se zahradou.",
     featureHighlights: ["Zahrada"],
     tags: ["Ukázková data"],
     isDemo: true,
@@ -196,9 +205,9 @@ export const HOMEPAGE_SHOWCASE_LISTINGS: PropertyCardData[] = [
     propertyTypeLabel: "Bytový dům",
     areaSqm: 320,
     priceCzk: 12_800_000,
-    imageUrl: "/case-studies/small-building.png",
-    shortDescription: "Ukázková nabídka — obsazenost a výnos.",
-    featureHighlights: ["4 jednotky"],
+    imageUrl: "/home/prop-townhouse.png",
+    shortDescription: "Elegantní městský dům s výnosovým potenciálem.",
+    featureHighlights: ["4 byty"],
     tags: ["Ukázková data"],
     isDemo: true,
   },
@@ -254,11 +263,11 @@ export function PlatformHomepage({
       <section className="home-hero">
         <div className="home-hero-bleed" aria-hidden>
           <Image
-            src="/case-studies/homepage-hero.png"
+            src={HERO_IMAGE}
             alt=""
             fill
             priority
-            className="object-cover object-[center_28%]"
+            className="object-cover object-center"
             sizes="50vw"
           />
         </div>
@@ -276,10 +285,7 @@ export function PlatformHomepage({
             <ul className="home-hero-benefits">
               {BENEFITS.map((item) => (
                 <li key={item.label}>
-                  <item.icon
-                    className="size-3.5 stroke-[1.5] text-[var(--action-accent)]"
-                    aria-hidden
-                  />
+                  <item.icon aria-hidden />
                   {item.label}
                 </li>
               ))}
@@ -287,11 +293,11 @@ export function PlatformHomepage({
           </div>
           <div className="home-hero-mobile-photo">
             <Image
-              src="/case-studies/homepage-hero.png"
-              alt="Moderní bytový dům s balkony a zelení"
+              src={HERO_IMAGE}
+              alt="Moderní rezidenční komplex se zelení"
               fill
               priority
-              className="object-cover object-[center_28%]"
+              className="object-cover object-center"
               sizes="100vw"
             />
           </div>
@@ -303,7 +309,7 @@ export function PlatformHomepage({
       </section>
 
       {/* PROPERTIES */}
-      <section className="home-section-tight border-t border-[var(--border-default)] bg-white">
+      <section className="home-section home-props">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
@@ -316,16 +322,15 @@ export function PlatformHomepage({
             </Link>
           </div>
           {showingShowcase ? (
-            <p className="mt-1.5 text-xs text-[var(--text-muted)]">
+            <p className="sr-only">
               Ukázkové karty — nejde o aktuální nabídky z katalogu.
             </p>
           ) : null}
-          <div className="mt-3 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {displayListings.map((card) => (
               <HomePropertyCard
                 key={card.id ?? card.href}
                 property={card}
-                showcase={Boolean(card.isDemo) || showingShowcase}
               />
             ))}
           </div>
@@ -334,35 +339,36 @@ export function PlatformHomepage({
 
       {/* ANALYSIS */}
       <section className="home-analysis">
-        <Container className="grid items-center gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:gap-10">
+        <Container className="relative z-[1] grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
-            <p className="home-eyebrow text-[var(--action-accent)]">
+            <p className="home-eyebrow text-[var(--home-teal,#008f8c)]">
               Datově podložená rozhodnutí
             </p>
-            <h2 className="home-analysis-title mt-1">
+            <h2 className="home-analysis-title mt-1.5">
               Než si koupíte, podívejte se
               <br className="hidden sm:block" /> na čísla.
             </h2>
-            <p className="mt-1.5 max-w-md text-[0.8125rem] text-white/75">
+            <p className="mt-2 max-w-md text-sm text-white/75">
               Náklady, výnosy a rizika konkrétní nemovitosti v jedné analýze.
             </p>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+            <ul className="home-analysis-points">
               {ANALYSIS_POINTS.map((item) => (
-                <li key={item.title} className="flex items-start gap-2">
-                  <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--action-accent)]/20 text-[var(--action-accent)]">
-                    <item.icon className="size-3.5 stroke-[1.5]" aria-hidden />
-                  </span>
-                  <span className="text-[0.75rem] font-medium leading-snug text-white">
-                    {item.title}
+                <li key={item.line1} className="home-analysis-point">
+                  <item.icon aria-hidden />
+                  <span>
+                    {item.line1}
+                    <br />
+                    {item.line2}
                   </span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[0.6875rem] text-white/65">Podrobná analýza</p>
-            <p className="font-metric text-xl tracking-tight text-white">
+            <hr className="mt-5 border-white/15" />
+            <p className="mt-4 text-[0.6875rem] text-white/65">Podrobná analýza</p>
+            <p className="font-metric text-2xl tracking-tight text-white">
               {formatCzk(publicCustomerOffer.priceGrossCzk)}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <Link
                 href="/ukazky/byt-dlouhodoby-pronajem"
                 className="home-btn-outline-light"
@@ -375,75 +381,73 @@ export function PlatformHomepage({
             </div>
           </div>
 
-          <div className="home-analysis-card">
-            <div className="flex items-start justify-between gap-2">
+          <div className="home-analysis-card-wrap">
+            <span className="home-analysis-float-badge">
+              <BarChart3 className="size-3.5" aria-hidden />
+              Přehled pro vaše rozhodnutí
+            </span>
+            <div className="home-analysis-card">
               <div>
                 <p className="home-eyebrow">Modelová analýza</p>
-                <p className="mt-0.5 font-display text-base text-[var(--text-primary)]">
+                <p className="mt-0.5 font-display text-base text-[var(--home-navy,#07344a)]">
                   {houseRenovationStudy.shortTitle}
                 </p>
               </div>
-              <span className="rounded-[4px] bg-[var(--action-accent)]/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--action-accent)]">
-                Přehled
-              </span>
-            </div>
 
-            <dl className="mt-2.5 space-y-2">
-              {ANALYSIS_BARS.map((row) => (
-                <div key={row.label}>
-                  <div className="mb-0.5 flex items-baseline justify-between gap-2 text-[0.75rem]">
-                    <dt className="text-[var(--text-secondary)]">{row.label}</dt>
-                    <dd className="font-metric font-medium">{row.value}</dd>
+              <dl className="mt-3 space-y-2.5">
+                {ANALYSIS_BARS.map((row) => (
+                  <div key={row.label}>
+                    <div className="mb-1 flex items-baseline justify-between gap-2 text-[0.8125rem]">
+                      <dt className="text-[var(--home-muted,#657782)]">{row.label}</dt>
+                      <dd className="font-metric font-medium">{row.value}</dd>
+                    </div>
+                    <div className="home-bar-track">
+                      <div
+                        className="home-bar-fill"
+                        style={{ width: `${row.pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="home-bar-track">
-                    <div
-                      className="home-bar-fill"
-                      style={{ width: `${row.pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-1 text-[10px] leading-snug text-[var(--text-muted)]">
-              Modelová struktura nákladů ze studie — ne tržní ocenění.
-            </p>
+                ))}
+              </dl>
+              <p className="mt-1.5 text-[10px] leading-snug text-[var(--home-muted,#657782)]">
+                Modelová struktura nákladů ze studie — ne tržní ocenění.
+              </p>
 
-            <div className="home-analysis-thumbs">
-              <figure>
-                <div className="overflow-hidden rounded-[4px]">
+              <div className="home-analysis-compare">
+                <span className="home-analysis-arrow" aria-hidden>
+                  <ArrowLeftRight className="size-3.5" />
+                </span>
+                <figure>
                   <Image
                     src="/case-studies/house-before.png"
                     alt="Před rekonstrukcí"
                     width={280}
                     height={160}
-                    className="aspect-[8/5] max-h-[6.25rem] w-full object-cover"
                   />
-                </div>
-                <figcaption className="mt-0.5 text-center text-[10px] text-[var(--text-muted)]">
-                  Před
-                </figcaption>
-              </figure>
-              <figure>
-                <div className="overflow-hidden rounded-[4px] ring-1 ring-[var(--action-accent)]/30">
+                  <figcaption className="mt-1 text-center text-[10px] text-[var(--home-muted,#657782)]">
+                    Před rekonstrukcí
+                  </figcaption>
+                </figure>
+                <figure>
                   <Image
                     src="/case-studies/house-after-visualization.png"
                     alt="Po rekonstrukci — model"
                     width={280}
                     height={160}
-                    className="aspect-[8/5] max-h-[6.25rem] w-full object-cover"
                   />
-                </div>
-                <figcaption className="mt-0.5 text-center text-[10px] text-[var(--text-muted)]">
-                  Po
-                </figcaption>
-              </figure>
+                  <figcaption className="mt-1 text-center text-[10px] text-[var(--home-muted,#657782)]">
+                    Po rekonstrukci
+                  </figcaption>
+                </figure>
+              </div>
             </div>
           </div>
         </Container>
       </section>
 
       {/* TOOLS */}
-      <section className="home-section-tight bg-white">
+      <section className="home-section home-tools">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <h2 className="home-heading">Analýzy a kalkulačky</h2>
@@ -458,14 +462,9 @@ export function PlatformHomepage({
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map((tool) => (
               <Link key={tool.href} href={tool.href} className="home-card home-tool-card">
-                <tool.icon
-                  className="mt-0.5 size-[22px] shrink-0 stroke-[1.5] text-[var(--action-accent)]"
-                  aria-hidden
-                />
+                <tool.icon aria-hidden />
                 <span>
-                  <span className="home-card-title text-[var(--text-primary)]">
-                    {tool.title}
-                  </span>
+                  <span className="home-card-title">{tool.title}</span>
                   <span className="home-card-desc block">{tool.text}</span>
                 </span>
               </Link>
@@ -474,51 +473,55 @@ export function PlatformHomepage({
         </Container>
       </section>
 
-      {/* MODES */}
-      <section className="home-section-tight border-y border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)]">
+      {/* OPTIONS */}
+      <section className="home-section home-options">
         <Container>
           <h2 className="home-heading">Více možností bydlení a investování</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {MODES.map((mode) => (
               <Link key={mode.href} href={mode.href} className="home-card home-mode-card">
-                <mode.icon
-                  className="mt-0.5 size-[22px] shrink-0 stroke-[1.5] text-[var(--action-accent)]"
-                  aria-hidden
-                />
+                <mode.icon aria-hidden />
                 <span>
-                  <span className="home-card-title text-[var(--text-primary)]">
-                    {mode.title}
-                  </span>
+                  <span className="home-card-title">{mode.title}</span>
                   <span className="home-card-desc block">{mode.text}</span>
                 </span>
               </Link>
             ))}
           </div>
+          <p className="home-options-note">
+            Dostupnost jednotlivých možností podle konkrétní nabídky.
+          </p>
         </Container>
       </section>
 
-      {/* CATEGORIES — image overlay text */}
-      <section className="home-section-tight bg-white">
+      {/* CATEGORIES — image top + white footer */}
+      <section className="home-section-tight home-categories">
         <Container>
-          <div className="grid gap-3.5 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {PROJECTS.map((project) => (
               <Link
                 key={project.href}
                 href={project.href}
                 className="home-category-card group"
               >
-                <Image
-                  src={project.image}
-                  alt=""
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-                <span className="home-category-label">
-                  <span className="font-display text-[0.9375rem] leading-tight">
-                    {project.title}
+                <div className="home-category-media">
+                  <Image
+                    src={project.image}
+                    alt=""
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                </div>
+                <span className="home-category-footer">
+                  <span>
+                    <h3>{project.title}</h3>
+                    <p>{project.text}</p>
                   </span>
-                  <ArrowRight className="size-4 shrink-0" aria-hidden />
+                  <ArrowRight
+                    className="mt-0.5 size-4 shrink-0 text-[var(--home-teal,#008f8c)]"
+                    aria-hidden
+                  />
                 </span>
               </Link>
             ))}
@@ -527,7 +530,7 @@ export function PlatformHomepage({
       </section>
 
       {/* STUDIES */}
-      <section className="home-section-tight border-t border-[var(--border-default)] bg-[var(--brand-warm-white,#fcfbf8)]">
+      <section className="home-section home-studies">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <h2 className="home-heading">Podívejte se, co odhalí analýza</h2>
@@ -552,15 +555,18 @@ export function PlatformHomepage({
                     sizes="12vw"
                   />
                 </div>
-                <div className="flex flex-1 flex-col justify-center gap-0.5 p-2.5">
+                <div className="flex flex-1 flex-col justify-center gap-0.5 p-3">
                   <p className="home-eyebrow">Modelová studie</p>
-                  <h3 className="font-display text-[0.875rem] leading-snug text-[var(--text-primary)] group-hover:text-[var(--action-accent)]">
+                  <h3 className="font-display text-[0.9375rem] leading-snug text-[var(--home-navy,#07344a)] group-hover:text-[var(--home-teal,#008f8c)]">
                     {study.title}
                   </h3>
-                  <p className="line-clamp-2 text-[0.6875rem] leading-snug text-[var(--text-muted)]">
+                  <p className="line-clamp-2 text-[0.75rem] leading-snug text-[var(--home-muted,#657782)]">
                     {study.text}
                   </p>
                 </div>
+                <span className="home-study-arrow">
+                  <ArrowRight className="size-4" aria-hidden />
+                </span>
               </Link>
             ))}
           </div>
@@ -569,14 +575,15 @@ export function PlatformHomepage({
 
       {/* SELLER */}
       <section className="home-seller-strip home-section-tight">
-        <Container className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-          <div className="flex items-start gap-2.5">
-            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-[var(--action-accent)]/30 text-[var(--action-accent)]">
-              <KeyRound className="size-3.5 stroke-[1.5]" aria-hidden />
+        <Home className="home-seller-deco" aria-hidden />
+        <Container className="relative z-[1] flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <div className="flex items-start gap-3">
+            <span className="home-seller-icon">
+              <KeyRound aria-hidden />
             </span>
             <div>
-              <h2 className="home-heading text-lg">Prodáváte nebo pronajímáte?</h2>
-              <p className="mt-0.5 text-[0.8125rem] text-[var(--text-secondary)]">
+              <h2 className="home-seller-title">Prodáváte nebo pronajímáte?</h2>
+              <p className="mt-1 text-[0.8125rem] text-[var(--home-muted,#657782)]">
                 Pro majitele, makléře, realitní kanceláře i developery.
               </p>
             </div>
@@ -589,7 +596,11 @@ export function PlatformHomepage({
               Služby a ceník inzerce
             </Link>
           </div>
-          <Link href="/ucet/nabidky" className="home-link lg:text-right">
+          <Link
+            href="/ucet/nabidky"
+            className="home-link inline-flex items-center gap-1.5 lg:justify-end"
+          >
+            <Settings className="size-3.5" aria-hidden />
             Správa nabídek v mém účtu
           </Link>
         </Container>
@@ -609,10 +620,8 @@ export function PlatformHomepage({
 
 function HomePropertyCard({
   property,
-  showcase,
 }: {
   property: PropertyCardData;
-  showcase?: boolean;
 }) {
   const tag =
     property.featureHighlights?.[0] ??
@@ -622,7 +631,7 @@ function HomePropertyCard({
 
   return (
     <article className="home-card overflow-hidden">
-      <Link href={property.href} className="block">
+      <Link href={property.href} className="group block">
         <div className="home-prop-media">
           <PropertyListingImage
             src={property.imageUrl}
@@ -630,17 +639,12 @@ function HomePropertyCard({
             className="transition-transform duration-500 group-hover:scale-[1.02]"
           />
           {tag ? (
-            <span className="absolute bottom-2.5 left-2.5 z-10 rounded-[4px] bg-white/95 px-2 py-0.5 text-[11px] font-medium text-[var(--text-primary)]">
+            <span className="absolute bottom-2.5 left-2.5 z-10 rounded-[4px] bg-white/95 px-2 py-0.5 text-[11px] font-medium text-[var(--home-navy,#07344a)]">
               {tag}
             </span>
           ) : null}
-          {showcase ? (
-            <span className="absolute left-2.5 top-2.5 z-10 rounded-[4px] bg-[var(--surface-inverse)]/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-              Ukázka
-            </span>
-          ) : null}
           <span
-            className="absolute right-2.5 top-2.5 z-10 inline-flex size-7 items-center justify-center rounded-full bg-white/90 text-[var(--text-muted)]"
+            className="absolute right-2.5 top-2.5 z-10 inline-flex size-7 items-center justify-center rounded-full bg-white/90 text-[var(--home-muted,#657782)]"
             aria-hidden
           >
             <Heart className="size-3.5" />
@@ -655,11 +659,11 @@ function HomePropertyCard({
                 : "Na vyžádání"}
             </p>
           </div>
-          <p className="mt-0.5 text-[0.8125rem] text-[var(--text-secondary)]">
+          <p className="mt-0.5 text-[0.8125rem] text-[var(--home-muted,#657782)]">
             {property.location}
           </p>
           {property.shortDescription ? (
-            <p className="mt-0.5 line-clamp-2 text-[0.75rem] text-[var(--text-muted)]">
+            <p className="mt-0.5 line-clamp-2 text-[0.75rem] text-[var(--home-muted,#657782)]">
               {property.shortDescription}
             </p>
           ) : null}

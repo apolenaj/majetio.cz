@@ -34,12 +34,12 @@ export function HomeAssessmentEntry() {
   }
 
   return (
-    <div className="grid items-center gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-6">
+    <div className="grid items-center gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-8">
       <div>
-        <h2 className="home-heading text-xl">
+        <h2 className="home-heading text-[clamp(1.375rem,2vw,1.75rem)]">
           Máte vybranou nemovitost?
         </h2>
-        <p className="mt-1 text-[0.8125rem] text-[var(--text-secondary)]">
+        <p className="mt-1 text-[0.8125rem] text-[var(--home-muted,#657782)]">
           Pošlete nám odkaz a zjistěte možnosti posouzení.
         </p>
       </div>

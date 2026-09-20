@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/container";
 import { brand } from "@/config/brand";
-import { FOOTER_GROUPS } from "@/config/navigation";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -46,74 +45,71 @@ const SOCIAL = [
   { href: "https://www.youtube.com/", label: "YouTube", Icon: YouTubeIcon },
 ] as const;
 
+/** Compact horizontal footer matching homepage reference. */
+const FOOTER_LINKS = [
+  { href: "/o-nas", label: "O nás" },
+  { href: "/ochrana-soukromi", label: "Ochrana soukromí" },
+  { href: "/kontakt", label: "Kontakt" },
+  { href: "/cookies", label: "Cookies" },
+  { href: "/metodika", label: "Metodika" },
+  { href: "/podminky", label: "Obchodní podmínky" },
+  { href: "/zdroje-dat", label: "Zdroje dat" },
+  { href: "/pravni-upozorneni", label: "Právní upozornění" },
+  { href: "/duvera-a-bezpecnost", label: "Důvěra a bezpečnost" },
+] as const;
+
 export function SiteFooter() {
   return (
-    <footer className="mt-auto bg-[var(--surface-inverse)] text-[var(--text-inverse)]">
-      <Container className="home-footer-compact grid gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:gap-3">
-        <div className="lg:col-span-2">
+    <footer className="home-footer mt-auto">
+      <Container className="home-footer-inner">
+        <div>
           <Logo variant="light" size="sm" label="Majetio" />
-          <p className="mt-1.5 max-w-[13rem] text-[0.6875rem] leading-snug text-white/70">
-            {brand.claims.secondary}
-          </p>
-          <p className="mt-1.5 text-[0.6875rem] text-white/55">
-            Financování:{" "}
+          <p className="home-footer-tag">Nemovitosti s větším významem.</p>
+        </div>
+
+        <div>
+          <nav className="home-footer-links" aria-label="Patička">
+            {FOOTER_LINKS.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <p className="home-footer-finance">
+            Financování s{" "}
             <a
               href="https://hypotekajasne.cz"
-              className="underline underline-offset-2 hover:text-white"
               rel="noopener noreferrer"
               target="_blank"
             >
               HypotekaJasne.cz
             </a>
           </p>
-          <ul className="mt-2 flex items-center gap-1.5">
+        </div>
+
+        <div className="flex flex-col items-start gap-3 lg:items-end">
+          <ul className="home-footer-social">
             {SOCIAL.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
-                  className="inline-flex size-6 items-center justify-center rounded-[4px] border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
                   aria-label={item.label}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <item.Icon className="size-3" />
+                  <item.Icon className="size-3.5" />
                 </a>
               </li>
             ))}
           </ul>
         </div>
-
-        {FOOTER_GROUPS.map((group) => (
-          <div key={group.title}>
-            <p className="text-[0.5625rem] font-semibold uppercase tracking-wide text-[var(--action-accent)]">
-              {group.title}
-            </p>
-            <ul className="mt-1.5 space-y-0.5">
-              {group.links.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-[0.6875rem] leading-snug text-white/75 transition-colors hover:text-white"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
       </Container>
-      <div className="border-t border-white/10">
-        <Container className="flex flex-col gap-0.5 py-2 text-[10px] text-white/50 sm:flex-row sm:justify-between">
+      <div className="home-footer-copy">
+        <Container className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} {brand.domains.cz}
           </p>
-          <p>
-            Odhad není investiční doporučení.{" "}
-            <Link href="/pravni-upozorneni" className="underline underline-offset-2">
-              Právní upozornění
-            </Link>
-          </p>
+          <p>Všechna práva vyhrazena.</p>
         </Container>
       </div>
     </footer>
