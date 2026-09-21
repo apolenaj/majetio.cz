@@ -80,6 +80,10 @@ export function PropertySearchFilters({
   }
 
   function onTabChange(tab: SearchContextTab) {
+    if (tab === "zahranicni") {
+      router.push("/zahranicni-nemovitosti");
+      return;
+    }
     const next: PropertyUrlFilterState = {
       ...draft,
       kontext: tab,

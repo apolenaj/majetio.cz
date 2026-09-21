@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Columns2, Share2 } from "lucide-react";
 
+import { FinancingSummary } from "@/components/financing/financing-summary";
 import { SavePropertyControl } from "@/components/favourites/save-property-control";
 import { PropertyPriceBlock } from "@/components/property/property-price-block";
 import { ReportListingDialog } from "@/components/property/report-listing-dialog";
@@ -20,6 +21,7 @@ import {
 } from "@/domains/properties/search/compare-tray";
 import { mortgageLeadFinancingPageHref } from "@/domains/leads/service/user-messaging";
 import type { MortgageLeadDuplicateInfo } from "@/domains/leads/schemas/mortgage-lead";
+import { getSiteOrigin } from "@/domains/seo/site-origin";
 import { cn } from "@/lib/utils";
 
 function toCompare(item: {
@@ -143,6 +145,15 @@ export function PropertyDecisionActions({
           priceHistory={property.priceHistory}
           compact
         />
+
+        {property.askingPrice != null && property.askingPrice > 0 ? (
+          <FinancingSummary
+            propertyPriceCzk={property.askingPrice}
+            propertyUrl={`${getSiteOrigin()}${href}`}
+            variant="compact"
+            sourceContext="property_detail"
+          />
+        ) : null}
 
         <div className="flex flex-col gap-2">
           <ButtonLink href={analyzeHref}>Analyzovat nemovitost</ButtonLink>

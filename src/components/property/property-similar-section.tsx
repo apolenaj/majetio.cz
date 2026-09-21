@@ -1,7 +1,7 @@
 import { PropertyCard, type PropertyCardData } from "@/components/property/property-card";
 import { Card } from "@/components/ui/card";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 export type SimilarPropertyItem = {
   card: PropertyCardData;

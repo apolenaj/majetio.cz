@@ -1,0 +1,207 @@
+/* FinancingSummary + HypotekaJasneCTA — Majetio warm white / navy / teal */
+
+.fs-card,
+.fs-compact,
+.fs-section {
+  --fs-navy: #0b3550;
+  --fs-teal: #0d9a92;
+  --fs-teal-dark: #087d78;
+  --fs-muted: #667a86;
+  --fs-border: #dde5e7;
+  --fs-cream: #fcfbf8;
+  --fs-soft: #f4fafa;
+}
+
+.fs-card,
+.fs-section {
+  margin-top: 1rem;
+  border: 1px solid var(--fs-border);
+  border-radius: 12px;
+  background: linear-gradient(165deg, var(--fs-cream), #fff 42%);
+  padding: 1.15rem 1.25rem;
+}
+
+.fs-section {
+  margin-top: 0;
+  padding: 1.35rem 1.4rem;
+}
+
+.fs-head h3 {
+  font-family: var(--font-source-serif), ui-serif, Georgia, serif;
+  font-size: 1.25rem;
+  color: var(--fs-navy);
+  font-weight: 600;
+}
+
+.fs-head p {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--fs-muted);
+}
+
+.fs-compact {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--fs-border);
+}
+
+.fs-compact > p {
+  font-size: 0.875rem;
+  color: var(--fs-navy);
+}
+
+.fs-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.65rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .fs-section .fs-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.fs-grid dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fs-muted);
+}
+
+.fs-grid dd {
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--fs-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.fs-emphasis {
+  color: var(--fs-teal-dark) !important;
+}
+
+.fs-link {
+  margin-top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fs-teal-dark);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fs-editor {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--fs-soft);
+  border: 1px solid var(--fs-border);
+}
+
+@media (min-width: 480px) {
+  .fs-editor {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.fs-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--fs-muted);
+}
+
+.fs-editor input {
+  min-height: 2.35rem;
+  border: 1px solid var(--fs-border);
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.875rem;
+  color: var(--fs-navy);
+  background: #fff;
+}
+
+.fs-disclaimer {
+  margin-top: 0.85rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--fs-muted);
+}
+
+.fs-meta {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--fs-muted);
+}
+
+.fs-actions {
+  margin-top: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.fs-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.6rem;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  background: var(--fs-teal);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fs-primary:hover {
+  background: var(--fs-teal-dark);
+}
+
+.fs-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--fs-border);
+  background: #fff;
+  color: var(--fs-navy);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fs-brand {
+  margin-top: 0.65rem;
+  font-size: 0.7rem;
+  color: var(--fs-muted);
+}
+
+.fs-muted {
+  font-size: 0.875rem;
+  color: var(--fs-muted);
+}
+
+.fs-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fs-navy);
+}

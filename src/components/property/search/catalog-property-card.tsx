@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Heart, MapPin } from "lucide-react";
 
+import { FINANCING_ASSUMPTIONS, resolveFinancingInputs } from "@/config/financing-assumptions";
 import { formatCzk } from "@/lib/format";
+import { calculateMortgage } from "@/lib/calculators/mortgage";
 import { resolveShortDescription } from "@/domains/listings/negotiations/validate";
 import {
   catalogPropertyHref,
@@ -50,6 +52,18 @@ export function PropertyCard({ property }: { property: Property }) {
   const tags = property.stitky.slice(0, 4);
   const href = catalogPropertyHref(property.id);
   const detailLabel = `Zobrazit detail: ${property.nazev}`;
+  const modelPayment =
+    property.typ_transakce === "prodej" && property.cena > 0
+      ? (() => {
+          const resolved = resolveFinancingInputs({ propertyPriceCzk: property.cena });
+          if (resolved.loanAmountCzk <= 0) return null;
+          return calculateMortgage({
+            principal: resolved.loanAmountCzk,
+            annualInterestRate: FINANCING_ASSUMPTIONS.referenceMortgageRatePp,
+            years: FINANCING_ASSUMPTIONS.defaultTermYears,
+          }).monthlyPayment;
+        })()
+      : null;
 
   return (
     <article className="property-card-premium flex h-full flex-col overflow-hidden rounded-lg border border-[#DCE5E7] bg-white shadow-[0_1px_2px_rgb(12_53_81/0.04)]">
@@ -101,6 +115,11 @@ export function PropertyCard({ property }: { property: Property }) {
         <p className="whitespace-nowrap font-metric text-[1.25rem] font-semibold text-[#0C3551]">
           {price}
         </p>
+        {modelPayment != null ? (
+          <p className="hidden text-xs text-[#667A86] sm:block">
+            Modelová splátka ≈ {formatCzk(modelPayment)}/měs.
+          </p>
+        ) : null}
         <p className="text-sm text-[#667A86]">
           {property.dispozice ? `${property.dispozice} · ` : null}
           {new Intl.NumberFormat("cs-CZ").format(property.plocha_m2)} m²

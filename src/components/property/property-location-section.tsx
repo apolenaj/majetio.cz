@@ -10,7 +10,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { formatCzkPerSqm, formatPercentPoints } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 function LocationMapVisual({
   location,

@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 
+import { HypotekaJasneCTA } from "@/components/financing/hypotekajasne-cta";
+import { FINANCING_ASSUMPTIONS } from "@/config/financing-assumptions";
 import { calculateMortgage } from "@/lib/calculators";
-import { DEMO_INTEREST_RATE } from "@/lib/calculators";
 
 import { CalculatorFooterCta, CalculatorShell } from "../calculator-shell";
 import {
@@ -34,8 +35,8 @@ const DEMO: FinanceState = {
   ownCapital: 1_500_000,
   loanAmount: 4_400_000,
   loanTouched: true,
-  rate: DEMO_INTEREST_RATE,
-  years: 30,
+  rate: FINANCING_ASSUMPTIONS.referenceMortgageRatePp,
+  years: FINANCING_ASSUMPTIONS.defaultTermYears,
   extraCosts: 0,
 };
 
@@ -44,8 +45,8 @@ const BLANK: FinanceState = {
   ownCapital: 0,
   loanAmount: 0,
   loanTouched: false,
-  rate: DEMO_INTEREST_RATE,
-  years: 30,
+  rate: FINANCING_ASSUMPTIONS.referenceMortgageRatePp,
+  years: FINANCING_ASSUMPTIONS.defaultTermYears,
   extraCosts: 0,
 };
 
@@ -144,37 +145,55 @@ export function FinancingTool() {
           <MoneyField
             label="Jiné jednorázové náklady"
             value={state.extraCosts}
-            onChange={(extraCosts) => setState((current) => ({ ...current, extraCosts }))}
+            onChange={(extraCosts) =>
+              setState((current) => ({ ...current, extraCosts }))
+            }
             hint="Neovlivňují splátku, jen celkovou potřebu hotovosti."
           />
+          <p className="calc-assumptions">
+            Referenční sazba{" "}
+            {FINANCING_ASSUMPTIONS.referenceMortgageRatePp.toLocaleString("cs-CZ", {
+              maximumFractionDigits: 2,
+            })}{" "}
+            % · {FINANCING_ASSUMPTIONS.sourceLabel} ·{" "}
+            {FINANCING_ASSUMPTIONS.lastUpdated}
+          </p>
         </section>
         <section className="calc-panel">
           <h2>Výsledky</h2>
           <div className="calc-result-hero">
-            <span>Měsíční splátka</span>
+            <span>Orientační měsíční splátka</span>
             <strong>{moneyText(mortgage.monthlyPayment)}</strong>
             <p>Výsledek při zadané sazbě a splatnosti. Není závazná nabídka banky.</p>
           </div>
           <div className="calc-stats">
-            <Kpi label="Kupní cena" value={moneyText(state.purchasePrice)} />
-            <Kpi label="Vlastní prostředky" value={moneyText(state.ownCapital + state.extraCosts)} />
+            <Kpi label="Cena nemovitosti" value={moneyText(state.purchasePrice)} />
+            <Kpi
+              label="Vlastní prostředky"
+              value={moneyText(state.ownCapital + state.extraCosts)}
+            />
             <Kpi label="Výše úvěru" value={moneyText(loan)} />
             <Kpi label="LTV" value={pctText(ltv, 1)} hint="Úvěr dělený kupní cenou." />
-            <Kpi label="Roční splátky" value={moneyText(mortgage.annualDebtService)} />
             <Kpi label="Celkem zaplaceno" value={moneyText(mortgage.totalPaid)} />
-            <Kpi label="Celkem úroky" value={moneyText(mortgage.totalInterest)} />
+            <Kpi label="Celkové úroky" value={moneyText(mortgage.totalInterest)} />
           </div>
-          <h3 className="calc-subhead">Citlivost sazby</h3>
+          <h3 className="calc-subhead">Scénáře sazby</h3>
           <div className="calc-stats">
             {scenarios.map((item) => (
               <Kpi
                 key={item.shift}
-                label={item.shift === 0 ? "Zadaná sazba" : `${item.shift > 0 ? "+" : ""}${item.shift} p. b.`}
+                label={
+                  item.shift === 0
+                    ? "Referenční"
+                    : item.shift < 0
+                      ? "Nižší"
+                      : "Vyšší"
+                }
                 value={moneyText(item.payment)}
                 hint={
                   item.delta == null || item.shift === 0
                     ? `${pctText(item.rate)}`
-                    : `Rozdíl proti základu ${moneyText(item.delta)}`
+                    : `Rozdíl proti referenci ${moneyText(item.delta)}`
                 }
               />
             ))}
@@ -196,13 +215,33 @@ export function FinancingTool() {
                 .filter((row) => row.year % 5 === 0)
                 .map((row) => (
                   <li key={row.year}>
-                    Rok {row.year}: jistina {moneyText(row.principalPaid)}, úrok {moneyText(row.interestPaid)}, zůstatek {moneyText(row.balance)}.
+                    Rok {row.year}: jistina {moneyText(row.principalPaid)}, úrok{" "}
+                    {moneyText(row.interestPaid)}, zůstatek {moneyText(row.balance)}.
                   </li>
                 ))}
             </ul>
           </div>
-          <CrossLinks links={[{ href: "/kalkulacky/cash-flow", label: "Spočítat cash flow →" }]} />
-          <Disclaimer extra="Nejde o schválení úvěru ani závaznou nabídku banky." />
+
+          <div className="calc-footer-cta">
+            <HypotekaJasneCTA
+              propertyPriceCzk={state.purchasePrice}
+              ownFundsCzk={state.ownCapital}
+              loanAmountCzk={loan}
+              termYears={state.years}
+              ratePp={state.rate}
+              sourceContext="calculator"
+              label="Porovnat aktuální financování"
+            />
+          </div>
+          <p className="calc-assumptions">
+            Chcete zjistit konkrétní možnosti? Aktuální sazby a varianty na
+            HypotékaJasně.cz.
+          </p>
+
+          <CrossLinks
+            links={[{ href: "/kalkulacky/cash-flow", label: "Spočítat cash flow →" }]}
+          />
+          <Disclaimer extra={FINANCING_ASSUMPTIONS.disclaimerCs} />
         </section>
       </div>
     </CalculatorShell>

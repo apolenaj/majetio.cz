@@ -59,7 +59,15 @@ export type AnalyticsEvent =
   | { name: "sample_analysis_viewed"; props: { isDemo: true } }
   | {
       name: "hypotekajasne_cta_clicked";
-      props: { target: "calculator" | "external"; location: "homepage" };
+      props: {
+        target: "calculator" | "external";
+        location:
+          | "homepage"
+          | "property_detail"
+          | "calculator"
+          | "foreign_property"
+          | "tools";
+      };
     }
   | {
       name: "pricing_cta_clicked";

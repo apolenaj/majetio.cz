@@ -15,6 +15,7 @@ import { MarketCapabilityNotice } from "@/components/markets/market-capability-n
 import { isCapabilityUiAvailable } from "@/domains/markets";
 import { PropertyInvestmentOverview } from "@/components/property/property-investment-overview";
 import { ScenarioSwitcher } from "@/components/property/property-scenario-switcher";
+import { FinancingSummary } from "@/components/financing/financing-summary";
 import { PropertyDetailFinancing } from "@/components/property/property-detail-financing";
 import { PropertyRenovationSection } from "@/components/property/property-renovation-section";
 import { PropertyRisksSection } from "@/components/property/property-risks-section";
@@ -298,12 +299,20 @@ export default async function PropertyDetailPage({ params }: Props) {
             <section id="prehled" className="scroll-mt-28 space-y-10">
               <PropertyGallery media={property.media} title={property.title} />
 
-              <div className="lg:hidden">
+              <div className="lg:hidden space-y-3">
                 <PropertyPriceBlock
                   askingPrice={property.askingPrice}
                   pricePerSqm={property.pricePerSqm}
                   priceHistory={property.priceHistory}
                 />
+                {property.askingPrice != null && property.askingPrice > 0 ? (
+                  <FinancingSummary
+                    propertyPriceCzk={property.askingPrice}
+                    propertyUrl={`${getSiteOrigin()}/nemovitosti/${property.slug}`}
+                    variant="compact"
+                    sourceContext="property_detail"
+                  />
+                ) : null}
               </div>
 
               <PropertyQuickSummary
@@ -359,6 +368,15 @@ export default async function PropertyDetailPage({ params }: Props) {
             </section>
 
             <section id="financovani" className="scroll-mt-28 space-y-10">
+              {property.askingPrice != null && property.askingPrice > 0 ? (
+                <FinancingSummary
+                  propertyPriceCzk={property.askingPrice}
+                  propertyUrl={`${getSiteOrigin()}/nemovitosti/${property.slug}`}
+                  variant="section"
+                  sourceContext="property_detail"
+                />
+              ) : null}
+
               <PropertyDetailFinancing
                 propertyId={property.id}
                 propertySlug={property.slug}
@@ -398,7 +416,7 @@ export default async function PropertyDetailPage({ params }: Props) {
                   locationLine ||
                   property.location.label ||
                   property.location.city ||
-                  "Neuvedeno",
+                  "Nutno ověřit",
                 askingPrice: property.askingPrice,
                 currency: property.currency,
                 transactionType: property.transactionType,
@@ -477,7 +495,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             <PropertyFeaturesPanel
               basicRows={[
                 { label: "Typ", value: propertyTypeLabel(property.propertyType) },
-                { label: "Dispozice", value: property.layout ?? "Neuvedeno" },
+                { label: "Dispozice", value: property.layout ?? "Nutno ověřit" },
                 {
                   label: "Užitná plocha",
                   value: areaLabel(property.usableArea, property.usableAreaDisplay),
@@ -562,7 +580,7 @@ export default async function PropertyDetailPage({ params }: Props) {
                         locationLine ||
                         property.location.label ||
                         property.location.city ||
-                        "Neuvedeno",
+                        "Nutno ověřit",
                       askingPrice: property.askingPrice,
                       currency: property.currency,
                       transactionType: property.transactionType,

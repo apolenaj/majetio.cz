@@ -14,7 +14,7 @@ import {
 } from "@/content/demo-property-context";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 /**
  * Dominant risks + verify checklist + due diligence status.

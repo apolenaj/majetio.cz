@@ -3,7 +3,7 @@ import type { CashFlowWaterfallDemo } from "@/content/demo-property-financial";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 type Row = {
   key: string;

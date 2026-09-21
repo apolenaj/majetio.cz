@@ -11,3 +11,5 @@ export {
 } from "./property-financing-calculator";
 export { FinancialPassportPreview, type FinancialPassportPreviewProps } from "./financial-passport-preview";
 export { MortgageReadinessCard } from "./mortgage-readiness-card";
+export { FinancingSummary } from "./financing-summary";
+export { HypotekaJasneCTA } from "./hypotekajasne-cta";

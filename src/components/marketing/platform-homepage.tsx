@@ -123,7 +123,7 @@ const MODES = [
     icon: RefreshCw,
   },
   {
-    href: "/moznosti/zahranicni",
+    href: "/zahranicni-nemovitosti",
     title: "Zahraniční nemovitosti",
     text: "Objevte příležitosti za hranicemi.",
     icon: MapPinned,

@@ -3,7 +3,7 @@ import type { RenovationDemo } from "@/content/demo-property-financial";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button-link";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 function Cell({ label, value }: { label: string; value: string }) {
   return (

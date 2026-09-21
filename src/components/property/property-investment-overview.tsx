@@ -6,7 +6,7 @@ import { MobileDisclosure } from "@/components/property/mobile-disclosure";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 function MetricCell({
   label,
@@ -64,7 +64,7 @@ export function PropertyInvestmentOverview({
         Investiční přehled a cash flow
       </h2>
       <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-        Základní ekonomika nabídky. Chybějící výpočty ukazujeme jako „Neuvedeno“,
+        Základní ekonomika nabídky. Chybějící výpočty ukazujeme jako „Nutno ověřit“,
         nikoli jako nulu.
       </p>
 

@@ -24,11 +24,11 @@ describe("structured property features", () => {
     expect(presenceToDb("no")).toBe(false);
   });
 
-  it("formats public labels Ano / Není / Neuvedeno", () => {
+  it("formats public labels Ano / Není / Nutno ověřit", () => {
     expect(formatFeatureLine({ key: "balcony", presence: "yes", detail: { areaSqm: 6.2 } }).value).toContain("Ano");
     expect(formatFeatureLine({ key: "balcony", presence: "yes", detail: { areaSqm: 6.2 } }).value).toContain("6,2");
     expect(formatFeatureLine({ key: "loggia", presence: "no" }).value).toBe("Není");
-    expect(formatFeatureLine({ key: "cellar", presence: "unset" }).value).toBe("Neuvedeno");
+    expect(formatFeatureLine({ key: "cellar", presence: "unset" }).value).toBe("Nutno ověřit");
     expect(
       formatFeatureLine({
         key: "terrace",

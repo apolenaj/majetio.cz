@@ -49,7 +49,7 @@ export function buildPublicFeatureGroups(input: {
   for (const def of applicableFeatureDefs(input.propertyType)) {
     const presence = presenceFromDb(input.answers[def.key]);
     // Nevztažné typy už filtruje applicableFeatureDefs.
-    // Historické unset: zobraz „Neuvedeno“ jen u povinných / relevantních.
+    // Historické unset: zobraz „Nutno ověřit“ jen u povinných / relevantních.
     const line = formatFeatureLine({
       key: def.key,
       presence,
@@ -74,7 +74,7 @@ export function buildPublicFeatureGroups(input: {
         utilityRows.push({
           key,
           label: LAND_UTILITY_LABELS[key],
-          value: "Neuvedeno",
+          value: "Nutno ověřit",
           note: null,
         });
         continue;
@@ -120,7 +120,7 @@ function formatArea(detail: FeatureDetail | null | undefined): string | null {
 export function formatFeaturePresence(presence: FeaturePresence): string {
   if (presence === "yes") return "Ano";
   if (presence === "no") return "Není";
-  return "Neuvedeno";
+  return "Nutno ověřit";
 }
 
 export function formatFeatureLine(input: {

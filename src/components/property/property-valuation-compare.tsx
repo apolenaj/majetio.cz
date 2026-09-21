@@ -12,7 +12,7 @@ import {
   toConfidenceLevel,
 } from "@/components/trust";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 function clamp01(n: number) {
   return Math.min(1, Math.max(0, n));

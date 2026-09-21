@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Calculator,
   CheckCircle2,
+  ExternalLink,
   Landmark,
   LineChart,
   Percent,
@@ -15,6 +16,7 @@ import {
   Wrench,
 } from "lucide-react";
 
+import { HypotekaJasneCTA } from "@/components/financing/hypotekajasne-cta";
 import {
   CATALOG_TOOLS,
   FEATURED_TOOLS,
@@ -123,6 +125,35 @@ export function ToolsHub() {
           <div className="tools-featured">
             {FEATURED_TOOLS.map((tool) => {
               const Icon = FEATURED_ICONS[tool.icon];
+              if (tool.id === "featured-finance") {
+                return (
+                  <article key={tool.id} className="tools-featured-card tools-featured-card--static">
+                    <div className="tools-featured-card-top">
+                      <span className="tools-featured-icon">
+                        <Icon aria-hidden />
+                      </span>
+                      {tool.badge ? (
+                        <span className="tools-featured-badge">{tool.badge}</span>
+                      ) : null}
+                    </div>
+                    <h3>{tool.title}</h3>
+                    <p>
+                      Spočítejte orientační splátku, vlastní zdroje a výši úvěru.
+                    </p>
+                    <p className="tools-featured-use">{tool.useCase}</p>
+                    <div className="tools-dual-cta">
+                      <Link href={tool.href} className="tools-btn-primary">
+                        Spočítat financování
+                      </Link>
+                      <HypotekaJasneCTA
+                        sourceContext="tools"
+                        label="Aktuální sazby a možnosti"
+                        className="tools-btn-outline tools-external-cta"
+                      />
+                    </div>
+                  </article>
+                );
+              }
               return (
                 <Link
                   key={tool.id}
@@ -180,6 +211,42 @@ export function ToolsHub() {
           <div className="tools-catalog">
             {tools.map((tool) => {
               const Icon = CATALOG_ICONS[tool.icon];
+              if (tool.id === "financovani") {
+                return (
+                  <article key={tool.id} className="tools-catalog-card tools-catalog-card--static">
+                    <div className="tools-catalog-top">
+                      <span className="tools-catalog-icon">
+                        <Icon aria-hidden />
+                      </span>
+                      {tool.badge ? (
+                        <span className="tools-catalog-status">{tool.badge}</span>
+                      ) : null}
+                    </div>
+                    <h3>{tool.title}</h3>
+                    <p>
+                      Spočítejte orientační splátku, vlastní zdroje a výši úvěru.
+                      Detailní sazby a varianty řeší HypotékaJasně.cz.
+                    </p>
+                    <div className="tools-catalog-tags">
+                      {tool.tags.map((tag) => (
+                        <span key={tag} className="tools-tag">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="tools-dual-cta">
+                      <Link href={tool.href} className="tools-catalog-cta">
+                        Spočítat splátku →
+                      </Link>
+                      <HypotekaJasneCTA
+                        sourceContext="tools"
+                        label="Aktuální sazby →"
+                        className="tools-catalog-cta tools-external-cta"
+                      />
+                    </div>
+                  </article>
+                );
+              }
               return (
                 <Link
                   key={tool.id}
@@ -227,6 +294,7 @@ export function ToolsHub() {
               className="tools-btn-outline"
             >
               Poptat analýzu
+              <ExternalLink className="ml-1 size-3.5 opacity-0" aria-hidden />
             </Link>
           </div>
         </section>

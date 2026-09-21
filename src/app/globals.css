@@ -4,6 +4,8 @@
 @import "../components/property/search/properties-listing-surface.css";
 @import "../components/housing-options/housing-options-surface.css";
 @import "../components/tools/tools-surface.css";
+@import "../components/property/search/catalog-detail-surface.css";
+@import "../components/financing/financing-surface.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Majetio Design System tokens

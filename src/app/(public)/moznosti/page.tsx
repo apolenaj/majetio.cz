@@ -68,7 +68,7 @@ const ITEMS = [
     icon: RefreshCw,
   },
   {
-    href: "/moznosti/zahranicni",
+    href: "/zahranicni-nemovitosti",
     title: "Zahraniční nemovitosti",
     text: "Nabídky mimo ČR s jasnou měnou a lokalitou.",
     icon: MapPinned,

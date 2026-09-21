@@ -17,7 +17,7 @@ const CONDITION_LABELS: Record<string, string> = {
   AVERAGE: "Průměrný",
   NEEDS_RENOVATION: "K rekonstrukci",
   SHELL: "Holostav",
-  UNKNOWN: "Neuvedeno",
+  UNKNOWN: "Nutno ověřit",
 };
 
 const OWNERSHIP_LABELS: Record<string, string> = {
@@ -26,7 +26,7 @@ const OWNERSHIP_LABELS: Record<string, string> = {
   MUNICIPAL: "Obecní",
   COMPANY: "Firemní",
   OTHER: "Jiné",
-  UNKNOWN: "Neuvedeno",
+  UNKNOWN: "Nutno ověřit",
 };
 
 export function propertyTypeLabel(value: string | null | undefined): string {
@@ -60,7 +60,7 @@ export function floorLabel(
 }
 
 export function elevatorLabel(hasElevator: boolean | null | undefined): string {
-  if (hasElevator == null) return "Neuvedeno";
+  if (hasElevator == null) return "Nutno ověřit";
   return hasElevator ? "Ano" : "Není";
 }
 

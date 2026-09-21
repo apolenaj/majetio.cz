@@ -46,6 +46,11 @@ const nextConfig: NextConfig = {
         destination: "/metodika/odhad-hodnoty",
         permanent: true,
       },
+      {
+        source: "/moznosti/zahranicni",
+        destination: "/zahranicni-nemovitosti",
+        permanent: false,
+      },
     ];
   },
   async headers() {

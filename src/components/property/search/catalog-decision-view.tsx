@@ -5,12 +5,17 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Bus, HeartPulse, Home, School, ShoppingCart, TrendingUp } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
+import { FinancingSummary } from "@/components/financing/financing-summary";
 import { DemoNegotiationForms } from "@/components/listings/demo-negotiation-forms";
 import { AnalysisOfferCard } from "@/components/property/analysis-offer-card";
+import { PrePurchaseChecklist } from "@/components/property/pre-purchase-checklist";
+import { PropertyFact } from "@/components/property/property-fact";
 import { CatalogPhotoGallery } from "@/components/property/search/catalog-photo-gallery";
+import { buildCatalogParamGroups } from "@/components/property/search/catalog-param-groups";
 import { PropertyCard } from "@/components/property/search/catalog-property-card";
 import { CatalogViewingChecklist } from "@/components/property/search/catalog-viewing-checklist";
 import { Container } from "@/components/ui/container";
+import { VERIFY_LABEL } from "@/domains/properties/presentation";
 import { getSiteOrigin } from "@/domains/seo/site-origin";
 import {
   buildModelDecision,
@@ -52,7 +57,8 @@ const NAV = [
   ["dokumenty", "Dokumenty"],
 ] as const;
 const COMPARE_KEY = "majetio-catalog-compare";
-const CTA = "inline-flex items-center justify-center rounded-full bg-[var(--action-primary)] px-4 py-3 text-center text-sm font-semibold text-[var(--text-inverse)]";
+const CTA = "pd-cta";
+const CTA_OUTLINE = "pd-cta-outline";
 
 const ScenarioChart = dynamic(
   () => import("@/components/charts/charts").then((mod) => mod.LineChart),
@@ -141,14 +147,16 @@ export function CatalogDecisionView({ property }: { property: Property }) {
   }
 
   const financingHref = `/kalkulacky/financovani?cena=${property.cena}`;
+  const propertyUrl = `${getSiteOrigin()}${catalogPropertyHref(property.id)}`;
 
   return (
+    <div className="pd-shell">
     <Container width="full" className="max-w-[1440px] py-6 sm:py-8">
-      <Link href="/nemovitosti" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)]">
+      <Link href="/nemovitosti" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--pd-muted,#667a86)]">
         <ArrowLeft className="size-4" aria-hidden />
         Zpět na výpis
       </Link>
-      <p className="mt-4 inline-flex rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+      <p className="mt-4 inline-flex rounded-full border border-[var(--pd-border,#dde5e7)] bg-[var(--pd-teal-soft,#f4fafa)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--pd-teal-dark,#087d78)]">
         Ukázková nabídka
       </p>
 
@@ -157,21 +165,27 @@ export function CatalogDecisionView({ property }: { property: Property }) {
           <CatalogPhotoGallery shots={catalogShots(property)} />
 
           <header id="prehled" className="scroll-mt-28 mt-6">
-            <h1 className="font-display text-3xl text-[var(--text-primary)] sm:text-4xl">{title}</h1>
-            <p className="mt-2 text-lg text-[var(--text-secondary)]">{property.lokalita}</p>
-            <p className="mt-4 font-metric text-4xl text-[var(--text-primary)]">{price}</p>
+            <h1 className="text-3xl sm:text-4xl">{title}</h1>
+            <p className="mt-2 text-lg text-[var(--pd-muted,#667a86)]">{property.lokalita}</p>
+            <p className="mt-4 font-metric text-4xl text-[var(--pd-navy,#0b3550)]">{price}</p>
             {perM2 != null && sale ? (
-              <p className="mt-1 text-sm text-[var(--text-muted)]">{formatCzk(perM2)}/m²</p>
+              <p className="mt-1 text-sm text-[var(--pd-muted,#667a86)]">{formatCzk(perM2)}/m²</p>
             ) : null}
-            <ul className="mt-4 flex flex-wrap gap-2 text-sm text-[var(--text-secondary)]">
+            {sale ? (
+              <FinancingSummary
+                propertyPriceCzk={property.cena}
+                propertyUrl={propertyUrl}
+                variant="compact"
+                sourceContext="property_detail"
+              />
+            ) : null}
+            <ul className="mt-4 flex flex-wrap gap-2">
               <Chip>{sale ? "Prodej" : "Pronájem"}</Chip>
               {property.dispozice ? <Chip>{property.dispozice}</Chip> : null}
               <Chip>{area}</Chip>
               <Chip>{TECHNICAL_CONDITION_LABEL[property.technicky_stav]}</Chip>
               {property.konstrukce ? <Chip>{property.konstrukce}</Chip> : null}
               {property.vytah === true ? <Chip>Výtah</Chip> : property.vytah === false ? <Chip>Bez výtahu</Chip> : null}
-              <Chip>Vlastnictví neuvedeno</Chip>
-              <Chip>PENB neuvedeno</Chip>
             </ul>
             <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
               <TextButton onClick={toggleSave}>{saved ? "Uloženo v prohlížeči" : "Uložit"}</TextButton>
@@ -237,43 +251,35 @@ export function CatalogDecisionView({ property }: { property: Property }) {
           </section>
 
           <section id="parametry" className="scroll-mt-28 mt-10">
-            <h2 className="font-display text-2xl">Parametry</h2>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              <ParamGroup title="Základní informace" rows={[
-                ["Dispozice", property.dispozice ?? "Neuvedeno"],
-                ["Užitná plocha", area],
-                ["Vlastnictví", "Neuvedeno"],
-                ["Stav", TECHNICAL_CONDITION_LABEL[property.technicky_stav]],
-                ["Typ stavby", property.konstrukce ?? "Neuvedeno"],
-                ["Patro", "Neuvedeno"],
-              ]} />
-              <ParamGroup
-                title="Venkovní prostory"
-                rows={(
-                  [
-                    ["Balkon", "Neuvedeno"],
-                    ["Lodžie", "Neuvedeno"],
-                    ["Terasa", "Neuvedeno"],
-                    ...(property.typ_nemovitosti === "dum"
-                      ? ([["Zahrada", "Neuvedeno"]] as Array<[string, string]>)
-                      : []),
-                  ] as Array<[string, string]>
-                )}
-              />
-              <ParamGroup title="Úložné prostory a parkování" rows={[
-                ["Sklep", "Neuvedeno"],
-                ["Parkování", "Neuvedeno"],
-                ["Garáž", "Neuvedeno"],
-              ]} />
-              <ParamGroup title="Technické vybavení" rows={[
-                ["Výtah", property.vytah == null ? "Neuvedeno" : property.vytah ? "Ano" : "Není"],
-                ["Bezbariérový přístup", "Neuvedeno"],
-                ["PENB", "Neuvedeno"],
-                ["Rok rekonstrukce", "Neuvedeno"],
-              ]} />
+            <div className="pd-section-head">
+              <h2>Parametry nemovitosti</h2>
+              <p>
+                Přehled údajů z nabídky. U potvrzených amenit ukazujeme Ano / Není.
+                Chybějící důležité informace označujeme jako Nutno ověřit — nikdy je
+                nevydáváme za „Není“.
+              </p>
             </div>
-            <p className="mt-3 text-xs text-[var(--text-muted)]">
-              Ukázka nemá potvrzené Ano/Ne od inzerenta. Neuvedeno ≠ Není.
+            <div className="pd-param-grid mt-4">
+              {buildCatalogParamGroups(property).map((group) => (
+                <article key={group.title} className="pd-card">
+                  <h3>{group.title}</h3>
+                  <dl>
+                    {group.rows.map((row) => (
+                      <PropertyFact
+                        key={row.label}
+                        label={row.label}
+                        display={row.fact.display}
+                        status={row.fact.status}
+                        tooltip={row.tooltip}
+                      />
+                    ))}
+                  </dl>
+                </article>
+              ))}
+            </div>
+            <p className="pd-note">
+              Ukázka nemá od inzerenta potvrzené Ano/Ne u většiny amenit. „Nutno ověřit“
+              není totéž co „Není“.
             </p>
           </section>
 
@@ -368,20 +374,20 @@ export function CatalogDecisionView({ property }: { property: Property }) {
           </section>
 
           <section id="financovani" className={`scroll-mt-28 mt-10 ${mode === "bydleni" ? "order-1" : "order-2"}`}>
-            <h2 className="font-display text-2xl">Financování nemovitosti</h2>
-            {model ? (
-              <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Stat label="Cena" value={formatCzk(property.cena)} />
-                <Stat label="Vlastní zdroje v modelu" value={formatCzk(model.equity)} />
-                <Stat label="Úvěr v modelu" value={formatCzk(model.loan)} />
-                <Stat label="Odhad splátky" value={`${formatCzk(model.monthlyPayment)} / měs.`} />
-              </dl>
+            <h2 className="font-display text-2xl">Jak můžete tuto nemovitost financovat</h2>
+            {sale ? (
+              <FinancingSummary
+                propertyPriceCzk={property.cena}
+                propertyUrl={propertyUrl}
+                variant="section"
+                sourceContext="property_detail"
+                calculatorHref={financingHref}
+              />
             ) : (
-              <p className="mt-3 text-sm">Pro tuto ukázku nemáme model financování. Kalkulačka se otevře s cenou této nabídky.</p>
+              <p className="mt-3 text-sm text-[var(--text-secondary)]">
+                U pronájmu nezobrazujeme model hypotéky. Pro koupi podobné nemovitosti použijte kalkulačku financování.
+              </p>
             )}
-            <Link href={financingHref} className={`mt-4 ${CTA}`}>
-              Spočítat financování
-            </Link>
           </section>
 
           <section className={`mt-10 ${mode === "bydleni" ? "order-3" : "order-4"}`}>
@@ -417,12 +423,12 @@ export function CatalogDecisionView({ property }: { property: Property }) {
           <section className={`mt-10 ${mode === "bydleni" ? "order-2" : "order-3"}`}>
             <h2 className="font-display text-2xl">Kolik vás nemovitost bude stát měsíčně?</h2>
             <dl className="mt-3 divide-y divide-[var(--border-default)] border-y border-[var(--border-default)]">
-              <Row label="Hypotéka" value={model ? `${formatCzk(model.monthlyPayment)} / měs.` : "Neuvedeno"} />
-              <Row label="Provoz vlastníka v modelu" value={model ? `${formatCzk(model.ownerOpexMonthly)} / měs.` : "Neuvedeno"} />
-              <Row label="Rezerva" value={model ? `${formatCzk(model.reserveMonthly)} / měs.` : "Neuvedeno"} />
-              <Row label="Energie" value="Neuvedeno" />
-              <Row label="Voda" value="Neuvedeno" />
-              <Row label="Parkování" value="Neuvedeno" />
+              <Row label="Hypotéka" value={model ? `${formatCzk(model.monthlyPayment)} / měs.` : VERIFY_LABEL} />
+              <Row label="Provoz vlastníka v modelu" value={model ? `${formatCzk(model.ownerOpexMonthly)} / měs.` : VERIFY_LABEL} />
+              <Row label="Rezerva" value={model ? `${formatCzk(model.reserveMonthly)} / měs.` : VERIFY_LABEL} />
+              <Row label="Energie" value={VERIFY_LABEL} />
+              <Row label="Voda" value={VERIFY_LABEL} />
+              <Row label="Parkování" value={VERIFY_LABEL} />
             </dl>
             {model ? (
               <p className="mt-3 font-medium">
@@ -444,23 +450,32 @@ export function CatalogDecisionView({ property }: { property: Property }) {
             <h2 className="font-display text-2xl">Na co si dát pozor</h2>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               <Risk title="Cena" level="Nelze určit z trhu" text={model ? "Rozdíl je jen proti modelové hladině, ne proti prodaným bytům." : "Chybí srovnání s trhem."} />
-              <Risk title="Cash-flow" level={model && model.monthlyCashFlow < 0 ? "Střední v modelu" : "Neuvedeno"} text={model ? "Při modelovém financování a nájmu vyjde cash-flow po rezervě záporné nebo kladné podle čísel výše." : "Bez nájmu a úvěru cash-flow nepočítáme."} />
-              <Risk title="SVJ" level="Nutné ověřit" text="Chybí informace o fondu oprav a plánovaných opravách." />
-              <Risk title="Energetika" level="Nutné ověřit" text="Chybí PENB. Neuvedeno není třída G." />
+              <Risk title="Cash-flow" level={model && model.monthlyCashFlow < 0 ? "Střední v modelu" : VERIFY_LABEL} text={model ? "Při modelovém financování a nájmu vyjde cash-flow po rezervě záporné nebo kladné podle čísel výše." : "Bez nájmu a úvěru cash-flow nepočítáme."} />
+              <Risk title="SVJ" level="Nutno ověřit" text="Chybí informace o fondu oprav a plánovaných opravách." />
+              <Risk title="Energetika" level="Nutno ověřit" text="Chybí PENB. Chybějící údaj není energetická třída G." />
             </ul>
           </section>
 
           <CatalogAnalysisOffer property={property} sale={sale} />
 
-          <section className="mt-10">
-            <h2 className="font-display text-2xl">Co ověřit před koupí</h2>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              <CheckList title="Právní" items={["List vlastnictví", "Zástavy a břemena", "Exekuce", "Přístup k nemovitosti"]} />
-              <CheckList title="SVJ" items={["Dluhy SVJ", "Fond oprav", "Zápisy ze schůzí"]} />
-              <CheckList title="Technické" items={["Elektro", "Voda a odpady", "Topení", "Vlhkost"]} />
-              <CheckList title="Dokumentace" items={["Půdorys", "PENB", "Prohlášení vlastníka"]} />
+          <div className="mt-10">
+            <PrePurchaseChecklist />
+          </div>
+
+          <section className="pd-analysis-cta">
+            <h2>Než koupíte, podívejte se na čísla.</h2>
+            <p>
+              Spočítejte výnos, cash flow nebo financování — nebo poptajte podrobnější
+              analýzu konkrétní nemovitosti.
+            </p>
+            <div className="pd-actions">
+              <Link href="/kalkulacky/investicni-vynos" className="pd-cta">
+                Spočítat investiční scénář
+              </Link>
+              <Link href="/sluzby/analyza-pred-koupi#poptavka" className="pd-cta-outline">
+                Objednat podrobnou analýzu
+              </Link>
             </div>
-            <p className="mt-2 text-xs text-[var(--text-muted)]">Stav všech bodů: nemáme informace. Zelené fajfky by byly lež.</p>
           </section>
 
           <section id="dokumenty" className="scroll-mt-28 mt-10">
@@ -538,32 +553,46 @@ export function CatalogDecisionView({ property }: { property: Property }) {
         </div>
 
         <aside className="hidden lg:sticky lg:top-24 lg:block">
-          <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Ukázka prezentace</p>
-            <p className="mt-2 font-metric text-3xl">{price}</p>
-            {perM2 != null && sale ? <p className="text-sm text-[var(--text-muted)]">{formatCzk(perM2)}/m²</p> : null}
-            <Link href="/kontakt" className={`mt-4 ${CTA}`}>
-              Kontaktovat (ukázka)
+          <div className="pd-sticky-panel">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pd-muted,#667a86)]">Ukázka prezentace</p>
+            <p className="pd-price mt-2">{price}</p>
+            {perM2 != null && sale ? <p className="text-sm text-[var(--pd-muted,#667a86)]">{formatCzk(perM2)}/m²</p> : null}
+            {sale ? (
+              <FinancingSummary
+                propertyPriceCzk={property.cena}
+                propertyUrl={propertyUrl}
+                variant="compact"
+                sourceContext="property_detail"
+              />
+            ) : null}
+            <p className="mt-3 text-sm text-[var(--pd-muted,#667a86)]">
+              {property.dispozice ? `${property.dispozice} · ` : ""}
+              {area}
+            </p>
+            <Link href="/kontakt" className={`mt-4 w-full ${CTA}`}>
+              Mám zájem
             </Link>
-            <Link href="/kontakt" className="mt-2 block rounded-full border border-[var(--border-default)] px-4 py-3 text-center text-sm font-semibold">
-              Napsat zprávu
+            <button type="button" onClick={toggleSave} className={`mt-2 w-full ${CTA_OUTLINE}`}>
+              {saved ? "Uloženo" : "Uložit"}
+            </button>
+            <Link href="/kalkulacky/investicni-vynos" className={`mt-2 w-full ${CTA_OUTLINE}`}>
+              Analyzovat tuto nemovitost
             </Link>
-            <p className="mt-3 text-xs text-[var(--text-muted)]">
+            <p className="mt-3 text-xs text-[var(--pd-muted,#667a86)]">
               Ukázka nemá živého makléře ani telefon. Prohlídku u této nabídky nelze domluvit.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <TextButton onClick={toggleSave}>{saved ? "Uloženo" : "Uložit"}</TextButton>
               <TextButton onClick={() => void share()}>{shared ? "Zkopírováno" : "Sdílet"}</TextButton>
               <TextButton onClick={toggleCompare}>Porovnat</TextButton>
             </div>
-            <p className="mt-3 text-xs text-[var(--text-muted)]">Uložení je jen v tomto prohlížeči, ne v účtu.</p>
+            <p className="mt-3 text-xs text-[var(--pd-muted,#667a86)]">Uložení je jen v tomto prohlížeči, ne v účtu.</p>
           </div>
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-default)] bg-[var(--surface-primary)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--pd-border,#dde5e7)] bg-[var(--pd-card,#fff)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <div className="mx-auto flex max-w-[1440px] gap-2">
-          <Link href="/kontakt" className="flex-1 rounded-full border border-[var(--border-default)] py-3 text-center text-sm font-semibold">
+          <Link href="/kontakt" className={`flex-1 ${CTA_OUTLINE}`}>
             Kontakt
           </Link>
           <Link href="/cenik" className={`flex-1 ${CTA}`}>
@@ -574,12 +603,13 @@ export function CatalogDecisionView({ property }: { property: Property }) {
       <div className="h-20 lg:hidden" aria-hidden />
 
       {compare.length > 0 ? (
-        <div className="fixed bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[var(--border-default)] bg-[var(--surface-primary)] px-4 py-2 text-sm shadow-sm lg:bottom-6">
+        <div className="fixed bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[var(--pd-border,#dde5e7)] bg-[var(--pd-card,#fff)] px-4 py-2 text-sm shadow-sm lg:bottom-6">
           Porovnáváte {compare.length} {compare.length === 1 ? "nemovitost" : compare.length < 5 ? "nemovitosti" : "nemovitostí"}
           <a href="#porovnani" className="ml-3 font-semibold underline">Porovnat</a>
         </div>
       ) : null}
     </Container>
+    </div>
   );
 }
 
@@ -587,9 +617,9 @@ function CompareTable({ ids }: { ids: number[] }) {
   const selected = mockProperties.filter((item) => ids.includes(item.id));
   if (selected.length < 2) return null;
   const models = selected.map((item) => buildModelDecision(item));
-  const money = (value: number | null | undefined) => (value == null ? "Neuvedeno" : formatCzk(value));
+  const money = (value: number | null | undefined) => (value == null ? VERIFY_LABEL : formatCzk(value));
   const pct = (value: number | null | undefined) =>
-    value == null ? "Neuvedeno" : `${value.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} %`;
+    value == null ? VERIFY_LABEL : `${value.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} %`;
   return (
     <section id="porovnani" className="scroll-mt-28 mt-10">
       <h2 className="font-display text-2xl">Porovnání</h2>
@@ -607,22 +637,22 @@ function CompareTable({ ids }: { ids: number[] }) {
             <CompareRow label="Cena" values={selected.map((item) => formatCzk(item.cena))} />
             <CompareRow label="Kč/m²" values={selected.map((item) => {
               const value = pricePerSquareMetre(item.cena, item.plocha_m2);
-              return value == null ? "Neuvedeno" : formatCzk(value);
+              return value == null ? VERIFY_LABEL : formatCzk(value);
             })} />
             <CompareRow label="Plocha" values={selected.map((item) => `${item.plocha_m2} m²`)} />
-            <CompareRow label="Dispozice" values={selected.map((item) => item.dispozice ?? "Neuvedeno")} />
+            <CompareRow label="Dispozice" values={selected.map((item) => item.dispozice ?? VERIFY_LABEL)} />
             <CompareRow label="Lokalita" values={selected.map((item) => item.lokalita)} />
             <CompareRow label="Stav" values={selected.map((item) => TECHNICAL_CONDITION_LABEL[item.technicky_stav])} />
             <CompareRow label="Hypotéka v modelu" values={models.map((item) => money(item?.monthlyPayment))} />
             <CompareRow label="Nájem v modelu" values={models.map((item) => money(item?.monthlyRent))} />
             <CompareRow label="Hrubý výnos" values={models.map((item) => pct(item?.grossYieldPct))} />
             <CompareRow label="Čistý výnos" values={models.map((item) => pct(item?.netYieldPct))} />
-            <CompareRow label="Cash-flow / měs." values={models.map((item) => item ? formatCzk(item.monthlyCashFlow, { signed: true }) : "Neuvedeno")} />
-            <CompareRow label="Skóre modelu" values={models.map((item) => item ? `${item.score.total} / 100` : "Neuvedeno")} />
+            <CompareRow label="Cash-flow / měs." values={models.map((item) => item ? formatCzk(item.monthlyCashFlow, { signed: true }) : VERIFY_LABEL)} />
+            <CompareRow label="Skóre modelu" values={models.map((item) => item ? `${item.score.total} / 100` : VERIFY_LABEL)} />
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-[var(--text-muted)]">Výnos a skóre jsou jen u ukázky s modelem. U ostatních je Neuvedeno, ne nula.</p>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">Výnos a skóre jsou jen u ukázky s modelem. U ostatních je „Nutno ověřit“, ne nula.</p>
     </section>
   );
 }
@@ -672,7 +702,7 @@ function MetricGrid({
     ["Vlastní zdroje", formatCzk(model.equity), "20 % ceny plus modelových 100 000 Kč vedlejších nákladů."],
     ["Měsíční provoz", `${formatCzk(model.ownerOpexMonthly)} / měs.`, "Modelový provoz vlastníka, ne vyúčtování SVJ."],
     ["Stav", TECHNICAL_CONDITION_LABEL[property.technicky_stav], "Stav uvedený v ukázce, ne posudek."],
-    ["PENB", "Neuvedeno", "Energetický průkaz v ukázce není. Neuvedeno není třída G."],
+    ["PENB", VERIFY_LABEL, "Energetický průkaz v ukázce není. Chybějící údaj není třída G."],
   ];
   const invest = [
     ["Cena / m²", `${formatCzk(perM2)}/m²`, "Nabídková cena děleno uvedenou plochou."],
@@ -733,30 +763,30 @@ function SectionNav({ active }: { active: string }) {
 }
 
 function Chip({ children }: { children: string }) {
-  return <li className="rounded-full bg-[var(--surface-sunken)] px-3 py-1">{children}</li>;
+  return <li className="pd-chip">{children}</li>;
 }
 function Badge({ children }: { children: string }) {
-  return <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-950">{children}</span>;
+  return <span className="rounded-full bg-[var(--pd-teal-soft,#f4fafa)] px-2 py-1 text-xs font-semibold text-[var(--pd-teal-dark,#087d78)]">{children}</span>;
 }
 function TextButton({ children, onClick }: { children: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="rounded-full border border-[var(--border-default)] px-3 py-1.5 text-sm">
+    <button type="button" onClick={onClick} className="rounded-[6px] border border-[var(--pd-border,#dde5e7)] bg-white px-3 py-1.5 text-sm text-[var(--pd-navy,#0b3550)]">
       {children}
     </button>
   );
 }
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-3">
-      <dt className="text-xs text-[var(--text-muted)]">{label}</dt>
-      <dd className="font-metric text-lg">{value}</dd>
+    <div className="rounded-[8px] border border-[var(--pd-border,#dde5e7)] bg-white px-3 py-3">
+      <dt className="text-xs text-[var(--pd-muted,#667a86)]">{label}</dt>
+      <dd className="font-metric text-lg text-[var(--pd-navy,#0b3550)]">{value}</dd>
     </div>
   );
 }
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-[9rem_1fr] gap-3 py-2 text-sm">
-      <dt className="text-[var(--text-muted)]">{label}</dt>
+      <dt className="text-[var(--pd-muted,#667a86)]">{label}</dt>
       <dd>{value}</dd>
     </div>
   );
@@ -795,34 +825,13 @@ function CatalogAnalysisOffer({
     </div>
   );
 }
-
-function ParamGroup({ title, rows }: { title: string; rows: Array<[string, string]> }) {
-  return (
-    <div>
-      <h3 className="font-medium">{title}</h3>
-      <dl className="mt-2">{rows.map(([label, value]) => <Row key={label} label={label} value={value} />)}</dl>
-    </div>
-  );
-}
 function Risk({ title, level, text }: { title: string; level: string; text: string }) {
   return (
-    <li className="rounded-xl border border-[var(--border-default)] p-3 text-sm">
-      <p className="font-medium">{title}</p>
-      <p className="text-xs text-[var(--text-muted)]">{level}</p>
-      <p className="mt-1 text-[var(--text-secondary)]">{text}</p>
+    <li className="pd-card text-sm">
+      <p className="font-medium text-[var(--pd-navy,#0b3550)]">{title}</p>
+      <p className="text-xs text-[var(--pd-muted,#667a86)]">{level}</p>
+      <p className="mt-1 text-[var(--pd-muted,#667a86)]">{text}</p>
     </li>
-  );
-}
-function CheckList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div>
-      <h3 className="font-medium">{title}</h3>
-      <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
-        {items.map((item) => (
-          <li key={item}>? {item}</li>
-        ))}
-      </ul>
-    </div>
   );
 }
 function RateField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
@@ -837,15 +846,15 @@ function RateField({ label, value, onChange }: { label: string; value: number; o
           const next = Number(event.target.value);
           onChange(Number.isFinite(next) ? Math.min(30, Math.max(-20, next)) : 0);
         }}
-        className="mt-1 w-full rounded-lg border border-[var(--border-default)] px-3 py-2"
+        className="mt-1 w-full rounded-[6px] border border-[var(--pd-border,#dde5e7)] px-3 py-2"
       />
     </label>
   );
 }
 function CompareRow({ label, values }: { label: string; values: string[] }) {
   return (
-    <tr className="border-t border-[var(--border-default)]">
-      <th className="p-2 font-normal text-[var(--text-muted)]">{label}</th>
+    <tr className="border-t border-[var(--pd-border,#dde5e7)]">
+      <th className="p-2 font-normal text-[var(--pd-muted,#667a86)]">{label}</th>
       {values.map((value, index) => (
         <td key={`${label}-${index}`} className="p-2">{value}</td>
       ))}

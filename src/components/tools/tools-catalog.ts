@@ -71,8 +71,9 @@ export const FEATURED_TOOLS: FeaturedTool[] = [
     id: "featured-finance",
     href: "/kalkulacky/financovani",
     title: "Financování",
-    description: "Spočítejte splátku, vlastní zdroje a orientační dostupnost.",
-    useCase: "LTV, splátka a scénáře s různou pákou.",
+    description:
+      "Spočítejte orientační splátku, vlastní zdroje a výši úvěru.",
+    useCase: "Majetio = orientace · HypotékaJasně = aktuální sazby a možnosti.",
     badge: "Oblíbené",
     icon: "finance",
   },

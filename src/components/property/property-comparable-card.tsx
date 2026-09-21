@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trackComparableOpened } from "@/components/property/property-valuation-analytics";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 function locationLine(c: PublicComparableDto): string {
   const parts = [c.district, c.city].filter(Boolean);

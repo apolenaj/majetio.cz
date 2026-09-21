@@ -44,7 +44,7 @@ describe("calculator input mapping", () => {
 });
 
 describe("scenario view-model", () => {
-  it("marks missing NOI as Neuvedeno and keeps formula explain text", () => {
+  it("marks missing NOI as unavailable label and keeps formula explain text", () => {
     const inputs = {
       ...DEFAULT_CALCULATOR_INPUTS,
       monthlyRent: null,

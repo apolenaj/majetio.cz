@@ -8,7 +8,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_STALE_AFTER_DAYS } from "@/lib/properties/freshness";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 /**
  * Provenance: sources, staleness warning, field conflicts without false precision.

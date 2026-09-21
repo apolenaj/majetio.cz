@@ -6,7 +6,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 /**
  * Price history timeline/table + days on market + relist notice.

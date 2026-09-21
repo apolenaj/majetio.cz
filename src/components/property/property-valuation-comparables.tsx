@@ -17,7 +17,7 @@ import {
 } from "@/components/data-display/table";
 import { PropertyComparableCard } from "@/components/property/property-comparable-card";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 function locationLine(c: PublicComparableDto): string {
   const parts = [c.district, c.city].filter(Boolean);

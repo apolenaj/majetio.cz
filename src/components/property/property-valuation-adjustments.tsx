@@ -6,7 +6,7 @@ import type {
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 /**
  * "Co hodnotu ovlivňuje" — public adjustment list from the engine.

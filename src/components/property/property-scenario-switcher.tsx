@@ -19,7 +19,7 @@ import { buildLoginUrl } from "@/lib/auth/callback-url";
 import { track } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 type Assumptions = {
   rentMonthlyCzk: number | null;

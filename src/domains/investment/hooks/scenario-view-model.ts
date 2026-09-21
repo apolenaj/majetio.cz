@@ -10,7 +10,7 @@ import type {
   OrchestratedCalculationResult,
 } from "../service/types";
 
-export const UNAVAILABLE_LABEL = "Neuvedeno";
+export const UNAVAILABLE_LABEL = "Nutno ověřit";
 
 export type ScenarioColumnKey = "base" | "conservative" | "optimistic";
 

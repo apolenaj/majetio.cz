@@ -943,3 +943,28 @@
   border-radius: 999px;
   padding: 0.2rem 0.55rem;
 }
+
+.tools-featured-card--static,
+.tools-catalog-card--static {
+  cursor: default;
+}
+
+.tools-featured-card--static:hover,
+.tools-catalog-card--static:hover {
+  transform: none;
+}
+
+.tools-dual-cta {
+  margin-top: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tools-external-cta {
+  gap: 0.35rem;
+}
+
+.tools-catalog-card--static .tools-catalog-cta {
+  margin-top: 0;
+}

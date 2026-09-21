@@ -11,7 +11,7 @@ import { formatCzk, formatPercentPoints } from "@/lib/format";
 import { buildLoginUrl } from "@/lib/auth/callback-url";
 import { track } from "@/lib/analytics/events";
 
-const NEU = "Neuvedeno";
+const NEU = "Nutno ověřit";
 
 export type FinancingPreviewUi = {
   estimatedMonthlyPaymentCzk: number;
