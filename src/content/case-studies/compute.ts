@@ -1,6 +1,8 @@
 /**
  * Single calculation path for case-study cards, detail pages, and tests.
- * Uses the investment engine pure functions — no fabricated market averages.
+ * Uses the investment engine (annual opex lines, Money). Public calculators
+ * under src/lib/calculators share one NOI model with each other; case-study
+ * fixtures stay on this engine so published numbers do not shift.
  */
 
 import {

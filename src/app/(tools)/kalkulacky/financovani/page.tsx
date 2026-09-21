@@ -5,6 +5,7 @@ import { loadFinancialPassport } from "@/lib/financial-passport/actions";
 import { getCachedMortgageOffers } from "@/domains/financing/service/mortgage-rates";
 import { Container } from "@/components/ui/container";
 import { PageHeader } from "@/components/layout/page-layouts";
+import { FinancingTool } from "@/components/tools";
 import { FinancingCalculatorClient } from "./financing-calculator-client";
 
 export const metadata: Metadata = {
@@ -38,29 +39,34 @@ export default async function Page({
   }
 
   return (
-    <Container width="dashboard" className="py-10">
-      <PageHeader
-        title="Kalkulačka financování"
-        description="Orientační výpočet struktury financování nemovitosti. Zadejte kupní cenu a vlastní kapitál — kalkulačka ukáže LTV, měsíční splátku, celkové náklady a porovná scénáře s různou pákou."
-        breadcrumbs={[
-          { href: "/kalkulacky", label: "Kalkulačky" },
-          { label: "Financování" },
-        ]}
-        badge={
-          <span className="inline-flex items-center rounded-[var(--radius-sm)] border border-[var(--border-default)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
-            Modelový scénář
-          </span>
-        }
-      />
-      <FinancingCalculatorClient
-        offers={offers}
-        freshness={freshness}
-        isAuthenticated={isAuthenticated}
-        passportState={passportState}
-        callbackUrl="/kalkulacky/financovani"
-        handoffSource="kalkulacky/financovani"
-        askingPriceCzk={askingPriceCzk}
-      />
-    </Container>
+    <>
+      <FinancingTool />
+      <Container width="dashboard" className="pb-16">
+        <details className="rounded-[10px] border border-[#dde5e7] bg-white p-4">
+          <summary className="cursor-pointer font-medium text-[#0b3550]">
+            Srovnání nabídek bank a LTV scénáře
+          </summary>
+          <div className="mt-6">
+            <PageHeader
+              title="Detail financování"
+              description="Katalog nabídek a scénáře hotovost / 60 % / 80 % LTV. Splátka vychází ze stejné anuitní metodiky investičního enginu."
+              breadcrumbs={[
+                { href: "/kalkulacky", label: "Kalkulačky" },
+                { label: "Financování" },
+              ]}
+            />
+            <FinancingCalculatorClient
+              offers={offers}
+              freshness={freshness}
+              isAuthenticated={isAuthenticated}
+              passportState={passportState}
+              callbackUrl="/kalkulacky/financovani"
+              handoffSource="kalkulacky/financovani"
+              askingPriceCzk={askingPriceCzk}
+            />
+          </div>
+        </details>
+      </Container>
+    </>
   );
 }

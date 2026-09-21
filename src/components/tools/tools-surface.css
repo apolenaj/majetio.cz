@@ -797,6 +797,138 @@
   gap: 0.6rem;
 }
 
+.calc-kpi-positive strong {
+  color: var(--tools-teal-dark);
+}
+
+.calc-kpi-negative strong {
+  color: #8d4e4e;
+}
+
+.calc-tip {
+  position: relative;
+  margin-left: 0.35rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--tools-border);
+  background: var(--tools-card);
+  color: var(--tools-muted);
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.calc-tip-bubble {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(100% + 0.4rem);
+  transform: translateX(-50%);
+  width: 14rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--tools-radius-sm);
+  background: var(--tools-navy);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.calc-tip:hover .calc-tip-bubble,
+.calc-tip:focus .calc-tip-bubble {
+  display: block;
+}
+
+.calc-breakdown {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.calc-breakdown li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--tools-border);
+  font-size: 0.85rem;
+}
+
+.calc-bars {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.calc-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.25rem;
+  color: var(--tools-muted);
+}
+
+.calc-bar-label strong {
+  color: var(--tools-navy);
+}
+
+.calc-mode,
+.calc-inline-actions,
+.calc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.calc-links a {
+  color: var(--tools-teal);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.calc-disclaimer {
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--tools-muted);
+}
+
+.calc-assumptions {
+  margin-top: 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--tools-muted);
+}
+
+.calc-subhead {
+  margin-top: 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tools-navy);
+}
+
+.calc-checks {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.85rem;
+}
+
+.calc-checks label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .calc-badge {
   display: inline-flex;
   align-items: center;

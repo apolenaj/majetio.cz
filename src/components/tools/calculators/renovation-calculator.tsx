@@ -2,45 +2,49 @@
 
 import { useMemo, useState } from "react";
 
-import { formatCzk } from "@/components/marketing/format";
-
 import {
-  CalculatorFooterCta,
-  CalculatorShell,
-} from "../calculator-shell";
-import { computeRenovation, parseAmount } from "./mvp-math";
+  RENOVATION_COST_RANGES,
+  defaultRenovationSelection,
+  estimateRenovation,
+  type RenovationItemId,
+} from "@/lib/calculators";
 
-const TYPES = [
-  { id: "cosmetic", label: "Kosmetické úpravy" },
-  { id: "standard", label: "Standardní rekonstrukce" },
-  { id: "full", label: "Kompletní rekonstrukce" },
-] as const;
+import { CalculatorFooterCta, CalculatorShell } from "../calculator-shell";
+import {
+  BarCompare,
+  CrossLinks,
+  Disclaimer,
+  Kpi,
+  MoneyField,
+  PercentField,
+  moneyText,
+} from "./ui";
 
 export function RenovationCalculator() {
-  const [type, setType] = useState<(typeof TYPES)[number]["id"]>("standard");
-  const [area, setArea] = useState("72");
-  const [contingency, setContingency] = useState("15");
+  const [area, setArea] = useState(72);
+  const [kind, setKind] = useState<"byt" | "dum">("byt");
+  const [condition, setCondition] = useState<"light" | "partial" | "full">("partial");
+  const [selected, setSelected] = useState<RenovationItemId[]>(
+    defaultRenovationSelection("partial", "byt"),
+  );
+  const [reserve, setReserve] = useState(15);
 
-  const result = useMemo(
-    () =>
-      computeRenovation({
-        type,
-        areaSqm: parseAmount(area),
-        contingencyPct: parseAmount(contingency),
-      }),
-    [type, area, contingency],
+  const estimate = useMemo(
+    () => estimateRenovation({ areaSqm: area, kind, selected, reservePct: reserve }),
+    [area, kind, selected, reserve],
   );
 
-  const fill = Math.min(
-    100,
-    result.high > 0 ? (result.total / result.high) * 100 : 0,
-  );
+  function applyPreset(nextKind: "byt" | "dum", nextCondition: "light" | "partial" | "full") {
+    setKind(nextKind);
+    setCondition(nextCondition);
+    setSelected(defaultRenovationSelection(nextCondition, nextKind));
+  }
 
   return (
     <CalculatorShell
-      title="Rekonstrukce"
-      description="Odhadněte rozpočet úprav, rezervu a dopad na ekonomiku projektu. Orientační pásmo podle typu prací a plochy."
-      badge="Praktické"
+      title="Odhad nákladů rekonstrukce"
+      description="Orientační modelové pásmo podle plochy a vybraných prací. Nejde o cenovou nabídku stavebních prací."
+      badge="Modelové sazby"
       breadcrumbs={[
         { href: "/", label: "Domů" },
         { href: "/analyzy-a-kalkulacky", label: "Analýzy a kalkulačky" },
@@ -51,91 +55,92 @@ export function RenovationCalculator() {
       <div className="calc-layout">
         <section className="calc-panel">
           <h2>Vstupy</h2>
-          <div className="calc-field">
-            <label>Typ prací</label>
-            <select
-              value={type}
-              onChange={(e) =>
-                setType(e.target.value as (typeof TYPES)[number]["id"])
-              }
+          <div className="calc-inline-actions">
+            <button type="button" className="tools-btn-outline" onClick={() => applyPreset("byt", "partial")}>
+              Načíst modelový příklad
+            </button>
+            <button
+              type="button"
+              className="tools-btn-outline"
+              onClick={() => {
+                setArea(0);
+                setSelected([]);
+              }}
             >
-              {TYPES.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              Vymazat
+            </button>
           </div>
-          <div className="calc-grid-2">
-            <div className="calc-field">
-              <label>Plocha (m²)</label>
-              <input
-                inputMode="decimal"
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-              />
-            </div>
-            <div className="calc-field">
-              <label>Rezerva (%)</label>
-              <input
-                inputMode="decimal"
-                value={contingency}
-                onChange={(e) => setContingency(e.target.value)}
-              />
-              <span className="calc-field-hint">Doporučeno 10–20 %</span>
-            </div>
+          <MoneyField label="Plocha m²" value={area} onChange={setArea} />
+          <div className="calc-mode">
+            <button type="button" className="tools-filter" aria-pressed={kind === "byt"} onClick={() => applyPreset("byt", condition)}>Byt</button>
+            <button type="button" className="tools-filter" aria-pressed={kind === "dum"} onClick={() => applyPreset("dum", condition)}>Dům</button>
           </div>
-          <p className="calc-field-hint">
-            Orientační sazby: {formatCzk(result.rate.low)}–
-            {formatCzk(result.rate.high)} / m² podle rozsahu.
-          </p>
+          <div className="calc-mode">
+            {(
+              [
+                ["light", "Lehké úpravy"],
+                ["partial", "Částečná rekonstrukce"],
+                ["full", "Kompletní rekonstrukce"],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} type="button" className="tools-filter" aria-pressed={condition === id} onClick={() => applyPreset(kind, id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="calc-checks">
+            {RENOVATION_COST_RANGES.filter((item) => kind === "dum" || !item.houseOnly).map((item) => (
+              <label key={item.id}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(item.id)}
+                  onChange={(event) => {
+                    setSelected((current) =>
+                      event.target.checked
+                        ? [...current, item.id]
+                        : current.filter((id) => id !== item.id),
+                    );
+                  }}
+                />
+                {item.label}
+              </label>
+            ))}
+          </div>
+          <PercentField label="Rezerva" value={reserve} onChange={setReserve} hint="Výchozí model je 15 %." />
         </section>
-
         <section className="calc-panel">
           <h2>Výsledky</h2>
           <div className="calc-result-hero">
-            <span>Odhad celkového rozpočtu</span>
-            <strong>{formatCzk(result.total)}</strong>
-            <p>{result.comment}</p>
+            <span>Střední scénář včetně rezervy</span>
+            <strong>{moneyText(estimate.totalWithReserve)}</strong>
+            <p>Modelové orientační hodnoty, ne nabídka zhotovitele.</p>
           </div>
           <div className="calc-stats">
-            <Stat label="Odhad minima" value={formatCzk(result.low)} />
-            <Stat label="Základní odhad" value={formatCzk(result.base)} />
-            <Stat label="Odhad maxima" value={formatCzk(result.high)} />
-            <Stat
-              label="Doporučená rezerva"
-              value={formatCzk(result.contingency)}
-            />
+            <Kpi label="Nízký scénář" value={moneyText(estimate.low)} />
+            <Kpi label="Střední scénář" value={moneyText(estimate.mid)} />
+            <Kpi label="Vyšší scénář" value={moneyText(estimate.high)} />
+            <Kpi label={`Rezerva ${estimate.reservePct} %`} value={moneyText(estimate.reserveOnMid)} />
           </div>
-          <div className="calc-progress">
-            <div className="calc-progress-label">
-              <span>Základ + rezerva vs. horní pásmo</span>
-              <span>{Math.round(fill)} %</span>
-            </div>
-            <div className="calc-progress-track">
-              <div className="calc-progress-fill" style={{ width: `${fill}%` }} />
-            </div>
-          </div>
-          <div className="calc-tips">
-            <h3>Tipy</h3>
-            <ul>
-              <li>Skutečný rozpočet ověřte položkově a lokalitou.</li>
-              <li>
-                Dopad na výnos spočítejte v Cash flow nebo Investičním výnosu.
-              </li>
-            </ul>
-          </div>
+          <BarCompare
+            items={[...estimate.lines]
+              .sort((a, b) => b.mid - a.mid)
+              .map((line) => ({
+                label: line.label,
+                value: line.mid,
+                display: moneyText(line.mid),
+              }))}
+          />
+          <CrossLinks
+            links={[
+              {
+                href: `/kalkulacky/investicni-vynos`,
+                label: "Zahrnout do investičního výpočtu →",
+              },
+            ]}
+          />
+          <Disclaimer extra="Nejde o cenovou nabídku stavebních prací." />
         </section>
       </div>
     </CalculatorShell>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="calc-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
   );
 }

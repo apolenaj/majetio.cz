@@ -2,64 +2,57 @@
 
 import { useMemo, useState } from "react";
 
-import { formatCzk, formatPct } from "@/components/marketing/format";
-
 import {
-  CalculatorFooterCta,
-  CalculatorShell,
-} from "../calculator-shell";
-import { computeCashFlow, parseAmount } from "./mvp-math";
+  SCENARIO_DELTAS,
+  applyScenario,
+  buildIncomeStatement,
+  type ScenarioId,
+} from "@/lib/calculators";
 
-export function CashFlowCalculator() {
-  const [price, setPrice] = useState("6500000");
-  const [rent, setRent] = useState("22000");
-  const [fees, setFees] = useState("2500");
-  const [reserveFund, setReserveFund] = useState("800");
-  const [insurance, setInsurance] = useState("350");
-  const [maintenance, setMaintenance] = useState("1200");
-  const [management, setManagement] = useState("1500");
-  const [mortgage, setMortgage] = useState("12000");
-  const [vacancy, setVacancy] = useState("5");
+import { CalculatorFooterCta, CalculatorShell } from "../calculator-shell";
+import { useInvestmentForm } from "./use-investment-form";
+import {
+  BarCompare,
+  Breakdown,
+  CrossLinks,
+  Disclaimer,
+  IntField,
+  Kpi,
+  ModeToggle,
+  MoneyField,
+  PercentField,
+  ToolActions,
+  moneyText,
+  pctText,
+  readQueryNumber,
+} from "./ui";
 
-  const result = useMemo(() => {
-    const cf = computeCashFlow({
-      rent: parseAmount(rent),
-      fees: parseAmount(fees),
-      reserveFund: parseAmount(reserveFund),
-      insurance: parseAmount(insurance),
-      maintenance: parseAmount(maintenance),
-      management: parseAmount(management),
-      mortgage: parseAmount(mortgage),
-      vacancyPct: parseAmount(vacancy),
-    });
-    const p = parseAmount(price);
-    const annualRent = parseAmount(rent) * 12;
-    const gross = p > 0 ? (annualRent / p) * 100 : 0;
-    const netAnnual = (cf.effectiveRent - cf.opex) * 12;
-    const net = p > 0 ? (netAnnual / p) * 100 : 0;
-    return { ...cf, gross, net };
-  }, [
-    price,
-    rent,
-    fees,
-    reserveFund,
-    insurance,
-    maintenance,
-    management,
-    mortgage,
-    vacancy,
-  ]);
-
-  const fillPct = Math.min(
-    100,
-    Math.max(0, 50 + (result.monthly / 20000) * 50),
+export function CashFlowCalculator({
+  initialQuery,
+}: {
+  initialQuery?: Record<string, string | string[] | undefined>;
+}) {
+  const form = useInvestmentForm({
+    purchasePrice: readQueryNumber(initialQuery, "kupniCena") ?? undefined,
+    monthlyRent: readQueryNumber(initialQuery, "najem") ?? undefined,
+  });
+  const [scenario, setScenario] = useState<ScenarioId>("base");
+  const statement = useMemo(
+    () => buildIncomeStatement(applyScenario(form.input, scenario)),
+    [form.input, scenario],
   );
+  const tone =
+    statement.monthlyCashFlow == null
+      ? "neutral"
+      : statement.monthlyCashFlow >= 0
+        ? "positive"
+        : "negative";
 
   return (
     <CalculatorShell
-      title="Cash flow"
-      description="Spočítejte příjmy, náklady a měsíční bilanci investiční nemovitosti. Výsledky jsou orientační."
-      badge="Rychlý výpočet"
+      title="Cash flow nemovitosti"
+      description="Zjistěte, kolik vám může nemovitost každý měsíc skutečně vydělávat nebo kolik budete doplácet."
+      badge="Sdílený model NOI"
       breadcrumbs={[
         { href: "/", label: "Domů" },
         { href: "/analyzy-a-kalkulacky", label: "Analýzy a kalkulačky" },
@@ -70,124 +63,134 @@ export function CashFlowCalculator() {
       <div className="calc-layout">
         <section className="calc-panel">
           <h2>Vstupy</h2>
+          <ToolActions onDemo={form.loadDemo} onReset={form.reset} />
+          <ModeToggle advanced={form.advanced} onChange={form.setAdvanced} />
+          <MoneyField
+            label="Kupní cena"
+            value={form.input.purchasePrice}
+            onChange={(purchasePrice) => form.patch({ purchasePrice })}
+          />
+          <MoneyField
+            label="Měsíční nájem"
+            value={form.input.monthlyRent}
+            onChange={(monthlyRent) => form.patch({ monthlyRent })}
+          />
           <div className="calc-grid-2">
-            <Field label="Kupní cena (Kč)" value={price} onChange={setPrice} />
-            <Field label="Měsíční nájem (Kč)" value={rent} onChange={setRent} />
-            <Field label="Poplatky (Kč)" value={fees} onChange={setFees} />
-            <Field
-              label="Fond oprav (Kč)"
-              value={reserveFund}
-              onChange={setReserveFund}
+            <MoneyField
+              label="Vlastní prostředky"
+              value={form.input.ownCapital}
+              onChange={(ownCapital) => form.patch({ ownCapital })}
             />
-            <Field
-              label="Pojištění (Kč)"
-              value={insurance}
-              onChange={setInsurance}
+            <MoneyField
+              label="Výše úvěru"
+              value={form.input.loanAmount ?? 0}
+              onChange={(loanAmount) => form.patch({ loanAmount })}
             />
-            <Field
-              label="Údržba (Kč)"
-              value={maintenance}
-              onChange={setMaintenance}
+            <PercentField
+              label="Úroková sazba p.a."
+              value={form.input.annualInterestRate}
+              onChange={(annualInterestRate) => form.patch({ annualInterestRate })}
             />
-            <Field
-              label="Správa (Kč)"
-              value={management}
-              onChange={setManagement}
-            />
-            <Field
-              label="Splátka (Kč)"
-              value={mortgage}
-              onChange={setMortgage}
-            />
-            <Field
-              label="Vacancy / rezerva (%)"
-              value={vacancy}
-              onChange={setVacancy}
-              hint="Snížení efektivního nájmu"
+            <IntField
+              label="Doba splatnosti (roky)"
+              value={form.input.loanYears}
+              onChange={(loanYears) => form.patch({ loanYears })}
             />
           </div>
+          {form.advanced ? (
+            <>
+              <MoneyField
+                label="Další měsíční příjem"
+                value={form.input.otherMonthlyIncome}
+                onChange={(otherMonthlyIncome) => form.patch({ otherMonthlyIncome })}
+              />
+              <div className="calc-grid-2">
+                <MoneyField label="Fond oprav / HOA" value={form.input.monthlyHOA} onChange={(monthlyHOA) => form.patch({ monthlyHOA })} />
+                <MoneyField label="Pojištění" value={form.input.insuranceMonthly} onChange={(insuranceMonthly) => form.patch({ insuranceMonthly })} />
+                <MoneyField label="Údržba" value={form.input.maintenanceMonthly} onChange={(maintenanceMonthly) => form.patch({ maintenanceMonthly })} />
+                <MoneyField label="Správa" value={form.input.managementMonthly} onChange={(managementMonthly) => form.patch({ managementMonthly })} />
+                <MoneyField label="Ostatní měsíční náklady" value={form.input.otherOperatingMonthly} onChange={(otherOperatingMonthly) => form.patch({ otherOperatingMonthly })} />
+                <MoneyField label="Roční daň / poplatky" value={form.input.annualPropertyTax} onChange={(annualPropertyTax) => form.patch({ annualPropertyTax })} />
+              </div>
+              <PercentField
+                label="Vacancy rate"
+                value={form.input.vacancyRate}
+                onChange={(vacancyRate) => form.patch({ vacancyRate })}
+              />
+            </>
+          ) : (
+            <MoneyField
+              label="Měsíční provozní náklady"
+              value={form.input.monthlyOperatingLump}
+              onChange={(monthlyOperatingLump) => form.patch({ monthlyOperatingLump })}
+            />
+          )}
         </section>
 
         <section className="calc-panel">
           <h2>Výsledky</h2>
-          <div className="calc-result-hero">
+          <div className="calc-mode">
+            {(Object.keys(SCENARIO_DELTAS) as ScenarioId[]).map((id) => (
+              <button
+                key={id}
+                type="button"
+                className="tools-filter"
+                aria-pressed={scenario === id}
+                onClick={() => setScenario(id)}
+              >
+                {SCENARIO_DELTAS[id].label}
+              </button>
+            ))}
+          </div>
+          <p className="calc-assumptions">{SCENARIO_DELTAS[scenario].note}</p>
+          <div className={`calc-result-hero calc-kpi-${tone}`}>
             <span>Měsíční cash flow</span>
-            <strong>
-              {result.monthly >= 0 ? "+" : ""}
-              {formatCzk(result.monthly)}
-            </strong>
-            <p>{result.comment}</p>
+            <strong>{moneyText(statement.monthlyCashFlow)}</strong>
+            <p>
+              {statement.monthlyCashFlow == null
+                ? "Splátku nelze spočítat při zadané splatnosti."
+                : statement.monthlyCashFlow >= 0
+                  ? "Pozitivní měsíční cash flow při zadaných předpokladech."
+                  : "Záporné měsíční cash flow při zadaných předpokladech."}
+            </p>
           </div>
           <div className="calc-stats">
-            <Stat label="Roční cash flow" value={formatCzk(result.annual)} />
-            <Stat label="Hrubý výnos" value={formatPct(result.gross)} />
-            <Stat label="Čistý výnos" value={formatPct(result.net)} />
-            <Stat label="Provozní náklady" value={formatCzk(result.opex)} />
-            <Stat
-              label="Efektivní nájem"
-              value={formatCzk(result.effectiveRent)}
-            />
-            <Stat
-              label="Ztráta vacancy"
-              value={formatCzk(result.vacancyLoss)}
-            />
+            <Kpi label="Roční cash flow" value={moneyText(statement.annualCashFlow)} tone={tone} />
+            <Kpi label="Efektivní nájem" value={moneyText(statement.effectiveMonthlyRent)} />
+            <Kpi label="Provozní náklady" value={moneyText(statement.monthlyOperatingCosts)} />
+            <Kpi label="Splátka" value={moneyText(statement.monthlyDebtService)} hint="Anuitní splátka z jistiny, sazby a doby." />
+            <Kpi label="NOI / měsíc" value={moneyText(statement.monthlyNoi)} hint="Čistý provozní příjem po nákladech, před splátkou." />
+            <Kpi label="Hrubý výnos" value={pctText(statement.grossYieldPct)} hint="Roční nájem při plné obsazenosti dělený kupní cenou." />
           </div>
-          <div className="calc-progress">
-            <div className="calc-progress-label">
-              <span>Bilance scénáře</span>
-              <span>{result.monthly >= 0 ? "Kladná" : "Záporná"}</span>
-            </div>
-            <div className="calc-progress-track">
-              <div
-                className="calc-progress-fill"
-                style={{ width: `${fillPct}%` }}
-              />
-            </div>
-          </div>
-          <div className="calc-tips">
-            <h3>Tipy</h3>
-            <ul>
-              <li>Vacancy 3–8 % je běžný konzervativní odhad.</li>
-              <li>
-                Pro detailnější scénáře otevřete kalkulačku Investiční výnos.
-              </li>
-            </ul>
-          </div>
+          <h3 className="calc-subhead">Jak jsme k výsledku došli</h3>
+          <Breakdown
+            rows={[
+              { sign: "+", label: "Nájem", value: moneyText(statement.potentialMonthlyRent) },
+              { sign: "+", label: "Další příjmy", value: moneyText(statement.otherMonthlyIncome) },
+              { sign: "−", label: "Neobsazenost", value: moneyText(statement.vacancyLossMonthly) },
+              { sign: "−", label: "Provozní náklady", value: moneyText(statement.monthlyOperatingCosts) },
+              { sign: "−", label: "Splátka", value: moneyText(statement.monthlyDebtService) },
+              { sign: "=", label: "Cash flow", value: moneyText(statement.monthlyCashFlow) },
+            ]}
+          />
+          <BarCompare
+            items={[
+              { label: "Efektivní příjem", value: statement.effectiveMonthlyRent + statement.otherMonthlyIncome, display: moneyText(statement.effectiveMonthlyRent + statement.otherMonthlyIncome) },
+              { label: "Náklady + splátka", value: statement.monthlyOperatingCosts + (statement.monthlyDebtService ?? 0), display: moneyText(statement.monthlyOperatingCosts + (statement.monthlyDebtService ?? 0)) },
+            ]}
+          />
+          <p className="calc-assumptions">
+            Použité předpoklady: sazba {pctText(applyScenario(form.input, scenario).annualInterestRate)} ·{" "}
+            {applyScenario(form.input, scenario).loanYears} let · vacancy{" "}
+            {pctText(applyScenario(form.input, scenario).vacancyRate, 1)}
+          </p>
+          {statement.issues.length > 0 ? (
+            <p className="calc-assumptions">{statement.issues.map((issue) => issue.message).join(" ")}</p>
+          ) : null}
+          <CrossLinks links={[{ href: "/kalkulacky/investicni-vynos", label: "Zkontrolovat výnos →" }]} />
+          <Disclaimer />
         </section>
       </div>
     </CalculatorShell>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-}) {
-  return (
-    <div className="calc-field">
-      <label>{label}</label>
-      <input
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      {hint ? <span className="calc-field-hint">{hint}</span> : null}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="calc-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
   );
 }

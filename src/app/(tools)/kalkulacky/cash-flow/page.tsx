@@ -10,6 +10,11 @@ export const metadata: Metadata = preparePageMeta({
   path: "/kalkulacky/cash-flow",
 });
 
-export default function Page() {
-  return <CashFlowCalculator />;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  return <CashFlowCalculator initialQuery={query} />;
 }

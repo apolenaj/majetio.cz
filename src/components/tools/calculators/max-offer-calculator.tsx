@@ -2,45 +2,51 @@
 
 import { useMemo, useState } from "react";
 
-import { formatCzk, formatPct } from "@/components/marketing/format";
-
 import {
-  CalculatorFooterCta,
-  CalculatorShell,
-} from "../calculator-shell";
-import { computeMaxOffer, parseAmount } from "./mvp-math";
+  calculateMaxOfferByCashFlow,
+  calculateMaxOfferByYield,
+  offerGap,
+} from "@/lib/calculators";
+
+import { CalculatorFooterCta, CalculatorShell } from "../calculator-shell";
+import { useInvestmentForm } from "./use-investment-form";
+import {
+  CrossLinks,
+  Disclaimer,
+  IntField,
+  Kpi,
+  MoneyField,
+  PercentField,
+  ToolActions,
+  moneyText,
+  pctText,
+} from "./ui";
 
 export function MaxOfferCalculator() {
-  const [rent, setRent] = useState("22000");
-  const [opex, setOpex] = useState("5500");
-  const [targetYield, setTargetYield] = useState("5.5");
-  const [asking, setAsking] = useState("7200000");
+  const form = useInvestmentForm();
+  const [method, setMethod] = useState<"yield" | "cashflow">("yield");
+  const [targetYield, setTargetYield] = useState(5.5);
+  const [asking, setAsking] = useState(5_900_000);
+  const [targetCf, setTargetCf] = useState(0);
 
-  const result = useMemo(() => {
-    const offer = computeMaxOffer({
-      rentMonthly: parseAmount(rent),
-      opexMonthly: parseAmount(opex),
-      targetYieldPct: parseAmount(targetYield),
-    });
-    const ask = parseAmount(asking);
-    const delta = offer.maxPrice - ask;
-    const deltaPct = ask > 0 ? (delta / ask) * 100 : 0;
-    return { ...offer, ask, delta, deltaPct };
-  }, [rent, opex, targetYield, asking]);
-
-  const fill =
-    result.maxPrice <= 0
-      ? 0
-      : Math.min(
-          100,
-          Math.max(5, (result.maxPrice / Math.max(result.ask, result.maxPrice)) * 100),
-        );
+  const byYield = useMemo(
+    () => calculateMaxOfferByYield(form.input, targetYield),
+    [form.input, targetYield],
+  );
+  const byCashFlow = useMemo(
+    () => calculateMaxOfferByCashFlow({ ...form.input, loanAmount: null }, targetCf),
+    [form.input, targetCf],
+  );
+  const price =
+    method === "yield" ? byYield.maximumPurchasePrice : byCashFlow.maximumPurchasePrice;
+  const gap = offerGap(asking, price);
+  const message = method === "yield" ? byYield.message : byCashFlow.message;
 
   return (
     <CalculatorShell
-      title="Maximální nabídková cena"
-      description="Zjistěte, jakou maximální cenu dává při daných parametrech ještě smysl nabídnout."
-      badge="Doporučeno"
+      title="Jakou maximální cenu má smysl nabídnout?"
+      description="Spočítejte maximální kupní cenu podle výnosu, nákladů a parametrů investice."
+      badge="Model při zadaných předpokladech"
       breadcrumbs={[
         { href: "/", label: "Domů" },
         { href: "/analyzy-a-kalkulacky", label: "Analýzy a kalkulačky" },
@@ -51,105 +57,84 @@ export function MaxOfferCalculator() {
       <div className="calc-layout">
         <section className="calc-panel">
           <h2>Vstupy</h2>
-          <div className="calc-grid-2">
-            <Field
-              label="Odhad měsíčního nájmu (Kč)"
-              value={rent}
-              onChange={setRent}
-            />
-            <Field
-              label="Měsíční provozní náklady (Kč)"
-              value={opex}
-              onChange={setOpex}
-            />
-            <Field
-              label="Cílový čistý výnos (%)"
-              value={targetYield}
-              onChange={setTargetYield}
-            />
-            <Field
-              label="Inzerovaná cena (Kč)"
-              value={asking}
-              onChange={setAsking}
-              hint="Pro porovnání s modelem"
-            />
+          <ToolActions onDemo={form.loadDemo} onReset={form.reset} />
+          <div className="calc-mode">
+            <button type="button" className="tools-filter" aria-pressed={method === "yield"} onClick={() => setMethod("yield")}>
+              Podle výnosu
+            </button>
+            <button type="button" className="tools-filter" aria-pressed={method === "cashflow"} onClick={() => setMethod("cashflow")}>
+              Podle cash flow
+            </button>
           </div>
+          <MoneyField label="Očekávaný měsíční nájem" value={form.input.monthlyRent} onChange={(monthlyRent) => form.patch({ monthlyRent })} />
+          <PercentField label="Vacancy" value={form.input.vacancyRate} onChange={(vacancyRate) => form.patch({ vacancyRate })} />
+          <MoneyField
+            label="Roční provozní náklady"
+            value={Math.round(form.input.monthlyOperatingLump * 12)}
+            onChange={(annual) => form.patch({ monthlyOperatingLump: annual / 12, useItemizedOpex: false })}
+          />
+          {method === "yield" ? (
+            <PercentField label="Cílový čistý výnos" value={targetYield} onChange={setTargetYield} />
+          ) : (
+            <>
+              <MoneyField label="Požadované měsíční cash flow" value={targetCf} signed onChange={setTargetCf} hint="0 = model na nule. Záporné číslo = maximální měsíční doplatek." />
+              <MoneyField label="Vlastní prostředky" value={form.input.ownCapital} onChange={(ownCapital) => form.patch({ ownCapital, loanAmount: null })} />
+              <div className="calc-grid-2">
+                <PercentField label="Sazba p.a." value={form.input.annualInterestRate} onChange={(annualInterestRate) => form.patch({ annualInterestRate })} />
+                <IntField label="Splatnost" value={form.input.loanYears} onChange={(loanYears) => form.patch({ loanYears })} />
+              </div>
+            </>
+          )}
+          <MoneyField label="Rekonstrukce" value={form.input.renovationCost} onChange={(renovationCost) => form.patch({ renovationCost })} />
+          <MoneyField label="Náklady na koupi" value={form.input.acquisitionCosts} onChange={(acquisitionCosts) => form.patch({ acquisitionCosts })} />
+          <MoneyField label="Počáteční rezerva" value={form.input.initialReserve} onChange={(initialReserve) => form.patch({ initialReserve })} />
+          <MoneyField label="Nabídka inzerátu" value={asking} onChange={setAsking} hint="Jen pro porovnání. Není tržní ocenění." />
         </section>
-
         <section className="calc-panel">
           <h2>Výsledky</h2>
           <div className="calc-result-hero">
-            <span>Maximální nabídková cena</span>
-            <strong>{formatCzk(result.maxPrice)}</strong>
-            <p>{result.comment}</p>
+            <span>Modelová maximální kupní cena</span>
+            <strong>{moneyText(price)}</strong>
+            <p>
+              {message ??
+                "Modelová maximální cena při zadaných předpokladech. Není správná cena ani skutečná hodnota."}
+            </p>
           </div>
           <div className="calc-stats">
-            <Stat
-              label="Roční čistý příjem"
-              value={formatCzk(result.annualNet)}
-            />
-            <Stat label="Cílový výnos" value={formatPct(parseAmount(targetYield))} />
-            <Stat label="Inzerovaná cena" value={formatCzk(result.ask)} />
-            <Stat
-              label="Rozdíl vs. inzerát"
-              value={`${result.delta >= 0 ? "+" : ""}${formatCzk(result.delta)}`}
-            />
+            <Kpi label="Nabídka inzerátu" value={moneyText(asking)} />
+            <Kpi label="Rozdíl" value={gap.delta == null ? "—" : moneyText(gap.delta)} />
+            <Kpi label="Rozdíl v %" value={pctText(gap.deltaPct, 1)} />
+            <Kpi label="NOI" value={moneyText(byYield.annualNoi)} />
           </div>
-          <div className="calc-progress">
-            <div className="calc-progress-label">
-              <span>Model vs. inzerát</span>
-              <span>
-                {result.delta >= 0
-                  ? "Prostor k nabídce"
-                  : "Nad cílovým limitem"}
-              </span>
+          <div className="calc-bars">
+            <div className="calc-bar-row">
+              <div className="calc-bar-label">
+                <span>Inzerovaná cena</span>
+                <strong>{moneyText(asking)}</strong>
+              </div>
+              <div className="calc-progress-track">
+                <div className="calc-progress-fill" style={{ width: "100%" }} />
+              </div>
             </div>
-            <div className="calc-progress-track">
-              <div className="calc-progress-fill" style={{ width: `${fill}%` }} />
+            <div className="calc-bar-row">
+              <div className="calc-bar-label">
+                <span>Modelová maximální cena</span>
+                <strong>{moneyText(price)}</strong>
+              </div>
+              <div className="calc-progress-track">
+                <div
+                  className="calc-progress-fill"
+                  style={{
+                    width: `${price == null || asking <= 0 ? 0 : Math.min(100, (price / asking) * 100)}%`,
+                  }}
+                />
+              </div>
             </div>
           </div>
-          <div className="calc-tips">
-            <h3>Tipy</h3>
-            <ul>
-              <li>Model počítá z cílového čistého výnosu (nájem − opex).</li>
-              <li>Nezahrnuje financování — to řeší kalkulačka Financování.</li>
-            </ul>
-          </div>
+          <CrossLinks links={[{ href: "/kalkulacky/financovani", label: "Spočítat financování →" }]} />
+          <Disclaimer />
         </section>
       </div>
     </CalculatorShell>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-}) {
-  return (
-    <div className="calc-field">
-      <label>{label}</label>
-      <input
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      {hint ? <span className="calc-field-hint">{hint}</span> : null}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="calc-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
   );
 }
