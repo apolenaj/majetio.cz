@@ -24,7 +24,10 @@ import {
 } from "lucide-react";
 
 import { HomeAssessmentEntry } from "@/components/marketing/home/home-assessment-entry";
-import { HomeSearchPanel } from "@/components/marketing/home/home-search-panel";
+import {
+  HomeSearchLinks,
+  HomeSearchPanel,
+} from "@/components/marketing/home/home-search-panel";
 import { Container } from "@/components/ui/container";
 import { houseRenovationStudy } from "@/content/case-studies";
 import {
@@ -259,59 +262,62 @@ export function PlatformHomepage({
 
   return (
     <div className="home-shell">
-      {/* HERO */}
-      <section className="home-hero">
-        <div className="home-hero-bleed" aria-hidden>
-          <Image
-            src={HERO_IMAGE}
-            alt=""
-            fill
-            priority
-            className="object-cover object-center"
-            sizes="50vw"
-          />
-        </div>
-
-        <Container className="relative z-[1] grid lg:grid-cols-2">
-          <div className="home-hero-copy">
-            <h1 className="home-hero-title">
-              Najděte nemovitost.
-              <br />
-              Poznejte její potenciál.
-            </h1>
-            <p className="home-hero-lead">
-              Pro bydlení i investici. S přehledem o ceně, nákladech a možnostech.
-            </p>
-            <ul className="home-hero-benefits">
-              {BENEFITS.map((item) => (
-                <li key={item.label}>
-                  <item.icon aria-hidden />
-                  {item.label}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="home-hero-mobile-photo">
+      {/* HERO + SEARCH OVERLAY */}
+      <div className="home-hero-stage">
+        <section className="home-hero">
+          <div className="home-hero-bleed" aria-hidden>
             <Image
               src={HERO_IMAGE}
-              alt="Moderní rezidenční komplex se zelení"
+              alt=""
               fill
               priority
               className="object-cover object-center"
-              sizes="100vw"
+              sizes="50vw"
             />
           </div>
-        </Container>
 
-        <Container className="home-search-wrap">
+          <Container className="relative z-[1] grid lg:grid-cols-2">
+            <div className="home-hero-copy">
+              <h1 className="home-hero-title">
+                Najděte nemovitost.
+                <br />
+                Poznejte její potenciál.
+              </h1>
+              <p className="home-hero-lead">
+                Pro bydlení i investici. S přehledem o ceně, nákladech a možnostech.
+              </p>
+              <ul className="home-hero-benefits">
+                {BENEFITS.map((item) => (
+                  <li key={item.label}>
+                    <item.icon aria-hidden />
+                    {item.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="home-hero-mobile-photo">
+              <Image
+                src={HERO_IMAGE}
+                alt="Moderní rezidenční komplex se zelení"
+                fill
+                priority
+                className="object-cover object-center"
+                sizes="100vw"
+              />
+            </div>
+          </Container>
+        </section>
+
+        <div className="home-search-wrap">
           <HomeSearchPanel />
-        </Container>
-      </section>
+        </div>
+      </div>
 
       {/* PROPERTIES */}
-      <section className="home-section home-props">
+      <section className="home-props">
         <Container>
-          <div className="flex flex-wrap items-end justify-between gap-2">
+          <HomeSearchLinks />
+          <div className="home-props-heading flex flex-wrap items-end justify-between gap-2">
             <div>
               <p className="home-eyebrow">Doporučené nabídky</p>
               <h2 className="home-heading mt-1">Objevte své další místo</h2>
