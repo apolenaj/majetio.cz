@@ -98,11 +98,12 @@ const catalogSeed: Array<
     plocha_m2: 54,
     stav_inzeratu: "premium",
     obrazky: {
-      hlavni: "/home/prop-villa.png",
+      hlavni:
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=70",
     },
     stitky: ["Vysoký výnos", "Bez rekonstrukce"],
     popis_upravy:
-      "Premium: Profesionální fotky, homestaging, 3D scan a optimalizovaný copywriting pro maximální dosah.",
+      "Ukázkový byt 2+kk — ilustrační fotografie interiéru bytu, ne vily.",
   },
   {
     id: 2,

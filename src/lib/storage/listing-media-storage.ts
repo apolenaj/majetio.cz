@@ -34,6 +34,8 @@ export type PutObjectInput = {
   contentType: string;
   /** Logical prefix, e.g. listings/{propertyId} */
   keyPrefix: string;
+  /** Floor-plan originals may include PDF; photos stay image-only. */
+  allowPdf?: boolean;
 };
 
 function isEphemeralHost(): boolean {
@@ -110,6 +112,7 @@ function extForMime(mime: string): string {
   if (mime === "image/png") return ".png";
   if (mime === "image/webp") return ".webp";
   if (mime === "image/gif") return ".gif";
+  if (mime === "application/pdf") return ".pdf";
   return ".jpg";
 }
 
@@ -190,11 +193,16 @@ export async function putListingObject(
           : "Nepovolený typ souboru. Povoleny: JPG, PNG, WebP, GIF.",
     };
   }
-  if (!mimeCheck.mime.startsWith("image/")) {
+  if (
+    !mimeCheck.mime.startsWith("image/") &&
+    !(input.allowPdf && mimeCheck.mime === "application/pdf")
+  ) {
     return {
       ok: false,
       code: "validation",
-      error: "K nabídce lze nahrát pouze obrázky.",
+      error: input.allowPdf
+        ? "Povolené formáty: JPG, PNG, WebP, GIF, PDF."
+        : "K nabídce lze nahrát pouze obrázky.",
     };
   }
 

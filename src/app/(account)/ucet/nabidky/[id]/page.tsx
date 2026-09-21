@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { SellerListingForm } from "@/components/listings/seller-listing-form";
 import { SellerListingControls } from "@/components/listings/seller-listing-controls";
+import { SellerFloorPlanPanel } from "@/components/floorplans/seller-floor-plan-panel";
 import { ListingInbox } from "@/components/listings/listing-inbox";
 import { PageHeader } from "@/components/layout/page-layouts";
 import { auth } from "@/lib/auth";
@@ -75,6 +76,20 @@ export default async function UpravNabidkuPage({ params }: Props) {
       ) : null}
 
       <SellerListingControls propertyId={property.id} status={property.status} />
+
+      {(property.propertyType === "APARTMENT" ||
+        property.propertyType === "HOUSE") && (
+        <SellerFloorPlanPanel
+          propertyId={property.id}
+          listedAreaM2={property.usableArea}
+          listingMedia={property.media.map((m) => ({
+            id: m.id,
+            url: m.url,
+            alt: m.alt,
+            type: m.type,
+          }))}
+        />
+      )}
 
       {property.media.length ? (
         <ul className="flex flex-wrap gap-3">

@@ -1906,6 +1906,7 @@ model Property {
   media           PropertyMedia[]
   /** @deprecated Prefer PropertyMedia. */
   images          PropertyImage[]
+  floorPlans      PropertyFloorPlan[]
   priceHistory    PropertyPriceHistory[]
   statusHistory   PropertyStatusHistory[]
   duplicateAsA    PropertyDuplicateCandidate[] @relation("DuplicatePropertyA")
@@ -2241,6 +2242,90 @@ model PropertyMedia {
 
   @@index([propertyId, type, sortOrder])
   @@index([sourceId])
+}
+
+/**
+ * Editable floor plan attached to a listing.
+ * Geometry lives in PropertyFloorPlanRevision.document (JSON).
+ */
+enum FloorPlanLifecycleStatus {
+  DRAFT
+  REVIEW_REQUIRED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum FloorPlanAnalysisJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model PropertyFloorPlan {
+  id                   String                   @id @default(cuid())
+  propertyId           String
+  status               FloorPlanLifecycleStatus @default(DRAFT)
+  publishedRevisionId  String?                  @unique
+  draftRevisionId      String?                  @unique
+  createdByUserId      String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  property           Property                   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  publishedRevision  PropertyFloorPlanRevision? @relation("FloorPlanPublishedRevision", fields: [publishedRevisionId], references: [id], onDelete: SetNull)
+  draftRevision      PropertyFloorPlanRevision? @relation("FloorPlanDraftRevision", fields: [draftRevisionId], references: [id], onDelete: SetNull)
+  revisions          PropertyFloorPlanRevision[] @relation("FloorPlanRevisions")
+  analysisJobs       PropertyFloorPlanAnalysisJob[]
+
+  @@index([propertyId, status])
+  @@index([updatedAt])
+}
+
+model PropertyFloorPlanRevision {
+  id              String   @id @default(cuid())
+  floorPlanId     String
+  version         Int
+  /** FloorPlanDocument JSON — schemaVersioned. */
+  document        Json
+  outputKind      String
+  scaleState      String
+  disclaimerCs    String   @db.Text
+  createdByUserId String?
+  sourceJobId     String?
+  createdAt       DateTime @default(now())
+
+  floorPlan              PropertyFloorPlan  @relation("FloorPlanRevisions", fields: [floorPlanId], references: [id], onDelete: Cascade)
+  publishedFor           PropertyFloorPlan? @relation("FloorPlanPublishedRevision")
+  draftFor               PropertyFloorPlan? @relation("FloorPlanDraftRevision")
+
+  @@unique([floorPlanId, version])
+  @@index([floorPlanId, createdAt])
+}
+
+model PropertyFloorPlanAnalysisJob {
+  id              String                     @id @default(cuid())
+  floorPlanId     String
+  status          FloorPlanAnalysisJobStatus @default(QUEUED)
+  /** photo_groups | upload_document | manual — never invents AI result without provider. */
+  kind            String
+  progressPct     Int                        @default(0)
+  errorMessageCs  String?                    @db.Text
+  /** Idempotency / dedupe key for double-click protection. */
+  clientRequestId String?
+  payload         Json?
+  resultRevisionId String?
+  createdByUserId String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  finishedAt      DateTime?
+
+  floorPlan PropertyFloorPlan @relation(fields: [floorPlanId], references: [id], onDelete: Cascade)
+
+  @@unique([floorPlanId, clientRequestId])
+  @@index([floorPlanId, status])
+  @@index([createdAt])
 }
 
 /** @deprecated Prefer PropertyMedia. Kept for early scaffolding. */

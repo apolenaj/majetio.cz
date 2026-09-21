@@ -16,7 +16,13 @@ import { isCapabilityUiAvailable } from "@/domains/markets";
 import { PropertyInvestmentOverview } from "@/components/property/property-investment-overview";
 import { ScenarioSwitcher } from "@/components/property/property-scenario-switcher";
 import { FinancingSummary } from "@/components/financing/financing-summary";
+import {
+  FloorPlanPublicView,
+  MediaFloorPlanTabs,
+} from "@/components/floorplans/floor-plan-public-view";
+import { PropertySellerCard, DEMO_SELLER_PROFILE } from "@/components/property/property-seller-card";
 import { PropertyDetailFinancing } from "@/components/property/property-detail-financing";
+import { loadPublishedFloorPlan } from "@/domains/floorplans/service";
 import { PropertyRenovationSection } from "@/components/property/property-renovation-section";
 import { PropertyRisksSection } from "@/components/property/property-risks-section";
 import { PropertyProvenanceSection } from "@/components/property/property-provenance-section";
@@ -158,6 +164,9 @@ export default async function PropertyDetailPage({ params }: Props) {
   const financial = getPropertyFinancialDemo(property.slug);
   const context = getPropertyContextDemo(property.slug);
   const valuation = await loadPropertyValuationBySlug(property.slug);
+  const publishedFloorPlan = await loadPublishedFloorPlan(property.id).catch(
+    () => null,
+  );
   // Incomplete / non-valuable listings must still render identity + lifecycle —
   // never hard-404 solely because the estimate engine has nothing to say.
 
@@ -297,7 +306,18 @@ export default async function PropertyDetailPage({ params }: Props) {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0 space-y-10">
             <section id="prehled" className="scroll-mt-28 space-y-10">
-              <PropertyGallery media={property.media} title={property.title} />
+              <MediaFloorPlanTabs
+                photos
+                floorPlan={Boolean(publishedFloorPlan)}
+                photosSlot={
+                  <PropertyGallery media={property.media} title={property.title} />
+                }
+                floorPlanSlot={
+                  publishedFloorPlan ? (
+                    <FloorPlanPublicView document={publishedFloorPlan.document} />
+                  ) : null
+                }
+              />
 
               <div className="lg:hidden space-y-3">
                 <PropertyPriceBlock
@@ -393,6 +413,12 @@ export default async function PropertyDetailPage({ params }: Props) {
                 renovation={financial?.renovation ?? null}
               />
             </section>
+
+            {publishedFloorPlan ? (
+              <section id="pudorys" className="scroll-mt-28">
+                <FloorPlanPublicView document={publishedFloorPlan.document} />
+              </section>
+            ) : null}
 
             <section id="rizika" className="scroll-mt-28">
               <PropertyRisksSection
@@ -532,22 +558,30 @@ export default async function PropertyDetailPage({ params }: Props) {
           </div>
 
           <aside className="lg:sticky lg:top-28 lg:self-start space-y-6">
-            <PropertyDecisionActions
-              property={{
-                id: property.id,
-                slug: property.slug,
-                title: property.title,
-                askingPrice: property.askingPrice,
-                pricePerSqm: property.pricePerSqm,
-                priceHistory: property.priceHistory,
-                locationLabel:
-                  locationLine ||
-                  property.location.label ||
-                  "Lokalita neuvedena",
-                isDemo: property.isDemo,
-              }}
-              activeFinancingLead={activeFinancingLead}
-            />
+            {property.isDemo ? (
+              <PropertySellerCard
+                profile={DEMO_SELLER_PROFILE}
+                askingPriceCzk={property.askingPrice}
+                propertyUrl={`${getSiteOrigin()}/nemovitosti/${property.slug}`}
+              />
+            ) : (
+              <PropertyDecisionActions
+                property={{
+                  id: property.id,
+                  slug: property.slug,
+                  title: property.title,
+                  askingPrice: property.askingPrice,
+                  pricePerSqm: property.pricePerSqm,
+                  priceHistory: property.priceHistory,
+                  locationLabel:
+                    locationLine ||
+                    property.location.label ||
+                    "Lokalita neuvedena",
+                  isDemo: property.isDemo,
+                }}
+                activeFinancingLead={activeFinancingLead}
+              />
+            )}
             {!property.isDemo && property.status === "ACTIVE" ? (
               <section
                 aria-labelledby="inquiry-heading"

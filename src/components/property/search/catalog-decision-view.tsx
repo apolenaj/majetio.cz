@@ -7,7 +7,16 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { FinancingSummary } from "@/components/financing/financing-summary";
 import { HypotekaJasneCTA } from "@/components/financing/hypotekajasne-cta";
+import {
+  FloorPlanPublicView,
+  MediaFloorPlanTabs,
+} from "@/components/floorplans/floor-plan-public-view";
+import {
+  DEMO_SELLER_PROFILE,
+  PropertySellerCard,
+} from "@/components/property/property-seller-card";
 import { FINANCING_ASSUMPTIONS, resolveFinancingInputs } from "@/config/financing-assumptions";
+import { DEMO_2KK_FLOOR_PLAN } from "@/domains/floorplans";
 import { DemoNegotiationForms } from "@/components/listings/demo-negotiation-forms";
 import { AnalysisOfferCard } from "@/components/property/analysis-offer-card";
 import { PrePurchaseChecklist } from "@/components/property/pre-purchase-checklist";
@@ -150,6 +159,8 @@ export function CatalogDecisionView({ property }: { property: Property }) {
 
   const propertyUrl = `${getSiteOrigin()}${catalogPropertyHref(property.id)}`;
   const financingDefaults = resolveFinancingInputs({ propertyPriceCzk: property.cena });
+  const demoFloorPlan = property.id === 1 ? DEMO_2KK_FLOOR_PLAN : null;
+  const shots = catalogShots(property);
 
   return (
     <div className="pd-shell">
@@ -164,7 +175,19 @@ export function CatalogDecisionView({ property }: { property: Property }) {
 
       <div className="mt-4 grid items-start gap-8 lg:grid-cols-[minmax(0,2.35fr)_minmax(18rem,1fr)]">
         <div className="min-w-0">
-          <CatalogPhotoGallery shots={catalogShots(property)} />
+          <MediaFloorPlanTabs
+            photos
+            floorPlan={Boolean(demoFloorPlan)}
+            photosSlot={<CatalogPhotoGallery shots={shots} />}
+            floorPlanSlot={
+              demoFloorPlan ? (
+                <FloorPlanPublicView
+                  document={demoFloorPlan}
+                  title="Modelový půdorys 2+kk"
+                />
+              ) : null
+            }
+          />
 
           <header id="prehled" className="scroll-mt-28 mt-6">
             <h1 className="text-3xl sm:text-4xl">{title}</h1>
@@ -479,15 +502,35 @@ export function CatalogDecisionView({ property }: { property: Property }) {
             </div>
           </section>
 
+          {demoFloorPlan ? (
+            <section id="pudorys" className="scroll-mt-28 mt-10">
+              <FloorPlanPublicView
+                document={demoFloorPlan}
+                title="Půdorys nemovitosti"
+              />
+            </section>
+          ) : null}
+
           <section id="dokumenty" className="scroll-mt-28 mt-10">
             <h2 className="font-display text-2xl">Dokumenty k nemovitosti</h2>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-              {["Půdorys", "PENB", "List vlastnictví", "Evidenční list", "Dokumenty SVJ", "Prohlášení vlastníka"].map((name) => (
+              {(demoFloorPlan
+                ? ["PENB", "List vlastnictví", "Evidenční list", "Dokumenty SVJ", "Prohlášení vlastníka"]
+                : ["Půdorys", "PENB", "List vlastnictví", "Evidenční list", "Dokumenty SVJ", "Prohlášení vlastníka"]
+              ).map((name) => (
                 <li key={name} className="rounded-xl border border-[var(--border-default)] px-3 py-3 text-sm">
                   <span className="font-medium">{name}</span>
                   <p className="text-[var(--text-muted)]">Dokument zatím nebyl nahrán</p>
                 </li>
               ))}
+              {demoFloorPlan ? (
+                <li className="rounded-xl border border-[var(--border-default)] px-3 py-3 text-sm">
+                  <span className="font-medium">Půdorys</span>
+                  <p className="text-[var(--text-muted)]">
+                    Modelová dispozice — viz sekce výše (ne z fotografií)
+                  </p>
+                </li>
+              ) : null}
             </ul>
           </section>
 
@@ -496,14 +539,18 @@ export function CatalogDecisionView({ property }: { property: Property }) {
             <p className="mt-2 text-sm text-[var(--text-secondary)]">U ukázky nemáme datum vložení ani předchozí cenu. Graf ceny inzerátu proto neukazujeme.</p>
           </section>
 
-          <section className="mt-10">
+          <section className="mt-10 lg:hidden">
             <h2 className="font-display text-2xl">Prodejce</h2>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Ukázka prezentace. Není tu ověřený makléř, telefon ani počet dalších nabídek. Živý inzerát tyto údaje bere z účtu inzerenta.
-            </p>
-            <Link href="/pridat-nemovitost" className="mt-3 inline-flex text-sm font-medium underline">
-              Přidat vlastní nemovitost
-            </Link>
+            <div className="mt-4">
+              <PropertySellerCard
+                profile={DEMO_SELLER_PROFILE}
+                askingPriceCzk={sale ? property.cena : null}
+                propertyUrl={propertyUrl}
+                onSave={toggleSave}
+                onShare={() => void share()}
+                savedLabel={saved ? "Uloženo" : "Uložit"}
+              />
+            </div>
           </section>
 
           <section className="mt-10">
@@ -565,40 +612,18 @@ export function CatalogDecisionView({ property }: { property: Property }) {
         </div>
 
         <aside className="hidden lg:sticky lg:top-24 lg:block">
-          <div className="pd-sticky-panel">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pd-muted,#667a86)]">Ukázka prezentace</p>
-            <p className="pd-price mt-2">{price}</p>
-            {perM2 != null && sale ? <p className="text-sm text-[var(--pd-muted,#667a86)]">{formatCzk(perM2)}/m²</p> : null}
-            {sale ? (
-              <FinancingSummary
-                propertyPriceCzk={property.cena}
-                propertyUrl={propertyUrl}
-                variant="compact"
-                sourceContext="property_detail"
-              />
-            ) : null}
-            <p className="mt-3 text-sm text-[var(--pd-muted,#667a86)]">
-              {property.dispozice ? `${property.dispozice} · ` : ""}
-              {area}
-            </p>
-            <Link href="/kontakt" className={`mt-4 w-full ${CTA}`}>
-              Mám zájem
-            </Link>
-            <button type="button" onClick={toggleSave} className={`mt-2 w-full ${CTA_OUTLINE}`}>
-              {saved ? "Uloženo" : "Uložit"}
-            </button>
-            <Link href="/kalkulacky/investicni-vynos" className={`mt-2 w-full ${CTA_OUTLINE}`}>
-              Analyzovat tuto nemovitost
-            </Link>
-            <p className="mt-3 text-xs text-[var(--pd-muted,#667a86)]">
-              Ukázka nemá živého makléře ani telefon. Prohlídku u této nabídky nelze domluvit.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <TextButton onClick={() => void share()}>{shared ? "Zkopírováno" : "Sdílet"}</TextButton>
-              <TextButton onClick={toggleCompare}>Porovnat</TextButton>
-            </div>
-            <p className="mt-3 text-xs text-[var(--pd-muted,#667a86)]">Uložení je jen v tomto prohlížeči, ne v účtu.</p>
-          </div>
+          <PropertySellerCard
+            profile={DEMO_SELLER_PROFILE}
+            askingPriceCzk={sale ? property.cena : null}
+            propertyUrl={propertyUrl}
+            onSave={toggleSave}
+            onShare={() => void share()}
+            savedLabel={saved ? "Uloženo" : "Uložit"}
+          />
+          <p className="mt-3 text-xs text-[var(--pd-muted,#667a86)]">
+            Uložení je jen v tomto prohlížeči. {property.dispozice ? `${property.dispozice} · ` : ""}
+            {area}
+          </p>
         </aside>
       </div>
 

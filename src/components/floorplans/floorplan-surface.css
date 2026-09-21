@@ -1,0 +1,109 @@
+/* Floor plan editor + public surface — Majetio navy/teal */
+
+.fp-btn,
+.fp-btn-primary,
+.fp-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid var(--border-default, #dde5e7);
+  background: #fff;
+  color: var(--text-primary, #0b3550);
+  cursor: pointer;
+}
+
+.fp-btn-primary {
+  background: var(--action-primary, #0d9a92);
+  border-color: var(--action-primary, #0d9a92);
+  color: #fff;
+}
+
+.fp-btn-danger {
+  color: #9b2c2c;
+  border-color: #f0c9c9;
+}
+
+.fp-chip {
+  border: 1px solid var(--border-default, #dde5e7);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #667a86);
+  cursor: pointer;
+}
+
+.fp-chip.is-active {
+  border-color: var(--action-primary, #0d9a92);
+  background: #f4fafa;
+  color: var(--text-primary, #0b3550);
+  font-weight: 600;
+}
+
+.fp-input {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  min-height: 2.25rem;
+  border: 1px solid var(--border-default, #dde5e7);
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.fp-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  padding: 1rem;
+  border: 1px solid var(--border-default, #dde5e7);
+  border-radius: 10px;
+  background: linear-gradient(165deg, #fcfbf8, #fff);
+  cursor: pointer;
+}
+
+.fp-choice:hover {
+  border-color: color-mix(in srgb, #0d9a92 40%, #dde5e7);
+}
+
+.fp-choice strong {
+  color: #0b3550;
+  font-size: 0.9rem;
+}
+
+.fp-choice span {
+  color: #667a86;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.fp-canvas svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 420px;
+}
+
+.fp-public svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.seller-card {
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .seller-card.is-sticky {
+    position: sticky;
+    top: 6rem;
+  }
+}
