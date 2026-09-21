@@ -7,6 +7,7 @@ import { PropertyCard } from "@/components/property/search/catalog-property-card
 import { maxLoanForMonthlyPayment } from "@/domains/investment/engine/calculations/rental-decision";
 import { formatCzk } from "@/lib/format";
 import { type Property } from "@/lib/mock-properties";
+import { cn } from "@/lib/utils";
 
 const RATE = new Decimal("0.05");
 
@@ -21,7 +22,15 @@ function parseAmount(raw: string): Decimal | null {
   }
 }
 
-export function CatalogBudgetList({ properties }: { properties: Property[] }) {
+export function CatalogBudgetList({
+  properties,
+  hideBudgetForm = false,
+  listLayout = false,
+}: {
+  properties: Property[];
+  hideBudgetForm?: boolean;
+  listLayout?: boolean;
+}) {
   const [funds, setFunds] = useState("");
   const [monthly, setMonthly] = useState("");
   const fundsValue = parseAmount(funds);
@@ -47,42 +56,56 @@ export function CatalogBudgetList({ properties }: { properties: Property[] }) {
 
   return (
     <div className="space-y-4">
-      <form className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
-        <h2 className="font-display text-xl text-[var(--text-primary)]">Co se vejde do mého rozpočtu</h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Koupě: vlastní prostředky a strop měsíční splátky. Model 5 % p.a. na 30 let. Není to schválení hypotéky.
-        </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
-            <span className="font-medium">Vlastní prostředky</span>
-            <input
-              value={funds}
-              inputMode="numeric"
-              onChange={(event) => setFunds(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-[var(--border-default)] bg-[var(--background-primary)] px-3 py-2 font-metric"
-            />
-          </label>
-          <label className="text-sm">
-            <span className="font-medium">Splátka nejvýše / měsíc</span>
-            <input
-              value={monthly}
-              inputMode="numeric"
-              onChange={(event) => setMonthly(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-[var(--border-default)] bg-[var(--background-primary)] px-3 py-2 font-metric"
-            />
-          </label>
-        </div>
-        {assessed ? (
-          <p className="mt-3 text-sm text-[var(--text-secondary)]">
-            Strop kupní ceny {formatCzk(assessed.maxPrice.toNumber())}. Vejde se {assessed.fits.length}. Nad
-            rozpočtem {assessed.over}. Pronájmy ({assessed.skippedRent}) se s koupí nesrovnávají.
+      {hideBudgetForm ? null : (
+        <form className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
+          <h2 className="font-display text-xl text-[var(--text-primary)]">
+            Co se vejde do mého rozpočtu
+          </h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Koupě: vlastní prostředky a strop měsíční splátky. Model 5 % p.a. na 30 let. Není to
+            schválení hypotéky.
           </p>
-        ) : (
-          <p className="mt-3 text-sm text-[var(--text-muted)]">Vyplňte obě pole, jinak se rozpočet nespočítá.</p>
-        )}
-      </form>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">
+              <span className="font-medium">Vlastní prostředky</span>
+              <input
+                value={funds}
+                inputMode="numeric"
+                onChange={(event) => setFunds(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-[var(--border-default)] bg-[var(--background-primary)] px-3 py-2 font-metric"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="font-medium">Splátka nejvýše / měsíc</span>
+              <input
+                value={monthly}
+                inputMode="numeric"
+                onChange={(event) => setMonthly(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-[var(--border-default)] bg-[var(--background-primary)] px-3 py-2 font-metric"
+              />
+            </label>
+          </div>
+          {assessed ? (
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+              Strop kupní ceny {formatCzk(assessed.maxPrice.toNumber())}. Vejde se{" "}
+              {assessed.fits.length}. Nad rozpočtem {assessed.over}. Pronájmy ({assessed.skippedRent})
+              se s koupí nesrovnávají.
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-[var(--text-muted)]">
+              Vyplňte obě pole, jinak se rozpočet nespočítá.
+            </p>
+          )}
+        </form>
+      )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        className={cn(
+          listLayout
+            ? "properties-grid-list"
+            : "grid gap-5 sm:grid-cols-2 xl:grid-cols-3",
+        )}
+      >
         {(assessed ? assessed.fits : properties).map((property) => (
           <div key={property.id} className="h-full">
             {assessed ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import * as React from "react";
 
 import { InfoTooltip, TooltipProvider } from "@/components/overlays/tooltip";
@@ -31,6 +31,7 @@ import {
 import {
   DISPOZICE_OPTIONS,
   ENERGIE_OPTIONS,
+  EMPTY_PROPERTY_URL_STATE,
   RAZENI_OPTIONS,
   STAV_OPTIONS,
   TYP_OPTIONS,
@@ -75,8 +76,8 @@ function Pill({
       className={cn(
         "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
         active
-          ? "border-slate-900 bg-slate-900 text-white"
-          : "border-[var(--border-default)] bg-[var(--surface-primary)] text-[var(--text-primary)] hover:border-slate-400",
+          ? "border-[#0C3551] bg-[#0C3551] text-white"
+          : "border-[var(--border-default)] bg-[var(--surface-primary)] text-[var(--text-primary)] hover:border-[#0D9A92]",
       )}
     >
       {children}
@@ -183,16 +184,31 @@ export function DiscoveryFilterBar({
   onChange,
   onCommit,
   resultCount,
+  layout = "bar",
 }: {
   draft: PropertyUrlFilterState;
   applied: PropertyUrlFilterState;
   onChange: (patch: Partial<PropertyUrlFilterState>) => void;
   onCommit: (next?: PropertyUrlFilterState) => void;
   resultCount: number;
+  /** bar = sticky horizontal (default); sidebar = premium left panel */
+  layout?: "bar" | "sidebar";
 }) {
   const [drawer, setDrawer] = React.useState(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
   const cta = resultCta(resultCount, dirty);
+  const isSidebar = layout === "sidebar";
+
+  function clearAll() {
+    const next: PropertyUrlFilterState = {
+      ...EMPTY_PROPERTY_URL_STATE,
+      kontext: draft.kontext,
+      razeni: draft.razeni,
+      stranka: 1,
+    };
+    onChange(next);
+    onCommit(next);
+  }
 
   function applyPreset(preset: InvestorPreset) {
     const active = Object.entries(preset.patch).every(([key, value]) => {
@@ -215,19 +231,116 @@ export function DiscoveryFilterBar({
   }
 
   const drawerBody = (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+    <div
+      className={cn(
+        "grid gap-8",
+        isSidebar
+          ? "grid-cols-1 gap-6"
+          : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]",
+      )}
+    >
       <section className="space-y-6">
-        <header>
-          <h2 className="font-display text-xl">Standardní filtry</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Typ nabídky, stav, vlastnictví a příslušenství.
-          </p>
-        </header>
+        {isSidebar ? null : (
+          <header>
+            <h2 className="font-display text-xl">Standardní filtry</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Typ nabídky, stav, vlastnictví a příslušenství.
+            </p>
+          </header>
+        )}
+        {isSidebar ? (
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+              Lokalita
+            </p>
+            <label className="relative block">
+              <Search
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--text-muted)]"
+                aria-hidden
+              />
+              <input
+                className={cn(inputClass, "pl-10")}
+                value={draft.lokalita ?? ""}
+                onChange={(event) =>
+                  onChange({ lokalita: event.target.value.trim() || undefined })
+                }
+                placeholder="Zadejte město, čtvrť nebo kraj"
+              />
+            </label>
+          </div>
+        ) : null}
         <MapFilter
           selectedRegions={draft.kraje}
           onChange={(kraje) => onChange({ kraje })}
           collapsible
+          compact={isSidebar}
         />
+        {isSidebar ? (
+          <>
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                Typ nemovitosti
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {TYP_OPTIONS.filter((option) => option.value !== "dum-na-klic").map(
+                  (option) => (
+                    <Pill
+                      key={option.value}
+                      active={draft.typ.includes(option.value)}
+                      onClick={() => onChange({ typ: toggle(draft.typ, option.value) })}
+                    >
+                      {option.label}
+                    </Pill>
+                  ),
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                Dispozice
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {DISPOZICE_OPTIONS.map((option) => (
+                  <Pill
+                    key={option}
+                    active={draft.dispozice.includes(option)}
+                    onClick={() =>
+                      onChange({ dispozice: toggle(draft.dispozice, option) })
+                    }
+                  >
+                    {layoutLabel(option)}
+                  </Pill>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                Cena
+              </p>
+              <RangePair
+                min={draft.cenaOd}
+                max={draft.cenaDo}
+                minLabel="Od Kč"
+                maxLabel="Do Kč"
+                onMin={(cenaOd) => onChange({ cenaOd })}
+                onMax={(cenaDo) => onChange({ cenaDo })}
+              />
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                Plocha
+              </p>
+              <RangePair
+                min={draft.plochaOd}
+                max={draft.plochaDo}
+                minLabel="Od m²"
+                maxLabel="Do m²"
+                onMin={(plochaOd) => onChange({ plochaOd })}
+                onMax={(plochaDo) => onChange({ plochaDo })}
+              />
+            </div>
+          </>
+        ) : null}
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
             Typ nabídky
@@ -463,23 +576,36 @@ export function DiscoveryFilterBar({
         </p>
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-[color-mix(in_srgb,var(--action-accent)_35%,var(--border-default))] bg-[color-mix(in_srgb,var(--action-accent)_6%,var(--surface-primary))] p-5">
+      <section
+        className={cn(
+          "space-y-5 rounded-2xl border border-[color-mix(in_srgb,#0D9A92_35%,var(--border-default))] bg-[color-mix(in_srgb,#0D9A92_6%,var(--surface-primary))] p-5",
+          isSidebar && "p-4",
+        )}
+      >
         <header className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl">Investiční filtry</h2>
+            <h2 className="font-display text-xl text-[#0C3551]">Investiční filtry</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Odhad není ověřený údaj. Chybějící metrika nabídku neskryje, dokud nezapnete výpočet.
+              {isSidebar
+                ? "Zobrazit pouze nabídky s ověřenými daty a investičními metrikami."
+                : "Odhad není ověřený údaj. Chybějící metrika nabídku neskryje, dokud nezapnete výpočet."}
             </p>
           </div>
           <InfoTooltip label="Metodika výnosu" content={formulaTooltip(SEARCH_FORMULA_KEYS.grossYield)} />
         </header>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-start gap-2.5 text-sm leading-snug text-[var(--text-primary)]">
           <input
             type="checkbox"
+            className="mt-0.5"
             checked={draft.jenVypoctene === true}
             onChange={(event) => onChange({ jenVypoctene: event.target.checked || undefined })}
           />
-          Pouze nabídky s vypočtenými investičními daty
+          <span>
+            <span className="font-medium">Pouze investiční příležitosti</span>
+            <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
+              Zobrazit pouze nabídky s ověřenými daty
+            </span>
+          </span>
         </label>
         <div>
           <div className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
@@ -760,6 +886,79 @@ export function DiscoveryFilterBar({
       </section>
     </div>
   );
+
+  if (isSidebar) {
+    return (
+      <TooltipProvider>
+        <div className="mb-3 flex flex-wrap items-center gap-2 lg:hidden">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => setDrawer(true)}
+          >
+            <SlidersHorizontal className="size-4" aria-hidden />
+            Filtry
+          </Button>
+          <Button type="button" onClick={() => onCommit()}>
+            {cta}
+          </Button>
+          <ActiveFilterChips state={applied} className="w-full" />
+        </div>
+
+        <aside className="properties-sidebar hidden lg:block" aria-label="Filtry nemovitostí">
+          <div className="properties-sidebar-header">
+            <h2>
+              <SlidersHorizontal className="size-4" aria-hidden />
+              Filtry
+            </h2>
+            <button type="button" className="properties-sidebar-clear" onClick={clearAll}>
+              Vymazat vše
+            </button>
+          </div>
+          {drawerBody}
+          <div className="properties-sidebar-cta">
+            <button type="button" onClick={() => onCommit()}>
+              {cta}
+              <span aria-hidden> →</span>
+            </button>
+          </div>
+        </aside>
+
+        {drawer ? (
+          <div className="fixed inset-0 z-50 flex justify-end">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/40"
+              aria-label="Zavřít filtry"
+              onClick={() => setDrawer(false)}
+            />
+            <div className="relative flex h-full w-full max-w-5xl flex-col bg-[var(--background-primary)] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-4">
+                <h2 className="font-display text-lg">Filtry</h2>
+                <button type="button" onClick={() => setDrawer(false)} aria-label="Zavřít">
+                  <X className="size-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-6">{drawerBody}</div>
+              <div className="sticky bottom-0 border-t border-[var(--border-default)] bg-[var(--surface-primary)] p-4">
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={() => {
+                    onCommit();
+                    setDrawer(false);
+                  }}
+                >
+                  {cta}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </TooltipProvider>
+    );
+  }
 
   return (
     <TooltipProvider>

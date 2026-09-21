@@ -8,6 +8,8 @@ import {
   PropertyCard,
   type PropertyCardData,
 } from "@/components/property/property-card";
+import { PropertyBudgetPanel } from "@/components/property/search/property-budget-panel";
+import { PropertyResultsToolbar } from "@/components/property/search/property-results-toolbar";
 import { PropertySearchEmptyState } from "@/components/property/search/property-search-empty";
 import { SaveSearchButton } from "@/components/property/search/save-search-button";
 import { InlineAlert } from "@/components/feedback/states";
@@ -96,6 +98,7 @@ export function PropertySearchResults({
   relaxedCount,
   isAuthenticated = false,
   showPassportCta = false,
+  compactHeader = false,
 }: {
   properties: PropertyCardData[];
   state: PropertyUrlFilterState;
@@ -103,11 +106,14 @@ export function PropertySearchResults({
   relaxedCount?: number | null;
   isAuthenticated?: boolean;
   showPassportCta?: boolean;
+  /** Hide budget panel / full toolbar (e.g. sponsored strip). */
+  compactHeader?: boolean;
 }) {
   const router = useRouter();
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [favouriteIds, setFavouriteIds] = React.useState<string[]>([]);
   const [toast, setToast] = React.useState<string | null>(null);
+  const [view, setView] = React.useState<"grid" | "list">("grid");
 
   React.useEffect(() => {
     restoreSearchScrollPosition();
@@ -216,14 +222,29 @@ export function PropertySearchResults({
     : buildLoginUrl("/ucet/financni-profil");
 
   return (
-    <div className="mt-6 space-y-6">
-      <PropertySearchResultsHeader
-        count={properties.length}
-        sortLabel={sortLabel}
-        actions={
-          <SaveSearchButton state={state} isAuthenticated={isAuthenticated} />
-        }
-      />
+    <div className={cn("space-y-5", !compactHeader && "mt-1")}>
+      {compactHeader ? (
+        <PropertySearchResultsHeader
+          count={properties.length}
+          sortLabel={sortLabel}
+          actions={
+            <SaveSearchButton state={state} isAuthenticated={isAuthenticated} />
+          }
+        />
+      ) : (
+        <>
+          <PropertyBudgetPanel />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <PropertyResultsToolbar
+              count={properties.length}
+              state={state}
+              view={view}
+              onViewChange={setView}
+            />
+            <SaveSearchButton state={state} isAuthenticated={isAuthenticated} />
+          </div>
+        </>
+      )}
 
       {showPassportCta ? (
         <InlineAlert tone="info" title="Doplňte Finanční pas">
@@ -255,7 +276,13 @@ export function PropertySearchResults({
           ) : null}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={cn(
+            view === "list"
+              ? "properties-grid-list"
+              : "grid gap-5 sm:grid-cols-2 xl:grid-cols-3",
+          )}
+        >
           {properties.map((property, index) => {
             const id = property.id ?? property.slug ?? slugFromHref(property.href);
             return (
@@ -263,6 +290,7 @@ export function PropertySearchResults({
                 key={property.href}
                 property={property}
                 priority={index < 3}
+                variant="premium"
                 isFavourite={favouriteIds.includes(id) || isFavourite(id)}
                 isCompared={compareIds.includes(id) || isInCompareTray(id)}
                 onFavourite={() => void handleFavourite(property)}

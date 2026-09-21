@@ -3,13 +3,10 @@
  */
 
 import { InlineAlert } from "@/components/feedback/states";
-import { PageHeader } from "@/components/layout/page-layouts";
+import { PropertiesPageHero } from "@/components/property/search/properties-page-hero";
 import { PropertySearchFilters } from "@/components/property/search/property-search-filters";
 import { PropertySearchResults } from "@/components/property/search/property-search-results";
 import type { PropertyCardData } from "@/components/property/property-card";
-import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button-link";
-import { Container } from "@/components/ui/container";
 import { mapPublicDtoToPropertyCard } from "@/domains/properties/service/card-mapper";
 import {
   applyUrlFiltersToListings,
@@ -236,83 +233,74 @@ export function DiscoveryListingShell({
 }) {
   const catalog =
     cards.length === 0 ? filterProperties(mockProperties, state) : null;
+  const resultCount = catalog ? catalog.length : cards.length;
 
   return (
-    <Container className="overflow-x-hidden py-6 sm:py-8 pb-28">
-      <PageHeader
+    <div className="properties-surface">
+      <PropertiesPageHero
         title={title}
         description={description}
         breadcrumbs={breadcrumbs}
-        badge={
-          hasLiveListings ? (
-            <Badge tone="success">Živé nabídky</Badge>
-          ) : hasDemoListings ? (
-            <Badge tone="premium">Modelové ukázky</Badge>
-          ) : undefined
-        }
-        actions={
-          <ButtonLink href="/pridat-nemovitost" size="sm">
-            Přidat nemovitost
-          </ButtonLink>
-        }
       />
-
-      {hasDemoListings && !hasLiveListings ? (
-        <InlineAlert tone="warning" title="Ukázkové nabídky" className="mb-4">
-          Nejsou to živé inzeráty z trhu.
-        </InlineAlert>
-      ) : hasDemoListings ? (
-        <InlineAlert tone="info" title="Oddělení modelových ukázek" className="mb-8">
-          Katalog obsahuje publikované nabídky. Položky označené jako demo nejsou reálné
-          inzeráty.
-        </InlineAlert>
-      ) : null}
 
       <PropertySearchFilters
+        layout="sidebar"
         state={state}
-        resultCount={catalog ? catalog.length : cards.length}
-      />
+        resultCount={resultCount}
+      >
+        {hasDemoListings && !hasLiveListings ? (
+          <InlineAlert tone="warning" title="Ukázkové nabídky">
+            Nejsou to živé inzeráty z trhu.
+          </InlineAlert>
+        ) : hasDemoListings ? (
+          <InlineAlert tone="info" title="Oddělení modelových ukázek">
+            Katalog obsahuje publikované nabídky. Položky označené jako demo nejsou reálné
+            inzeráty.
+          </InlineAlert>
+        ) : null}
 
-      {sponsoredCards.length > 0 ? (
-        <section
-          aria-labelledby="sponsored-heading"
-          className="mb-10 space-y-4"
-          data-testid="sponsored-placements"
-        >
-          <div>
-            <h2
-              id="sponsored-heading"
-              className="font-display text-xl text-[var(--text-primary)]"
-            >
-              Sponzorované nabídky
-            </h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {SPONSORED_FIREWALL_DISCLAIMER_CS}
-            </p>
-          </div>
+        {sponsoredCards.length > 0 ? (
+          <section
+            aria-labelledby="sponsored-heading"
+            className="space-y-4"
+            data-testid="sponsored-placements"
+          >
+            <div>
+              <h2
+                id="sponsored-heading"
+                className="font-display text-xl text-[var(--prop-navy,#0C3551)]"
+              >
+                Sponzorované nabídky
+              </h2>
+              <p className="mt-1 text-sm text-[var(--prop-muted,#667A86)]">
+                {SPONSORED_FIREWALL_DISCLAIMER_CS}
+              </p>
+            </div>
+            <PropertySearchResults
+              properties={sponsoredCards}
+              state={state}
+              sortLabel="Sponzorováno"
+              relaxedCount={null}
+              isAuthenticated={isAuthenticated}
+              showPassportCta={false}
+              compactHeader
+            />
+          </section>
+        ) : null}
+
+        {catalog ? (
+          <MockPropertyGrid properties={catalog} state={state} sortLabel={sortLabel} />
+        ) : (
           <PropertySearchResults
-            properties={sponsoredCards}
+            properties={cards}
             state={state}
-            sortLabel="Sponzorováno"
-            relaxedCount={null}
+            sortLabel={sortLabel}
+            relaxedCount={relaxedCount}
             isAuthenticated={isAuthenticated}
-            showPassportCta={false}
+            showPassportCta={showPassportCta}
           />
-        </section>
-      ) : null}
-
-      {catalog ? (
-        <MockPropertyGrid properties={catalog} state={state} sortLabel={sortLabel} />
-      ) : (
-        <PropertySearchResults
-          properties={cards}
-          state={state}
-          sortLabel={sortLabel}
-          relaxedCount={relaxedCount}
-          isAuthenticated={isAuthenticated}
-          showPassportCta={showPassportCta}
-        />
-      )}
-    </Container>
+        )}
+      </PropertySearchFilters>
+    </div>
   );
 }

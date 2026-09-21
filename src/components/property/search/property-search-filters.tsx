@@ -15,14 +15,19 @@ import { track } from "@/lib/analytics/events";
 
 /**
  * Discovery filters stay in the URL.
- * The bar is the primary surface; advanced and investment filters open in the drawer.
+ * layout=bar: sticky horizontal bar + drawer.
+ * layout=sidebar: premium left panel wrapping main results via children.
  */
 export function PropertySearchFilters({
   state,
   resultCount,
+  layout = "bar",
+  children,
 }: {
   state: PropertyUrlFilterState;
   resultCount: number;
+  layout?: "bar" | "sidebar";
+  children?: React.ReactNode;
   /** @deprecated Counts removed from category cards — kept for API compat. */
   categoryCounts?: Partial<Record<string, number>>;
 }) {
@@ -85,16 +90,38 @@ export function PropertySearchFilters({
     commit(next);
   }
 
+  const filterBar = (
+    <DiscoveryFilterBar
+      draft={draft}
+      applied={state}
+      onChange={patch}
+      onCommit={commit}
+      resultCount={resultCount}
+      layout={layout}
+    />
+  );
+
+  if (layout === "sidebar") {
+    return (
+      <div className="properties-layout">
+        {filterBar}
+        <div className="properties-main">
+          <FilterTabs
+            value={draft.kontext ?? "doporucene"}
+            onChange={onTabChange}
+            className="border-[var(--prop-border,#DCE5E7)]"
+          />
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <DiscoveryFilterBar
-        draft={draft}
-        applied={state}
-        onChange={patch}
-        onCommit={commit}
-        resultCount={resultCount}
-      />
+      {filterBar}
       <FilterTabs value={draft.kontext ?? "doporucene"} onChange={onTabChange} />
+      {children}
     </div>
   );
 }

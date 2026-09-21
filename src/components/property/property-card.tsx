@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Heart, Columns2 } from "lucide-react";
+import { Building2, Columns2, Heart, MapPin } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -65,6 +65,39 @@ export type PropertyCardData = {
   matchReasons?: Array<{ tone: "positive" | "warning" | "neutral"; label: string }>;
 };
 
+function tagTone(tag: string): "mint" | "blue" | "neutral" {
+  const lower = tag.toLowerCase();
+  if (
+    lower.includes("výnos") ||
+    lower.includes("příjem") ||
+    lower.includes("cash") ||
+    lower.includes("invest")
+  ) {
+    return "mint";
+  }
+  if (
+    lower.includes("lokalit") ||
+    lower.includes("centrum") ||
+    lower.includes("cena") ||
+    lower.includes("prémi")
+  ) {
+    return "blue";
+  }
+  return "neutral";
+}
+
+function enrichTags(property: PropertyCardData): string[] {
+  const tags = [...(property.tags ?? [])];
+  if (property.grossYieldPct != null && property.grossYieldPct >= 6) {
+    if (!tags.some((t) => t.toLowerCase().includes("výnos"))) {
+      tags.unshift("Vysoký výnos");
+    }
+  }
+  if (property.acceptsPriceOffers) tags.push("Přijímá cenové návrhy");
+  if (property.acceptsCoPurchase) tags.push("Možnost společné koupě");
+  return [...new Set(tags)].slice(0, 4);
+}
+
 export function PropertyCard({
   property,
   onFavourite,
@@ -73,6 +106,7 @@ export function PropertyCard({
   isCompared,
   priority = false,
   className,
+  variant = "default",
 }: {
   property: PropertyCardData;
   onFavourite?: () => void;
@@ -82,6 +116,7 @@ export function PropertyCard({
   /** LCP hint for above-the-fold cards. */
   priority?: boolean;
   className?: string;
+  variant?: "default" | "premium";
 }) {
   const status = property.listingStatus ?? "active";
   const unavailable = status === "unavailable";
@@ -89,6 +124,8 @@ export function PropertyCard({
   const detailLabel = `Zobrazit detail: ${property.title}`;
   const detailLinkClass =
     "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
+  const premium = variant === "premium";
+  const displayTags = premium ? enrichTags(property) : property.tags?.slice(0, 2) ?? [];
 
   return (
     <Card
@@ -97,11 +134,12 @@ export function PropertyCard({
       padding="none"
       className={cn(
         "overflow-hidden",
+        premium && "property-card-premium border border-[#DCE5E7] bg-white shadow-[0_1px_2px_rgb(12_53_81/0.04)]",
         unavailable && "opacity-75 grayscale-[0.35]",
         className,
       )}
     >
-      <div className="relative">
+      <div className={cn("relative", premium && "property-card-premium-media")}>
         <Link
           href={property.href}
           aria-label={detailLabel}
@@ -132,7 +170,7 @@ export function PropertyCard({
               {property.sponsored ? <SponsoredListingBadge /> : null}
               {property.isDemo ? (
                 <span className="rounded border border-[var(--action-premium)] bg-[color-mix(in_srgb,var(--action-premium)_20%,white)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">
-                  Demo
+                  {premium ? "Ilustrační foto" : "Demo"}
                 </span>
               ) : null}
               {stale ? (
@@ -148,11 +186,53 @@ export function PropertyCard({
             </div>
           </AspectRatio>
         </Link>
+        {premium && (onFavourite || onCompare) ? (
+          <div className="absolute top-3 right-3 z-10 flex gap-1.5">
+            {onFavourite ? (
+              <button
+                type="button"
+                aria-label={isFavourite ? "Odebrat z oblíbených" : "Přidat do oblíbených"}
+                className="inline-flex size-9 items-center justify-center rounded-full bg-white/92 text-[#0C3551] shadow-sm backdrop-blur-sm transition hover:text-[#0D9A92]"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onFavourite();
+                }}
+              >
+                <Heart
+                  className={cn("size-4", isFavourite && "fill-[#C45C5C] text-[#C45C5C]")}
+                />
+              </button>
+            ) : null}
+            {onCompare ? (
+              <button
+                type="button"
+                aria-label={isCompared ? "Odebrat z porovnání" : "Přidat do porovnání"}
+                className={cn(
+                  "inline-flex size-9 items-center justify-center rounded-full bg-white/92 text-[#0C3551] shadow-sm backdrop-blur-sm transition hover:text-[#0D9A92]",
+                  isCompared && "text-[#0D9A92]",
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onCompare();
+                }}
+              >
+                <Columns2 className="size-4" />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      <div className="space-y-3 p-4">
+      <div className={cn("space-y-3 p-4", premium && "space-y-2.5 p-4 sm:p-5")}>
         {property.transactionLabel || property.propertyTypeLabel ? (
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+          <p
+            className={cn(
+              "text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]",
+              premium && "tracking-[0.08em] text-[#667A86]",
+            )}
+          >
             {[property.transactionLabel, property.propertyTypeLabel].filter(Boolean).join(" · ")}
           </p>
         ) : null}
@@ -164,63 +244,74 @@ export function PropertyCard({
                 "font-display text-lg hover:underline",
                 detailLinkClass,
                 unavailable ? "text-[var(--text-muted)]" : "text-[var(--text-primary)]",
+                premium && "text-[1.0625rem] leading-snug text-[#0C3551] sm:text-lg",
               )}
               onClick={() => saveSearchScrollPosition()}
             >
               <span className="line-clamp-2">{property.title}</span>
             </Link>
-            <p className="mt-1 truncate text-sm text-[var(--text-secondary)]">
-              {property.location}
+            <p
+              className={cn(
+                "mt-1 truncate text-sm text-[var(--text-secondary)]",
+                premium && "inline-flex max-w-full items-center gap-1 text-[#667A86]",
+              )}
+            >
+              {premium ? <MapPin className="size-3.5 shrink-0" aria-hidden /> : null}
+              <span className="truncate">{property.location}</span>
             </p>
           </div>
-          <div className="flex shrink-0 gap-1">
-            {onFavourite ? (
-              <IconButton
-                label={isFavourite ? "Odebrat z oblíbených" : "Přidat do oblíbených"}
-                variant={isFavourite ? "secondary" : "ghost"}
-                size="icon-sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onFavourite();
-                }}
-              >
-                <Heart
-                  className={cn("size-4", isFavourite && "fill-current text-[var(--status-error)]")}
-                />
-              </IconButton>
-            ) : null}
-            {onCompare ? (
-              <IconButton
-                label={isCompared ? "Odebrat z porovnání" : "Přidat do porovnání"}
-                variant={isCompared ? "secondary" : "ghost"}
-                size="icon-sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onCompare();
-                }}
-              >
-                <Columns2 className={cn("size-4", isCompared && "text-[var(--action-primary)]")} />
-              </IconButton>
-            ) : null}
-          </div>
+          {!premium ? (
+            <div className="flex shrink-0 gap-1">
+              {onFavourite ? (
+                <IconButton
+                  label={isFavourite ? "Odebrat z oblíbených" : "Přidat do oblíbených"}
+                  variant={isFavourite ? "secondary" : "ghost"}
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onFavourite();
+                  }}
+                >
+                  <Heart
+                    className={cn("size-4", isFavourite && "fill-current text-[var(--status-error)]")}
+                  />
+                </IconButton>
+              ) : null}
+              {onCompare ? (
+                <IconButton
+                  label={isCompared ? "Odebrat z porovnání" : "Přidat do porovnání"}
+                  variant={isCompared ? "secondary" : "ghost"}
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCompare();
+                  }}
+                >
+                  <Columns2 className={cn("size-4", isCompared && "text-[var(--action-primary)]")} />
+                </IconButton>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {property.matchScore != null && property.matchScore > 0 ? (
-            <Badge tone="premium">Shoda {property.matchScore} %</Badge>
-          ) : null}
-          {property.dataQuality ? (
-            <DataQualityBadge quality={property.dataQuality} />
-          ) : null}
-          {property.risk ? <RiskBadge level={property.risk} /> : null}
-          {property.tags?.slice(0, 2).map((tag) => (
-            <Badge key={tag} tone="neutral">
-              {tag}
-            </Badge>
-          ))}
-        </div>
+        {!premium ? (
+          <div className="flex flex-wrap gap-2">
+            {property.matchScore != null && property.matchScore > 0 ? (
+              <Badge tone="premium">Shoda {property.matchScore} %</Badge>
+            ) : null}
+            {property.dataQuality ? (
+              <DataQualityBadge quality={property.dataQuality} />
+            ) : null}
+            {property.risk ? <RiskBadge level={property.risk} /> : null}
+            {displayTags.map((tag) => (
+              <Badge key={tag} tone="neutral">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
 
         {property.matchReasons && property.matchReasons.length > 0 ? (
           <ul className="space-y-1 text-xs text-[var(--text-secondary)]">
@@ -241,17 +332,22 @@ export function PropertyCard({
           </ul>
         ) : null}
 
-        <p className="whitespace-nowrap font-metric text-xl font-medium text-[var(--text-primary)]">
+        <p
+          className={cn(
+            "whitespace-nowrap font-metric text-xl font-medium text-[var(--text-primary)]",
+            premium && "text-[1.25rem] font-semibold text-[#0C3551]",
+          )}
+        >
           {unavailable
             ? "Nedostupné"
             : property.priceCzk != null
               ? formatCzk(property.priceCzk)
               : "Cena na vyžádání"}
         </p>
-        {property.pricePerSqmCzk != null && !unavailable ? (
+        {property.pricePerSqmCzk != null && !unavailable && !premium ? (
           <p className="text-sm text-[var(--text-secondary)]">{formatCzkPerSqm(property.pricePerSqmCzk)}</p>
         ) : null}
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className={cn("text-sm text-[var(--text-secondary)]", premium && "text-[#667A86]")}>
           {[
             property.disposition,
             property.areaDisplay ?? (property.areaSqm != null ? `${property.areaSqm} m²` : null),
@@ -260,15 +356,39 @@ export function PropertyCard({
             .filter(Boolean)
             .join(" · ") || "Parametry neuvedeny"}
         </p>
-        {property.featureHighlights && property.featureHighlights.length > 0 ? (
+
+        {premium && displayTags.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {displayTags.map((tag) => (
+              <li
+                key={tag}
+                className={cn(
+                  "properties-card-tag",
+                  tagTone(tag) === "mint" && "properties-card-tag--mint",
+                  tagTone(tag) === "blue" && "properties-card-tag--blue",
+                  tagTone(tag) === "neutral" && "properties-card-tag--neutral",
+                )}
+              >
+                {tag}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {property.featureHighlights && property.featureHighlights.length > 0 && !premium ? (
           <p className="text-xs text-[var(--text-muted)]">
             {property.featureHighlights.join(" · ")}
           </p>
         ) : null}
-        <p className="line-clamp-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+        <p
+          className={cn(
+            "line-clamp-3 text-sm leading-relaxed text-[var(--text-secondary)]",
+            premium && "line-clamp-2 text-[#667A86]",
+          )}
+        >
           {property.shortDescription || "Krátký popis není uveden."}
         </p>
-        {property.acceptsPriceOffers || property.acceptsCoPurchase ? (
+        {!premium && (property.acceptsPriceOffers || property.acceptsCoPurchase) ? (
           <ul className="flex flex-wrap gap-1.5">
             {property.acceptsPriceOffers ? (
               <li className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
@@ -283,18 +403,23 @@ export function PropertyCard({
           </ul>
         ) : null}
 
-        <Link
-          href={property.href}
-          className={cn(
-            "inline-flex text-sm font-medium text-[var(--text-primary)] underline underline-offset-2",
-            detailLinkClass,
-          )}
-          onClick={() => saveSearchScrollPosition()}
-        >
-          Zobrazit detail
-        </Link>
+        {!premium ? (
+          <Link
+            href={property.href}
+            className={cn(
+              "inline-flex text-sm font-medium text-[var(--text-primary)] underline underline-offset-2",
+              detailLinkClass,
+            )}
+            onClick={() => saveSearchScrollPosition()}
+          >
+            Zobrazit detail
+          </Link>
+        ) : null}
 
-        <InvestmentSnapshot property={property} hidden={unavailable} />
+        {!premium ? <InvestmentSnapshot property={property} hidden={unavailable} /> : null}
+        {premium && !unavailable ? (
+          <PremiumInvestmentStrip property={property} />
+        ) : null}
       </div>
     </Card>
   );
@@ -312,6 +437,21 @@ function renovationLabel(min?: number, max?: number): string | null {
     new Intl.NumberFormat("cs-CZ").format(Math.round(value / 1000));
   if (hi != null && hi !== lo) return `~${thousands(lo)}–${thousands(hi)} tis. Kč`;
   return `~${thousands(lo)} tis. Kč`;
+}
+
+function PremiumInvestmentStrip({ property }: { property: PropertyCardData }) {
+  const parts: string[] = [];
+  if (property.grossYieldPct != null) parts.push(`Výnos ${pct(property.grossYieldPct)}`);
+  if (property.cashFlowMonthlyCzk != null) {
+    parts.push(`CF ${formatCzk(property.cashFlowMonthlyCzk, { signed: true })}/měs.`);
+  }
+  if (property.majetioScore != null) parts.push(`Score ${property.majetioScore}`);
+  if (parts.length === 0) return null;
+  return (
+    <p className="border-t border-[#DCE5E7] pt-2.5 text-xs font-medium text-[#0A7F79]">
+      {parts.join(" · ")}
+    </p>
+  );
 }
 
 function InvestmentSnapshot({

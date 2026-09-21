@@ -98,8 +98,7 @@ const catalogSeed: Array<
     plocha_m2: 54,
     stav_inzeratu: "premium",
     obrazky: {
-      hlavni:
-        "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=70",
+      hlavni: "/home/prop-villa.png",
     },
     stitky: ["Vysoký výnos", "Bez rekonstrukce"],
     popis_upravy:
@@ -116,8 +115,7 @@ const catalogSeed: Array<
     plocha_m2: 72,
     stav_inzeratu: "klasicky",
     obrazky: {
-      hlavni:
-        "https://images.unsplash.com/photo-1770233447535-d557efaa1550?auto=format&fit=crop&w=900&q=70",
+      hlavni: "/case-studies/rental-apartment.png",
     },
     stitky: ["Pod tržním odhadem", "Fix & Rent"],
     popis_upravy: "Klasika: Fotky z mobilu, stručný popis od majitele, bez přípravy.",
@@ -133,10 +131,7 @@ const catalogSeed: Array<
     plocha_m2: 28,
     stav_inzeratu: "premium",
     obrazky: {
-      pred_rekonstrukci:
-        "https://images.unsplash.com/photo-1490006388477-9ab871431fb6?auto=format&fit=crop&w=900&q=70",
-      po_rekonstrukci:
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=70",
+      hlavni: "/home/prop-townhouse.png",
       pocet_wow_fotek: 4,
     },
     stitky: ["Stabilní pronájem", "Pozitivní cashflow"],
