@@ -14,7 +14,7 @@ import {
   disclaimerForKind,
   emptyFloorPlanDocument,
   type FloorPlanDocument,
-} from "@/domains/floorplans";
+} from "./types";
 import { putListingObject } from "@/lib/storage/listing-media-storage";
 import { prisma } from "@/lib/db";
 import { assertCanManageListing } from "@/domains/listings/seller/seller-listing-service";

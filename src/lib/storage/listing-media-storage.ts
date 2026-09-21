@@ -9,6 +9,8 @@
  * module import time. This module is server-only (Prisma/actions callers).
  */
 
+import "server-only";
+
 import {
   DeleteObjectCommand,
   PutObjectCommand,

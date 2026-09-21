@@ -22,7 +22,7 @@ import {
 } from "@/components/floorplans/floor-plan-public-view";
 import { PropertySellerCard, DEMO_SELLER_PROFILE } from "@/components/property/property-seller-card";
 import { PropertyDetailFinancing } from "@/components/property/property-detail-financing";
-import { loadPublishedFloorPlan } from "@/domains/floorplans/service";
+import { loadPublishedFloorPlan } from "@/domains/floorplans/server";
 import { PropertyRenovationSection } from "@/components/property/property-renovation-section";
 import { PropertyRisksSection } from "@/components/property/property-risks-section";
 import { PropertyProvenanceSection } from "@/components/property/property-provenance-section";

@@ -1,3 +1,8 @@
+/**
+ * Client-safe floor plan barrel — types, geometry, SVG, demo data, merge helpers.
+ * Never re-export persistence / Prisma / storage from here.
+ */
+
 export type {
   FloorPlanDocument,
   FloorPlanOutputKind,
@@ -31,10 +36,3 @@ export {
   markManualEdit,
   type AnalysisProposal,
 } from "./merge";
-export {
-  getOrCreateFloorPlanForProperty,
-  saveFloorPlanDraft,
-  publishFloorPlan,
-  loadPublishedFloorPlan,
-  enqueuePhotoAnalysisJob,
-} from "./service";

@@ -2,15 +2,16 @@
  * Floor plan persistence + authorization (seller-owned listings only).
  */
 
+import "server-only";
+
 import { prisma } from "@/lib/db";
 import { assertCanManageListing } from "@/domains/listings/seller/seller-listing-service";
 import {
   disclaimerForKind,
   emptyFloorPlanDocument,
-  recomputeRoomAreas,
-  validateFloorPlanDocument,
   type FloorPlanDocument,
-} from "@/domains/floorplans";
+} from "./types";
+import { recomputeRoomAreas, validateFloorPlanDocument } from "./geometry";
 
 function parseDocument(raw: unknown): FloorPlanDocument {
   if (!raw || typeof raw !== "object") {
