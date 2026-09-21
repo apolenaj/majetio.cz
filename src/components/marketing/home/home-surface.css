@@ -714,8 +714,9 @@
 
 /* ——— Footer compact horizontal ——— */
 .home-footer {
-  background: var(--home-navy-deep);
-  color: #fff;
+  background: #fcfbf8;
+  color: #17394f;
+  border-top: 1px solid #dde3e3;
 }
 
 .home-footer-inner {
@@ -738,7 +739,7 @@
   max-width: 11rem;
   font-size: 0.6875rem;
   line-height: 1.35;
-  color: rgb(255 255 255 / 70%);
+  color: #657782;
 }
 
 .home-footer-links {
@@ -755,23 +756,27 @@
 }
 
 .home-footer-links a {
-  color: rgb(255 255 255 / 78%);
+  color: #17394f;
 }
 
 .home-footer-links a:hover {
-  color: #fff;
+  color: #008f8c;
 }
 
 .home-footer-finance {
   margin-top: 0.75rem;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 65%);
+  color: #657782;
 }
 
 .home-footer-finance a {
-  color: #fff;
+  color: #17394f;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.home-footer-finance a:hover {
+  color: #008f8c;
 }
 
 .home-footer-social {
@@ -786,19 +791,19 @@
   height: 1.75rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgb(255 255 255 / 18%);
+  border: 1px solid #dde3e3;
   border-radius: 4px;
-  color: rgb(255 255 255 / 75%);
+  color: #657782;
 }
 
 .home-footer-social a:hover {
-  color: #fff;
-  border-color: rgb(255 255 255 / 40%);
+  color: #17394f;
+  border-color: #657782;
 }
 
 .home-footer-copy {
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid #dde3e3;
   padding-block: 0.5rem;
   font-size: 0.625rem;
-  color: rgb(255 255 255 / 50%);
+  color: #657782;
 }

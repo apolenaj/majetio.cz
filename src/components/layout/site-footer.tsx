@@ -63,7 +63,7 @@ export function SiteFooter() {
     <footer className="home-footer mt-auto">
       <Container className="home-footer-inner">
         <div>
-          <Logo variant="light" size="sm" label="Majetio" />
+          <Logo variant="dark" size="sm" label="Majetio" />
           <p className="home-footer-tag">Nemovitosti s větším významem.</p>
         </div>
 
