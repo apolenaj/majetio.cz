@@ -485,7 +485,12 @@ export function PlatformHomepage({
           <h2 className="home-heading">Více možností bydlení a investování</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {MODES.map((mode) => (
-              <Link key={mode.href} href={mode.href} className="home-card home-mode-card">
+              <Link
+                key={mode.href}
+                href={mode.href}
+                className="home-card home-mode-card"
+                aria-label={`${mode.title} — zobrazit modelové nabídky`}
+              >
                 <mode.icon aria-hidden />
                 <span>
                   <span className="home-card-title">{mode.title}</span>

@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
   /** Do not ship browser source maps to clients in production. */
   productionBrowserSourceMaps: false,
   allowedDevOrigins: ["127.0.0.1", "localhost"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+    ],
+  },
   async redirects() {
     return [
       {

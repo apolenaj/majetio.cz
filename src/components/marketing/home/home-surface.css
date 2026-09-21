@@ -558,11 +558,39 @@
 }
 
 .home-mode-card {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.875rem;
   min-height: 5.25rem;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.home-mode-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--home-teal, #0d9a92) 45%, var(--home-border, #dce5e7));
+  box-shadow: 0 8px 20px rgb(12 53 81 / 0.08);
+}
+
+.home-mode-card::after {
+  content: "→";
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--home-teal, #0d9a92);
+  opacity: 0.55;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.home-mode-card:hover::after {
+  opacity: 1;
+  transform: translateX(2px);
 }
 
 .home-mode-card svg {
@@ -578,6 +606,7 @@
   font-weight: 600;
   line-height: 1.25;
   color: var(--home-navy);
+  padding-right: 1rem;
 }
 
 .home-mode-card .home-card-desc {
@@ -585,6 +614,7 @@
   font-size: 0.75rem;
   line-height: 1.35;
   color: var(--home-muted);
+  padding-right: 1rem;
 }
 
 .home-options-note {
