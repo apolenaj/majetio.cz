@@ -1,44 +1,98 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArrowRight,
+  Calculator,
+  Landmark,
+  LineChart,
+  Percent,
+  Target,
+  Timer,
+  Wrench,
+} from "lucide-react";
 
 import { preparePageMeta } from "@/components/content/page-helpers";
-import { InlineAlert } from "@/components/feedback/states";
-import { PageHeader } from "@/components/layout/page-layouts";
-import { Card } from "@/components/ui/card";
-import { Container } from "@/components/ui/container";
-import { Grid } from "@/components/ui/layout-primitives";
-import { MEGA_KALKULACKY } from "@/config/navigation";
+import { CATALOG_TOOLS } from "@/components/tools/tools-catalog";
 
 export const metadata: Metadata = preparePageMeta({
   title: "Kalkulačky",
-  description: "Přehled kalkulaček Majetio. Výpočtová logika se připravuje.",
+  description:
+    "Přehled kalkulaček Majetio — výnos, cash flow, financování, rekonstrukce a maximální nabídková cena.",
   path: "/kalkulacky",
 });
 
+const ICONS = {
+  overview: Calculator,
+  cashflow: LineChart,
+  finance: Landmark,
+  maxprice: Target,
+  yield: Percent,
+  payback: Timer,
+  reno: Wrench,
+} as const;
+
 export default function KalkulackyPage() {
+  const tools = CATALOG_TOOLS.filter((t) => t.id !== "overview");
+
   return (
-    <Container className="py-12 sm:py-16">
-      <PageHeader
-        title="Kalkulačky"
-        description="Nástroje pro výnos, cash flow, financování a nabídkovou cenu."
-        breadcrumbs={[{ href: "/", label: "Domů" }, { label: "Kalkulačky" }]}
-      />
-      <InlineAlert tone="info" title="Bez falešných výsledků" className="mb-8">
-        Každá kalkulačka má připravenou stránku se strukturou. Engine výpočtů přijde ve
-        Fázi 3 s testy.
-      </InlineAlert>
-      <Grid cols={2}>
-        {MEGA_KALKULACKY.filter((c) => c.href !== "/kalkulacky").map((calc) => (
-          <Card key={calc.href} variant="interactive" as="article">
-            <Link href={calc.href} className="block">
-              <h2 className="font-display text-xl">{calc.label}</h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Zobrazit strukturu nástroje →
-              </p>
-            </Link>
-          </Card>
-        ))}
-      </Grid>
-    </Container>
+    <div className="tools-surface calc-shell">
+      <header className="calc-hero">
+        <div className="tools-wrap">
+          <nav className="tools-crumb" aria-label="Drobečková navigace">
+            <Link href="/">Domů</Link>
+            <span aria-hidden>/</span>
+            <Link href="/analyzy-a-kalkulacky">Analýzy a kalkulačky</Link>
+            <span aria-hidden>/</span>
+            <span>Kalkulačky</span>
+          </nav>
+          <h1>Přehled kalkulaček</h1>
+          <p className="calc-hero-lead">
+            Všechny výpočtové nástroje na jednom místě. Každý modul má funkční
+            formulář a orientační výsledky.
+          </p>
+        </div>
+      </header>
+
+      <div className="tools-wrap calc-body">
+        <div className="tools-catalog">
+          {tools.map((tool) => {
+            const Icon = ICONS[tool.icon];
+            return (
+              <Link key={tool.id} href={tool.href} className="tools-catalog-card">
+                <div className="tools-catalog-top">
+                  <span className="tools-catalog-icon">
+                    <Icon aria-hidden />
+                  </span>
+                  {tool.badge ? (
+                    <span className="tools-catalog-status">{tool.badge}</span>
+                  ) : null}
+                </div>
+                <h3>{tool.title}</h3>
+                <p>{tool.description}</p>
+                <div className="tools-catalog-tags">
+                  {tool.tags.map((tag) => (
+                    <span key={tag} className="tools-tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <span className="tools-catalog-cta">
+                  Spustit nástroj <ArrowRight size={14} aria-hidden />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="calc-footer-cta">
+          <Link href="/analyzy-a-kalkulacky" className="tools-btn-outline">
+            Zpět na Analýzy a kalkulačky
+          </Link>
+          <Link href="/ukazky" className="tools-btn-primary">
+            Modelové studie
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
