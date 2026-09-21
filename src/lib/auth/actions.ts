@@ -23,10 +23,52 @@ import { logEmailInDev, passwordResetEmail, welcomeEmail } from "@/lib/email/tem
 import { prisma } from "@/lib/db";
 import { ConsentType, Role } from "@prisma/client";
 
-export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
+export type ActionResult =
+  | { ok: true; message?: string }
+  | { ok: false; error: string };
+
+function isAuthSignInFailureUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value, "http://localhost");
+    return (
+      url.pathname.includes("/api/auth/error") ||
+      url.searchParams.has("error") ||
+      url.searchParams.get("error") != null
+    );
+  } catch {
+    return /(?:[?&]error=|\/api\/auth\/error)/i.test(value);
+  }
+}
+
+function mapRegisterException(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  ) {
+    return AUTH_MESSAGES.emailTaken;
+  }
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof (error as { code?: string }).code === "string" &&
+    (error as { code: string }).code.startsWith("P")
+  ) {
+    console.error("[auth.register] prisma", (error as { code: string }).code);
+    return AUTH_MESSAGES.registerFailed;
+  }
+  console.error(
+    "[auth.register] unexpected",
+    error instanceof Error ? error.name : typeof error,
+  );
+  return AUTH_MESSAGES.registerFailed;
+}
 
 const registerSchema = z.object({
-  email: z.string().email().max(254),
+  email: z.string().trim().email().max(254),
   password: z.string().min(8).max(128),
   acceptTerms: z.literal("on").or(z.literal("true")).or(z.literal("1")),
   callbackUrl: z.string().optional(),
@@ -51,7 +93,17 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   });
 
   if (!parsed.success) {
-    return { ok: false, error: AUTH_MESSAGES.genericError };
+    const issue = parsed.error.issues[0];
+    if (issue?.path[0] === "email") {
+      return { ok: false, error: "Zkontrolujte zadaný e-mail." };
+    }
+    if (issue?.path[0] === "password") {
+      return { ok: false, error: AUTH_MESSAGES.weakPassword };
+    }
+    if (issue?.path[0] === "acceptTerms") {
+      return { ok: false, error: AUTH_MESSAGES.consentRequired };
+    }
+    return { ok: false, error: "Zkontrolujte zadaný e-mail a heslo." };
   }
 
   if (formData.get("acceptTerms") == null) {
@@ -69,118 +121,160 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     return { ok: false, error: rateLimitedMessage(limited.retryAfterSec) };
   }
 
-  const { detectFreeAccountVelocity, isBlockedByAbuse } = await import(
-    "@/domains/fraud",
-  );
-  const abuse = await detectFreeAccountVelocity({ ip, email });
-  if (isBlockedByAbuse(abuse.signals)) {
-    await recordAuthFailure([ip, "register", email]);
-    const { writeMonetizationAuditLog } = await import(
-      "@/domains/revenue/monetization-audit",
-    );
-    await writeMonetizationAuditLog({
-      action: "fraud.signal.blocked",
-      entity: "UserRegistration",
-      ip,
-      meta: {
-        codes: abuse.signals.map((s) => s.code),
-        severities: abuse.signals.map((s) => s.severity),
-      },
-    });
-    return { ok: false, error: AUTH_MESSAGES.genericError };
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  if (existing) {
-    await recordAuthFailure([ip, "register", email]);
-    return { ok: false, error: AUTH_MESSAGES.emailTaken };
-  }
-
-  const passwordHash = await hashPassword(parsed.data.password);
-
-  // Role is ALWAYS USER at registration — never taken from the client.
-  const user = await prisma.$transaction(async (tx) => {
-    const created = await tx.user.create({
-      data: {
-        email,
-        passwordHash,
-        role: Role.USER,
-        profile: { create: { preferredLocale: "cs" } },
-      },
-      select: { id: true, email: true },
-    });
-
-    const now = new Date();
-    await tx.consent.createMany({
-      data: [
-        {
-          userId: created.id,
-          type: ConsentType.TERMS,
-          granted: true,
-          version: CURRENT_CONSENT_VERSIONS.TERMS,
-          grantedAt: now,
-        },
-        {
-          userId: created.id,
-          type: ConsentType.PRIVACY,
-          granted: true,
-          version: CURRENT_CONSENT_VERSIONS.PRIVACY,
-          grantedAt: now,
-        },
-      ],
-    });
-
-    return created;
-  });
-
-  await writeAuditLog({
-    action: "auth.register",
-    entity: "User",
-    entityId: user.id,
-    actorId: user.id,
-  });
-  await writeAuditLog({
-    action: "consent.grant",
-    entity: "Consent",
-    entityId: user.id,
-    actorId: user.id,
-    meta: {
-      types: ["TERMS", "PRIVACY"],
-      versions: CURRENT_CONSENT_VERSIONS,
-    },
-  });
-
-  track({ name: "signup_completed", props: { consents: "terms_privacy" } });
-  const { getPublicAppUrl } = await import("@/lib/app-url");
-  const base = getPublicAppUrl();
-  logEmailInDev(welcomeEmail(`${base}/onboarding`), "new-user");
-
   try {
-    const result = await signIn("credentials", {
-      email,
-      password: parsed.data.password,
-      redirect: false,
+    const { detectFreeAccountVelocity, isBlockedByAbuse } = await import(
+      "@/domains/fraud",
+    );
+    const abuse = await detectFreeAccountVelocity({ ip, email });
+    if (isBlockedByAbuse(abuse.signals)) {
+      await recordAuthFailure([ip, "register", email]);
+      const { writeMonetizationAuditLog } = await import(
+        "@/domains/revenue/monetization-audit",
+      );
+      await writeMonetizationAuditLog({
+        action: "fraud.signal.blocked",
+        entity: "UserRegistration",
+        ip,
+        meta: {
+          codes: abuse.signals.map((s) => s.code),
+          severities: abuse.signals.map((s) => s.severity),
+        },
+      });
+      return { ok: false, error: AUTH_MESSAGES.registerFailed };
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
     });
-    if (result?.error) {
-      return { ok: false, error: AUTH_MESSAGES.genericError };
+    if (existing) {
+      await recordAuthFailure([ip, "register", email]);
+      return { ok: false, error: AUTH_MESSAGES.emailTaken };
     }
+
+    const passwordHash = await hashPassword(parsed.data.password);
+
+    // Role is ALWAYS USER at registration — never taken from the client.
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: Role.USER,
+          profile: { create: { preferredLocale: "cs" } },
+        },
+        select: { id: true, email: true },
+      });
+
+      const now = new Date();
+      await tx.consent.createMany({
+        data: [
+          {
+            userId: created.id,
+            type: ConsentType.TERMS,
+            granted: true,
+            version: CURRENT_CONSENT_VERSIONS.TERMS,
+            grantedAt: now,
+          },
+          {
+            userId: created.id,
+            type: ConsentType.PRIVACY,
+            granted: true,
+            version: CURRENT_CONSENT_VERSIONS.PRIVACY,
+            grantedAt: now,
+          },
+        ],
+      });
+
+      return created;
+    });
+
+    await writeAuditLog({
+      action: "auth.register",
+      entity: "User",
+      entityId: user.id,
+      actorId: user.id,
+    });
+    await writeAuditLog({
+      action: "consent.grant",
+      entity: "Consent",
+      entityId: user.id,
+      actorId: user.id,
+      meta: {
+        types: ["TERMS", "PRIVACY"],
+        versions: CURRENT_CONSENT_VERSIONS,
+      },
+    });
+
+    track({ name: "signup_completed", props: { consents: "terms_privacy" } });
+    const { getPublicAppUrl } = await import("@/lib/app-url");
+    const base = getPublicAppUrl();
+    logEmailInDev(welcomeEmail(`${base}/onboarding`), "new-user");
+
+    let signedIn = false;
+    try {
+      // Auth.js v5 with redirect:false returns a URL string (not { error }).
+      const signInResult = await signIn("credentials", {
+        email,
+        password: parsed.data.password,
+        redirect: false,
+      });
+      if (isAuthSignInFailureUrl(signInResult)) {
+        signedIn = false;
+      } else {
+        signedIn = true;
+      }
+    } catch (error) {
+      if (error instanceof AuthError) {
+        signedIn = false;
+      } else {
+        // Propagate Next.js redirect / router interrupts; ignore other sign-in noise.
+        const { unstable_rethrow } = await import("next/navigation");
+        unstable_rethrow(error);
+        signedIn = false;
+      }
+    }
+
+    try {
+      const { linkUnclaimedMortgageLeadsOnAuth } = await import(
+        "@/domains/leads/service/lead-linking"
+      );
+      await linkUnclaimedMortgageLeadsOnAuth({
+        userId: user.id,
+        verifiedEmail: email,
+        authMethod: "register",
+      });
+    } catch (linkError) {
+      console.error(
+        "[auth.register] lead link failed",
+        linkError instanceof Error ? linkError.name : "unknown",
+      );
+    }
+
+    if (!signedIn) {
+      // Account exists — do not leave the user stuck with a generic failure.
+      return {
+        ok: true,
+        message: "Účet byl vytvořen. Přihlaste se prosím e-mailem a heslem.",
+      };
+    }
+
+    redirect(getSafeCallbackUrl(parsed.data.callbackUrl, "/onboarding"));
   } catch (error) {
-    if (error instanceof AuthError) {
-      return { ok: false, error: AUTH_MESSAGES.genericError };
+    const { unstable_rethrow } = await import("next/navigation");
+    unstable_rethrow(error);
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      typeof (error as { digest?: string }).digest === "string" &&
+      (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
     }
-    throw error;
+    await recordAuthFailure([ip, "register", email]).catch(() => undefined);
+    return { ok: false, error: mapRegisterException(error) };
   }
-
-  const { linkUnclaimedMortgageLeadsOnAuth } = await import(
-    "@/domains/leads/service/lead-linking"
-  );
-  await linkUnclaimedMortgageLeadsOnAuth({
-    userId: user.id,
-    verifiedEmail: email,
-    authMethod: "register",
-  });
-
-  redirect(getSafeCallbackUrl(parsed.data.callbackUrl, "/onboarding"));
 }
 
 export async function loginAction(formData: FormData): Promise<ActionResult> {
@@ -198,15 +292,18 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   const callbackUrl = getSafeCallbackUrl(parsed.data.callbackUrl, "/ucet");
 
   try {
+    // Auth.js v5 with redirect:false returns a URL string (not { error }).
     const result = await signIn("credentials", {
       email,
       password: parsed.data.password,
       redirect: false,
     });
-    if (result?.error) {
+    if (isAuthSignInFailureUrl(result)) {
       return { ok: false, error: AUTH_MESSAGES.invalidCredentials };
     }
   } catch (error) {
+    const { unstable_rethrow } = await import("next/navigation");
+    unstable_rethrow(error);
     if (error instanceof AuthError) {
       return { ok: false, error: AUTH_MESSAGES.invalidCredentials };
     }

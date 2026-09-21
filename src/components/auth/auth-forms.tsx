@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { unstable_rethrow } from "next/navigation";
 import * as React from "react";
 
 import { Checkbox } from "@/components/forms/controls";
@@ -15,16 +17,6 @@ import {
   resetPasswordAction,
 } from "@/lib/auth/actions";
 
-function isRedirectError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "digest" in error &&
-    typeof (error as { digest?: string }).digest === "string" &&
-    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-  );
-}
-
 export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -34,6 +26,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     <form
       className="space-y-4"
       aria-label="Přihlášení"
+      method="post"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
@@ -45,6 +38,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
             if (result && !result.ok) setError(result.error);
             else router.refresh();
           } catch (err) {
+            unstable_rethrow(err);
             if (isRedirectError(err)) return;
             setError("Přihlášení se nepodařilo.");
           }
@@ -88,6 +82,7 @@ export function RegisterForm({ callbackUrl }: { callbackUrl: string }) {
     <form
       className="space-y-4"
       aria-label="Registrace"
+      method="post"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
@@ -97,10 +92,19 @@ export function RegisterForm({ callbackUrl }: { callbackUrl: string }) {
           try {
             const result = await registerAction(fd);
             if (result && !result.ok) setError(result.error);
-            else router.refresh();
+            else if (result?.ok && result.message) {
+              router.push("/prihlaseni");
+              router.refresh();
+            } else {
+              router.refresh();
+            }
           } catch (err) {
+            // redirect() from the server action must not surface as a form error.
+            unstable_rethrow(err);
             if (isRedirectError(err)) return;
-            setError("Registraci se nepodařilo dokončit.");
+            setError(
+              "Registraci se nyní nepodařilo dokončit. Zkuste to prosím znovu.",
+            );
           }
         });
       }}
@@ -109,6 +113,21 @@ export function RegisterForm({ callbackUrl }: { callbackUrl: string }) {
       {error ? (
         <InlineAlert tone="error" title="Registrace se nezdařila">
           {error}
+          {error.includes("už existuje") ? (
+            <>
+              {" "}
+              <Link href="/prihlaseni" className="underline underline-offset-2">
+                Přihlásit se
+              </Link>
+              {" · "}
+              <Link
+                href="/zapomenute-heslo"
+                className="underline underline-offset-2"
+              >
+                Zapomenuté heslo
+              </Link>
+            </>
+          ) : null}
         </InlineAlert>
       ) : null}
       <Field id="register-email" label="E-mail" required>
@@ -120,7 +139,12 @@ export function RegisterForm({ callbackUrl }: { callbackUrl: string }) {
         required
         helperText="Nejméně 8 znaků, alespoň jedno písmeno a jedna číslice."
       >
-        <TextInput name="password" type="password" autoComplete="new-password" required />
+        <TextInput
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          required
+        />
       </Field>
       <Checkbox
         name="acceptTerms"
@@ -228,9 +252,19 @@ export function ResetPasswordForm({
         required
         helperText="Nejméně 8 znaků, alespoň jedno písmeno a jedna číslice."
       >
-        <TextInput name="password" type="password" autoComplete="new-password" required />
+        <TextInput
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          required
+        />
       </Field>
-      <Button type="submit" fullWidth loading={pending} disabled={Boolean(message)}>
+      <Button
+        type="submit"
+        fullWidth
+        loading={pending}
+        disabled={Boolean(message)}
+      >
         Nastavit nové heslo
       </Button>
     </form>
