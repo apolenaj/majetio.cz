@@ -231,6 +231,7 @@ export function FinancingTool() {
               ratePp={state.rate}
               sourceContext="calculator"
               label="Porovnat aktuální financování"
+              destination="compare"
             />
           </div>
           <p className="calc-assumptions">

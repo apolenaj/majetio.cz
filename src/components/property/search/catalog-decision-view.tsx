@@ -6,6 +6,8 @@ import { ArrowLeft, Bus, HeartPulse, Home, School, ShoppingCart, TrendingUp } fr
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { FinancingSummary } from "@/components/financing/financing-summary";
+import { HypotekaJasneCTA } from "@/components/financing/hypotekajasne-cta";
+import { FINANCING_ASSUMPTIONS, resolveFinancingInputs } from "@/config/financing-assumptions";
 import { DemoNegotiationForms } from "@/components/listings/demo-negotiation-forms";
 import { AnalysisOfferCard } from "@/components/property/analysis-offer-card";
 import { PrePurchaseChecklist } from "@/components/property/pre-purchase-checklist";
@@ -146,8 +148,8 @@ export function CatalogDecisionView({ property }: { property: Property }) {
     setShared(true);
   }
 
-  const financingHref = `/kalkulacky/financovani?cena=${property.cena}`;
   const propertyUrl = `${getSiteOrigin()}${catalogPropertyHref(property.id)}`;
+  const financingDefaults = resolveFinancingInputs({ propertyPriceCzk: property.cena });
 
   return (
     <div className="pd-shell">
@@ -381,7 +383,6 @@ export function CatalogDecisionView({ property }: { property: Property }) {
                 propertyUrl={propertyUrl}
                 variant="section"
                 sourceContext="property_detail"
-                calculatorHref={financingHref}
               />
             ) : (
               <p className="mt-3 text-sm text-[var(--text-secondary)]">
@@ -542,9 +543,20 @@ export function CatalogDecisionView({ property }: { property: Property }) {
               <Link href="/kontakt" className={CTA}>
                 Napsat na kontakt
               </Link>
-              <Link href={financingHref} className="rounded-full border border-[var(--border-default)] px-4 py-3 text-sm font-semibold">
-                Spočítat financování
-              </Link>
+              {sale ? (
+                <HypotekaJasneCTA
+                  propertyPriceCzk={financingDefaults.propertyPriceCzk}
+                  ownFundsCzk={financingDefaults.ownFundsCzk}
+                  loanAmountCzk={financingDefaults.loanAmountCzk}
+                  termYears={financingDefaults.termYears}
+                  ratePp={FINANCING_ASSUMPTIONS.referenceMortgageRatePp}
+                  propertyUrl={propertyUrl}
+                  sourceContext="property_detail"
+                  destination="calculator"
+                  label="Otevřít kalkulačku"
+                  className="rounded-full border border-[var(--border-default)] px-4 py-3 text-sm font-semibold inline-flex items-center gap-1.5"
+                />
+              ) : null}
               <button type="button" onClick={toggleCompare} className="rounded-full border border-[var(--border-default)] px-4 py-3 text-sm">
                 Přidat do porovnání
               </button>

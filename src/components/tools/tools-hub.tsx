@@ -147,6 +147,7 @@ export function ToolsHub() {
                       </Link>
                       <HypotekaJasneCTA
                         sourceContext="tools"
+                        destination="compare"
                         label="Aktuální sazby a možnosti"
                         className="tools-btn-outline tools-external-cta"
                       />
@@ -240,6 +241,7 @@ export function ToolsHub() {
                       </Link>
                       <HypotekaJasneCTA
                         sourceContext="tools"
+                        destination="compare"
                         label="Aktuální sazby →"
                         className="tools-catalog-cta tools-external-cta"
                       />

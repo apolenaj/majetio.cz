@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { FINANCING_ASSUMPTIONS, resolveFinancingInputs } from "@/config/financing-assumptions";
@@ -17,7 +15,6 @@ export type FinancingSummaryProps = {
   currency?: string | null;
   sourceContext?: HypotekaJasneLinkContext;
   variant?: "compact" | "panel" | "section";
-  calculatorHref?: string;
   foreign?: boolean;
 };
 
@@ -28,7 +25,6 @@ export function FinancingSummary({
   currency,
   sourceContext = "property_detail",
   variant = "panel",
-  calculatorHref = "/kalkulacky/financovani",
   foreign = false,
 }: FinancingSummaryProps) {
   const [open, setOpen] = useState(false);
@@ -80,9 +76,6 @@ export function FinancingSummary({
   }
 
   const payment = mortgage.monthlyPayment;
-  const calcLink = calculatorHref.includes("?")
-    ? calculatorHref
-    : `${calculatorHref}?cena=${Math.round(propertyPriceCzk)}`;
 
   if (variant === "compact") {
     return (
@@ -102,7 +95,6 @@ export function FinancingSummary({
             country={country}
             currency={currency}
             sourceContext={sourceContext}
-            calculatorHref={calcLink}
             ownFunds={ownFunds}
             rate={rate}
             years={years}
@@ -130,7 +122,6 @@ export function FinancingSummary({
         country={country}
         currency={currency}
         sourceContext={sourceContext}
-        calculatorHref={calcLink}
         ownFunds={ownFunds}
         rate={rate}
         years={years}
@@ -153,7 +144,6 @@ function CompactBody({
   country,
   currency,
   sourceContext,
-  calculatorHref,
   ownFunds,
   rate,
   years,
@@ -171,7 +161,6 @@ function CompactBody({
   country?: string | null;
   currency?: string | null;
   sourceContext: HypotekaJasneLinkContext;
-  calculatorHref: string;
   ownFunds: number;
   rate: number;
   years: number;
@@ -182,6 +171,18 @@ function CompactBody({
   onToggleEditor?: () => void;
   showEditorToggle?: boolean;
 }) {
+  const ctaProps = {
+    propertyPriceCzk: resolved.propertyPriceCzk,
+    ownFundsCzk: resolved.ownFundsCzk,
+    loanAmountCzk: resolved.loanAmountCzk,
+    termYears: resolved.termYears,
+    ratePp: resolved.annualInterestRatePp,
+    propertyUrl,
+    country,
+    currency,
+    sourceContext,
+  };
+
   return (
     <>
       <dl className="fs-grid">
@@ -205,7 +206,12 @@ function CompactBody({
         </div>
         <div>
           <dt>Sazba ve výpočtu</dt>
-          <dd>{resolved.annualInterestRatePp.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} %</dd>
+          <dd>
+            {resolved.annualInterestRatePp.toLocaleString("cs-CZ", {
+              maximumFractionDigits: 2,
+            })}{" "}
+            %
+          </dd>
         </div>
         <div>
           <dt>Splatnost</dt>
@@ -226,7 +232,9 @@ function CompactBody({
             <input
               inputMode="numeric"
               value={ownFunds}
-              onChange={(e) => onOwnFunds(Number(e.target.value.replace(/\D/g, "")) || 0)}
+              onChange={(e) =>
+                onOwnFunds(Number(e.target.value.replace(/\D/g, "")) || 0)
+              }
             />
           </label>
           <label>
@@ -245,42 +253,43 @@ function CompactBody({
             <input
               inputMode="numeric"
               value={years}
-              onChange={(e) => onYears(Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1))}
+              onChange={(e) =>
+                onYears(Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1))
+              }
             />
           </label>
         </div>
       ) : null}
 
       <p className="fs-disclaimer">
-        {foreign ? FINANCING_ASSUMPTIONS.foreignDisclaimerCs : FINANCING_ASSUMPTIONS.disclaimerCs}
+        {foreign
+          ? FINANCING_ASSUMPTIONS.foreignDisclaimerCs
+          : FINANCING_ASSUMPTIONS.disclaimerCs}
       </p>
       <p className="fs-meta">
-        {FINANCING_ASSUMPTIONS.sourceLabel} · aktualizace {FINANCING_ASSUMPTIONS.lastUpdated}
+        {FINANCING_ASSUMPTIONS.sourceLabel} · aktualizace{" "}
+        {FINANCING_ASSUMPTIONS.lastUpdated}
       </p>
 
       <div className="fs-actions">
         <HypotekaJasneCTA
-          propertyPriceCzk={resolved.propertyPriceCzk}
-          ownFundsCzk={resolved.ownFundsCzk}
-          loanAmountCzk={resolved.loanAmountCzk}
-          termYears={resolved.termYears}
-          ratePp={resolved.annualInterestRatePp}
-          propertyUrl={propertyUrl}
-          country={country}
-          currency={currency}
-          sourceContext={sourceContext}
+          {...ctaProps}
+          destination="compare"
           label={
             foreign
               ? "Zjistit možnosti financování"
               : "Porovnat možnosti financování"
           }
         />
-        <Link href={calculatorHref} className="fs-secondary">
-          Otevřít kalkulačku
-        </Link>
+        <HypotekaJasneCTA
+          {...ctaProps}
+          destination="calculator"
+          label="Otevřít kalkulačku"
+          className="fs-secondary"
+        />
       </div>
       <p className="fs-brand">
-        Více možností financování na HypotékaJasně.cz
+        Kompletní hypoteční kalkulačka na HypotékaJasně.cz
       </p>
     </>
   );
