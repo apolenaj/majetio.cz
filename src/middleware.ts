@@ -198,9 +198,19 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  // Auth.js sets `__Secure-authjs.session-token` on HTTPS. Without secureCookie,
+  // getToken looks for the unprefixed name and sessions appear logged-out on refresh.
+  const secureCookie =
+    request.nextUrl.protocol === "https:" || process.env.VERCEL === "1";
+  const sessionCookieName = secureCookie
+    ? "__Secure-authjs.session-token"
+    : "authjs.session-token";
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
+    secureCookie,
+    cookieName: sessionCookieName,
+    salt: sessionCookieName,
   });
   const isLoggedIn = Boolean(token?.sub);
 

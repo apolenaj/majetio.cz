@@ -60,3 +60,7 @@ tsc-out.txt
 public/uploads/listings/**
 !public/uploads/listings/.gitkeep
 
+
+.env.vercel.production
+.env*.local
+
